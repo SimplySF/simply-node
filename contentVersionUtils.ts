@@ -30,7 +30,7 @@ import {
 export async function downloadContentVersion(
   targetOrgConnection: Connection,
   contentVersionDownload: ContentVersionDownload,
-  downloadDirectory: string
+  downloadDirectory: string,
 ): Promise<string> {
   const filePath = `${downloadDirectory}/${
     contentVersionDownload.ContentDocumentId
@@ -42,7 +42,7 @@ export async function downloadContentVersion(
         Authorization: `Bearer ${targetOrgConnection.accessToken as string}`,
       },
     }),
-    fs.createWriteStream(filePath)
+    fs.createWriteStream(filePath),
   );
 
   return filePath;
@@ -52,7 +52,7 @@ export async function uploadContentVersion(
   targetOrgConnection: Connection,
   pathOnClient: string,
   title?: string,
-  firstPublishLocationId?: string
+  firstPublishLocationId?: string,
 ): Promise<ContentVersion> {
   // Check that we have access to the file
   await fs.promises.access(pathOnClient, fs.constants.F_OK);
@@ -78,7 +78,7 @@ export async function uploadContentVersion(
   });
 
   const queryResult = await targetOrgConnection.singleRecordQuery(
-    `SELECT ContentDocumentId, FileExtension, Id, Title FROM ContentVersion WHERE Id='${data.id}'`
+    `SELECT ContentDocumentId, FileExtension, Id, Title FROM ContentVersion WHERE Id='${data.id}'`,
   );
 
   return queryResult as ContentVersion;
