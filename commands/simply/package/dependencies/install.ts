@@ -241,7 +241,7 @@ export default class PackageDependenciesInstall extends SfCommand<PackageToInsta
     this.spinner.start('Checking for duplicate package dependencies', '', { stdout: true });
     packagesToInstall = packagesToInstall.filter(
       (packageToInstall, index, self) =>
-        index === self.findIndex((t) => t.SubscriberPackageVersionId === packageToInstall?.SubscriberPackageVersionId)
+        index === self.findIndex((t) => t.SubscriberPackageVersionId === packageToInstall?.SubscriberPackageVersionId),
     );
     this.spinner.stop();
 
@@ -290,7 +290,7 @@ export default class PackageDependenciesInstall extends SfCommand<PackageToInsta
           packageToInstall.Status = 'Skipped';
 
           this.info(
-            `Package ${packageToInstall?.PackageName} (${packageToInstall?.SubscriberPackageVersionId}) is already installed and will be skipped`
+            `Package ${packageToInstall?.PackageName} (${packageToInstall?.SubscriberPackageVersionId}) is already installed and will be skipped`,
           );
 
           continue;
@@ -352,13 +352,13 @@ export default class PackageDependenciesInstall extends SfCommand<PackageToInsta
             const status =
               publishStatus === 'NO_ERRORS_DETECTED' ? 'Available for installation' : 'Unavailable for installation';
             this.spinner.status = `${remainingTime.minutes} minutes remaining until timeout. Publish status: ${status}`;
-          }
+          },
         );
 
         this.spinner.start(
           `${remainingTime.minutes} minutes remaining until timeout. Publish status: 'Querying Status'`,
           '',
-          { stdout: true }
+          { stdout: true },
         );
 
         await subscriberPackageVersion.waitForPublish({
@@ -407,7 +407,7 @@ export default class PackageDependenciesInstall extends SfCommand<PackageToInsta
             timeThen = Date.now();
             remainingTime = Duration.milliseconds(remainingTime.milliseconds - elapsedTime.milliseconds);
             this.spinner.status = `${remainingTime.minutes} minutes remaining until timeout. Install status: ${piRequest.Status}`;
-          }
+          },
         );
       }
 

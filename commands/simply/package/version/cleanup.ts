@@ -105,7 +105,7 @@ export default class PackageVersionCleanup extends SfCommand<PackageVersionClean
         packageVersion.IsReleased === false &&
         packageVersion.MajorVersion.toString() === majorMatcher &&
         packageVersion.MinorVersion.toString() === minorMatcher &&
-        packageVersion.PatchVersion.toString() === patchMatcher
+        packageVersion.PatchVersion.toString() === patchMatcher,
     );
 
     const packageVersionDeletePromiseRequests: Array<Promise<PackageSaveResult>> = [];

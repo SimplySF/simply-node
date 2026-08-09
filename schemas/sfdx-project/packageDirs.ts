@@ -31,7 +31,7 @@ const BasePackageDirPropsSchema = z.object({
     .default(true)
     .optional()
     .describe(
-      'If you have specified more than one path, include this parameter for the default path to indicate which is the default package directory.'
+      'If you have specified more than one path, include this parameter for the default path to indicate which is the default package directory.',
     ),
   path: z
     .string()
@@ -45,7 +45,7 @@ const BasePackageDirWithDependenciesSchema = BasePackageDirPropsSchema.extend({
     .array(PackageDirDependencySchema)
     .optional()
     .describe(
-      'To specify dependencies for 2GP within the same Dev Hub, use either the package version alias or a combination of the package name and the version number.'
+      'To specify dependencies for 2GP within the same Dev Hub, use either the package version alias or a combination of the package name and the version number.',
     ),
 });
 

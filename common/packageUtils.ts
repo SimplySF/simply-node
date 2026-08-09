@@ -39,10 +39,10 @@ export const isSubscriberPackageVersionId = (inputToEvaluate: string): boolean =
 
 export const isSubscriberPackageVersionInstalled = (
   installedPackages: InstalledPackages[],
-  subscriberPackageVersionId: string
+  subscriberPackageVersionId: string,
 ): boolean =>
   installedPackages.some(
-    (installedPackage) => installedPackage?.SubscriberPackageVersion?.Id === subscriberPackageVersionId
+    (installedPackage) => installedPackage?.SubscriberPackageVersion?.Id === subscriberPackageVersionId,
   );
 
 export const reducePackageInstallRequestErrors = (request: PackageInstallRequest): string => {
@@ -59,6 +59,6 @@ export const reducePackageInstallRequestErrors = (request: PackageInstallRequest
 };
 
 export const isDependenciesPackagingDirectory = (
-  packageDir: NamedPackageDir
+  packageDir: NamedPackageDir,
 ): packageDir is NamedPackageDir & BasePackageDirWithDependencies =>
   'dependencies' in packageDir && Array.isArray(packageDir?.dependencies);

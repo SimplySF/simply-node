@@ -41,7 +41,7 @@ export type PackageVersionService = {
   buildInteractiveChoices(
     dependency: ParsedDependency,
     branch: string,
-    branchesWithReleased: string[]
+    branchesWithReleased: string[],
   ): VersionChoice[];
   buildReleasedChoices(dependency: ParsedDependency, branchesWithReleased: string[]): VersionChoice[];
   buildLatestChoices(dependency: ParsedDependency): VersionChoice[];
@@ -56,7 +56,7 @@ export type VersionServiceFilterIds = {
 export async function buildVersionService(
   connection: Connection,
   project: SfProject,
-  filterIds?: VersionServiceFilterIds
+  filterIds?: VersionServiceFilterIds,
 ): Promise<PackageVersionService> {
   let packages: PackagingSObjects.Package2[];
   let versions: PackageVersionListResult[];
@@ -67,7 +67,7 @@ export async function buildVersionService(
       const inClause = filterIds.subscriberVersionIds.map((id) => `'${id}'`).join(', ');
       const result = await connection.autoFetchQuery(
         `SELECT Package2Id FROM Package2Version WHERE SubscriberPackageVersionId IN (${inClause})`,
-        { tooling: true }
+        { tooling: true },
       );
       for (const rec of result.records as unknown as Array<{ Package2Id: string }>) {
         package2IdSet.add(rec.Package2Id);
@@ -82,12 +82,12 @@ export async function buildVersionService(
     } else {
       const apiVersion = connection.getApiVersion();
       const fields = Package2Fields.filter((f) => apiVersion >= '59.0' || f !== 'AppAnalyticsEnabled').filter(
-        (f) => apiVersion >= '66.0' || f !== 'RecommendedVersionId'
+        (f) => apiVersion >= '66.0' || f !== 'RecommendedVersionId',
       );
       const inClause = targetPackage2Ids.map((id) => `'${id}'`).join(', ');
       const pkg2Result = await connection.autoFetchQuery(
         `SELECT ${fields.join(', ')} FROM Package2 WHERE Id IN (${inClause}) ORDER BY NamespacePrefix, Name`,
-        { tooling: true }
+        { tooling: true },
       );
       packages = (pkg2Result?.records ?? []) as unknown as PackagingSObjects.Package2[];
       versions = await Package.listVersions(connection, project, {
@@ -186,7 +186,7 @@ export async function buildVersionService(
     package2Id: string,
     branch: string,
     dependency: ParsedDependency,
-    level: ChunkLevel
+    level: ChunkLevel,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): Map<number, any> | undefined {
     const resolvedBranch = branch ?? '';
@@ -224,7 +224,7 @@ export async function buildVersionService(
     package2Id: string,
     branch: string,
     dependency: ParsedDependency,
-    seen: Set<string>
+    seen: Set<string>,
   ): VersionChoice | undefined {
     const block = findBlock(releasedVersionsByPackageAndBranch, package2Id, branch, dependency, ChunkLevel.Major);
     if (!block) return undefined;
@@ -243,7 +243,7 @@ export async function buildVersionService(
     dependency: ParsedDependency,
     level: ChunkLevel,
     label: string,
-    seen: Set<string>
+    seen: Set<string>,
   ): VersionChoice | undefined {
     const block = findBlock(versionsByPackageAndBranch, package2Id, branch, dependency, level);
     if (!block) return undefined;
@@ -301,7 +301,7 @@ export async function buildVersionService(
     buildInteractiveChoices(
       dependency: ParsedDependency,
       branch: string,
-      branchesWithReleased: string[]
+      branchesWithReleased: string[],
     ): VersionChoice[] {
       const package2Id = dependency.package2Id!;
       const maj = dependency.majorVersion ?? '';
@@ -327,7 +327,7 @@ export async function buildVersionService(
           dependency,
           ChunkLevel.Patch,
           `Latest version on '${branch}' branch`,
-          seen
+          seen,
         );
         if (c) choices.push(c);
       }
@@ -339,7 +339,7 @@ export async function buildVersionService(
         dependency,
         ChunkLevel.Patch,
         `Latest ${maj}.${min}.${pat} version on main build branch`,
-        seen
+        seen,
       );
       if (patchMain) choices.push(patchMain);
       for (const b of branchesWithReleased ?? []) {
@@ -349,7 +349,7 @@ export async function buildVersionService(
           dependency,
           ChunkLevel.Patch,
           `Latest ${maj}.${min}.${pat} version on build branch - ${b}`,
-          seen
+          seen,
         );
         if (c) choices.push(c);
       }
@@ -361,7 +361,7 @@ export async function buildVersionService(
         dependency,
         ChunkLevel.Minor,
         `Latest ${maj}.${min} version on main build branch`,
-        seen
+        seen,
       );
       if (minorMain) choices.push(minorMain);
       for (const b of branchesWithReleased ?? []) {
@@ -371,7 +371,7 @@ export async function buildVersionService(
           dependency,
           ChunkLevel.Minor,
           `Latest ${maj}.${min} version on build branch - ${b}`,
-          seen
+          seen,
         );
         if (c) choices.push(c);
       }
@@ -383,7 +383,7 @@ export async function buildVersionService(
         dependency,
         ChunkLevel.Major,
         'Latest version on main build branch',
-        seen
+        seen,
       );
       if (majorMain) choices.push(majorMain);
       for (const b of branchesWithReleased ?? []) {
@@ -393,7 +393,7 @@ export async function buildVersionService(
           dependency,
           ChunkLevel.Major,
           `Latest version on build branch - ${b}`,
-          seen
+          seen,
         );
         if (c) choices.push(c);
       }

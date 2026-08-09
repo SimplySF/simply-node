@@ -52,7 +52,7 @@ export async function buildProjectService(project: SfProject): Promise<SfdxProje
     const result = new Map<string, ParsedDependency[]>();
 
     for (const dir of project.getPackageDirectories()) {
-      const deps = isNamedPackagingDirectory(dir) ? dir.dependencies ?? [] : [];
+      const deps = isNamedPackagingDirectory(dir) ? (dir.dependencies ?? []) : [];
       const parsed: ParsedDependency[] = [];
 
       for (const dep of deps) {
@@ -101,7 +101,7 @@ export async function buildProjectService(project: SfProject): Promise<SfdxProje
         const dep = deps.find(
           (d) =>
             resolveAlias(d['package']) === change.oldDependency.package2Id ||
-            resolveAlias(d['package']) === change.oldDependency.subscriberPackageVersionId
+            resolveAlias(d['package']) === change.oldDependency.subscriberPackageVersionId,
         );
 
         if (!dep) continue;

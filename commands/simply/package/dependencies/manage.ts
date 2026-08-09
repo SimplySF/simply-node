@@ -79,7 +79,7 @@ export default class PackageDependenciesManage extends SfCommand<PackageDependen
     const filterIds: VersionServiceFilterIds = {
       package2Ids: allDependencies.flatMap((d) => (d.package2Id ? [d.package2Id] : [])),
       subscriberVersionIds: allDependencies.flatMap((d) =>
-        d.subscriberPackageVersionId ? [d.subscriberPackageVersionId] : []
+        d.subscriberPackageVersionId ? [d.subscriberPackageVersionId] : [],
       ),
     };
 
@@ -165,7 +165,7 @@ export default class PackageDependenciesManage extends SfCommand<PackageDependen
           const packageDisplayName = versionService.getPackageAlias(package2Id) ?? package2Id;
           selectedValue = await this.promptForVersion(
             messages.getMessage('prompt.selectVersion', [packageDisplayName]),
-            choices
+            choices,
           );
         } else {
           selectedValue = choices[0].value;
@@ -176,7 +176,7 @@ export default class PackageDependenciesManage extends SfCommand<PackageDependen
           dependency,
           selectedValue,
           versionService.getVersionAlias.bind(versionService),
-          versionService.getPackage2IdForVersion.bind(versionService)
+          versionService.getPackage2IdForVersion.bind(versionService),
         );
         changesByDirectory.get(dirPath)!.push(change);
 
@@ -223,7 +223,7 @@ function buildChange(
   oldDependency: ParsedDependency,
   selectedValue: string,
   getVersionAlias: (id: string) => string | undefined,
-  getPackage2Id: (id: string) => string | undefined
+  getPackage2Id: (id: string) => string | undefined,
 ): DependencyChange {
   // Pinned selection: value is a SubscriberPackageVersionId (04t)
   if (selectedValue.startsWith('04t')) {
