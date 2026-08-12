@@ -88,8 +88,8 @@ export default class PackageVersionCleanup extends SfCommand<PackageVersionClean
 
     const packageVersionListOptions: PackageVersionListOptions = {
       concise: false,
-      createdLastDays: undefined as unknown as number,
-      modifiedLastDays: undefined as unknown as number,
+      createdLastDays: undefined,
+      modifiedLastDays: undefined,
       orderBy: 'MajorVersion, MinorVersion, PatchVersion, BuildNumber',
       packages: [flags.package],
       isReleased: false,

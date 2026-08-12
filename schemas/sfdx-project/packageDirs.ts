@@ -40,7 +40,7 @@ const BasePackageDirPropsSchema = z.object({
 });
 
 /** Package directory with package (requires versionNumber) */
-const BasePackageDirWithDependenciesSchema = BasePackageDirPropsSchema.extend({
+export const BasePackageDirWithDependenciesSchema = BasePackageDirPropsSchema.extend({
   dependencies: z
     .array(PackageDirDependencySchema)
     .optional()

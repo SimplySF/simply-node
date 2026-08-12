@@ -183,7 +183,7 @@ export default class PackageDependenciesInstall extends SfCommand<PackageToInsta
           Status: '',
           PackageName: dependency.package,
           SubscriberPackageVersionId: subscriberPackageVersionId,
-        } as PackageToInstall);
+        });
       }
     }
 
@@ -231,7 +231,7 @@ export default class PackageDependenciesInstall extends SfCommand<PackageToInsta
           PackageName: devHubDependency.package,
           Status: '',
           SubscriberPackageVersionId: subscriberPackageVersionId,
-        } as PackageToInstall);
+        });
       }
 
       this.spinner.stop();
@@ -433,7 +433,7 @@ export default class PackageDependenciesInstall extends SfCommand<PackageToInsta
             throw messages.createError('error.packageInstallInProgress', [
               this.config.bin,
               pkgInstallRequest.Id,
-              targetOrgConnection.getUsername() as string,
+              targetOrgConnection.getUsername(),
             ]);
           } else {
             packageToInstall.Status = 'Failed';
