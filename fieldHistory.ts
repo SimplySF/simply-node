@@ -19,6 +19,9 @@ import type { FilterCondition, FilterGroup } from '../schemas/history/filterConf
 /**
  * Derive the field history object's API name for an sobject. Opportunity is a special case —
  * its history object is `OpportunityFieldHistory`, not `OpportunityHistory`.
+ *
+ * @param sobject - The tracked sobject's API name.
+ * @returns The corresponding field history object's API name.
  */
 export function getHistoryObjectName(sobject: string): string {
   if (sobject === 'Opportunity') {
@@ -32,7 +35,12 @@ export function getHistoryObjectName(sobject: string): string {
   return `${sobject}History`;
 }
 
-/** Derive the field history object's lookup field back to the parent record. */
+/**
+ * Derive the field history object's lookup field back to the parent record.
+ *
+ * @param sobject - The tracked sobject's API name.
+ * @returns The field history object's lookup field name (e.g. `AccountId`, `ParentId`).
+ */
 export function getParentIdField(sobject: string): string {
   if (sobject === 'Opportunity') {
     return 'OpportunityId';
@@ -45,14 +53,28 @@ export function getParentIdField(sobject: string): string {
   return `${sobject}Id`;
 }
 
+/** Type guard distinguishing a nested {@link FilterGroup} from a leaf {@link FilterCondition}. */
 function isFilterGroup(filter: FilterCondition | FilterGroup): filter is FilterGroup {
   return 'logic' in filter;
 }
 
+/**
+ * @param field - The filter's configured field name; `'ParentId'` is a placeholder for the
+ * history object's actual parent lookup field.
+ * @param parentFieldName - The history object's real parent lookup field (e.g. `AccountId`).
+ * @returns `parentFieldName` if `field` is the `'ParentId'` placeholder, otherwise `field` as-is.
+ */
 function resolveFieldName(field: string, parentFieldName: string): string {
   return field === 'ParentId' ? parentFieldName : field;
 }
 
+/**
+ * @param operator - The filter condition's operator.
+ * @param value - The filter condition's configured value.
+ * @param isDateField - Whether the field being compared is a date/datetime field (affects string
+ * quoting, since date literals shouldn't be quoted).
+ * @returns The value formatted as a SOQL literal, ready to interpolate into a WHERE clause.
+ */
 function formatSoqlValue(operator: FilterCondition['operator'], value: unknown, isDateField: boolean): string {
   if (operator === 'IN' || operator === 'NOT IN') {
     const values = Array.isArray(value) ? value : [value];
@@ -70,6 +92,13 @@ function formatSoqlValue(operator: FilterCondition['operator'], value: unknown, 
  * Build a SOQL WHERE clause from the subset of a filter tree that references SOQL-filterable
  * fields. Conditions on any other field are left for {@link recordMatchesClientFilters} to
  * apply after the query runs.
+ *
+ * @param node - The filter tree (or subtree) to build a clause from.
+ * @param parentFieldName - The history object's real parent lookup field, substituted for the
+ * `'ParentId'` placeholder.
+ * @param soqlFilterableFields - Fields that can be safely pushed into the SOQL WHERE clause;
+ * conditions on any other field are omitted here.
+ * @returns The WHERE clause body (no leading `WHERE`), or `''` if nothing was filterable.
  */
 export function buildWhereClause(
   node: FilterGroup | undefined,
@@ -103,10 +132,21 @@ export function buildWhereClause(
   return clause;
 }
 
+/**
+ * @param pattern - A SOQL `LIKE` pattern (`%` as the wildcard).
+ * @returns An equivalent `RegExp` source string, with regex metacharacters escaped and `%`
+ * translated to `.*`.
+ */
 function escapeLikePattern(pattern: string): string {
   return pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/%/g, '.*');
 }
 
+/**
+ * @param recordValue - The record's (string-valued) field value.
+ * @param filterValue - The filter condition's configured value.
+ * @param operator - The filter condition's operator.
+ * @returns Whether the comparison holds. Numeric-looking values are compared numerically.
+ */
 function compareValues(
   recordValue: string | undefined,
   filterValue: unknown,
@@ -154,6 +194,14 @@ function compareValues(
  * Evaluate whether a queried record satisfies the parts of a filter tree that reference fields
  * *not* covered by the SOQL WHERE clause (e.g. OldValue/NewValue). Conditions on SOQL-filterable
  * fields are treated as already satisfied, since the query itself enforced them.
+ *
+ * @param record - The queried record to test.
+ * @param node - The filter tree (or subtree) to evaluate.
+ * @param parentFieldName - The history object's real parent lookup field, substituted for the
+ * `'ParentId'` placeholder.
+ * @param soqlFilterableFields - Fields already enforced by the SOQL WHERE clause; conditions on
+ * these fields are treated as satisfied without re-checking.
+ * @returns Whether `record` satisfies the non-SOQL-filterable parts of `node`.
  */
 export function recordMatchesClientFilters(
   record: Record<string, string>,
