@@ -15,7 +15,7 @@
  */
 
 import { NamedPackageDir } from '@salesforce/core';
-import { InstalledPackages, PackagingSObjects } from '@salesforce/packaging';
+import { PackagingSObjects } from '@salesforce/packaging';
 import { BasePackageDirWithDependencies } from '../schemas/sfdx-project/packageDirs.js';
 
 type PackageInstallRequest = PackagingSObjects.PackageInstallRequest;
@@ -56,19 +56,6 @@ export const isSubscriberPackageId = (inputToEvaluate: string): boolean =>
  */
 export const isSubscriberPackageVersionId = (inputToEvaluate: string): boolean =>
   inputToEvaluate ? inputToEvaluate.startsWith(PACKAGE_PREFIX_SUBSCRIBER_PACKAGE_VERSION) : false;
-
-/**
- * @param installedPackages - The org's currently installed packages.
- * @param subscriberPackageVersionId - The `SubscriberPackageVersionId` to look for.
- * @returns Whether exactly that version is already installed in the org.
- */
-export const isSubscriberPackageVersionInstalled = (
-  installedPackages: InstalledPackages[],
-  subscriberPackageVersionId: string,
-): boolean =>
-  installedPackages.some(
-    (installedPackage) => installedPackage?.SubscriberPackageVersion?.Id === subscriberPackageVersionId,
-  );
 
 /**
  * Format a `PackageInstallRequest`'s errors as a single human-readable, numbered-list string.

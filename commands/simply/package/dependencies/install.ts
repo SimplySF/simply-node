@@ -17,11 +17,11 @@
 /* eslint-disable complexity */
 /* eslint-disable no-await-in-loop */
 /* eslint-disable no-unsafe-finally */
+import fs from 'node:fs/promises';
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { AuthInfo, Connection, Lifecycle, Messages, SfError } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
 import {
-  InstalledPackages,
   PackageEvents,
   PackageInstallCreateRequest,
   PackageInstallOptions,
@@ -35,7 +35,6 @@ import {
   isDependenciesPackagingDirectory,
   isPackage2Id,
   isSubscriberPackageVersionId,
-  isSubscriberPackageVersionInstalled,
   reducePackageInstallRequestErrors,
 } from '../../../../common/packageUtils.js';
 
@@ -44,11 +43,18 @@ type PackageInstallRequest = PackagingSObjects.PackageInstallRequest;
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('@simplysf/simply-package', 'simply.package.dependencies.install');
 
-/** A single dependency's install outcome: `''`, `'Skipped'`, `'Installing'`, `'Installed'`, or `'Failed'`. */
+/**
+ * A single dependency's install outcome: the package attempted, whatever version (if any) was
+ * already installed in the org for that package, and the decision made.
+ */
 export type PackageToInstall = {
-  Status: string;
   PackageName: string;
+  /** The `SubscriberPackageVersionId` already installed in the org for this package, or `''` if none was. */
+  ExistingSubscriberPackageVersionId: string;
+  /** The `SubscriberPackageVersionId` this command attempted to install. */
   SubscriberPackageVersionId: string;
+  /** `''`, `'Skipped'`, `'Installing'`, `'Installed'`, or `'Failed'`. */
+  Status: string;
 };
 
 /** Maps the `--install-type` flag's display values to the internal values used for comparisons. */
@@ -60,6 +66,14 @@ const upgradeType = { Delete: 'delete-only', DeprecateOnly: 'deprecate-only', Mi
 
 /** Matches one or more comma-separated `alias:key` pairs, as accepted by `--installation-key`. */
 const installationKeyRegex = new RegExp(/^(\w+:\w+)(,\s*\w+:\w+)*/);
+
+/**
+ * @param packagesToInstall - The install outcome for every resolved dependency.
+ * @returns A pretty-printed JSON install report.
+ */
+function buildInstallReport(packagesToInstall: PackageToInstall[]): string {
+  return JSON.stringify(packagesToInstall, null, 2);
+}
 
 /**
  * Installs all specified package dependencies in a Salesforce DX project using the
@@ -113,6 +127,10 @@ export default class PackageDependenciesInstall extends SfCommand<PackageToInsta
       summary: messages.getMessage('flags.publish-wait.summary'),
       char: 'b',
       default: Duration.minutes(0),
+    }),
+    'report-file': Flags.string({
+      summary: messages.getMessage('flags.report-file.summary'),
+      description: messages.getMessage('flags.report-file.description'),
     }),
     'security-type': Flags.custom<'AllUsers' | 'AdminsOnly'>({
       options: ['AllUsers', 'AdminsOnly'],
@@ -171,6 +189,20 @@ export default class PackageDependenciesInstall extends SfCommand<PackageToInsta
     const packageInstallRequests: PackageInstallRequest[] = [];
     const devHubDependencies: PackageDirDependency[] = [];
 
+    // If requested, write a JSON report of the install outcome to a file alongside the normal
+    // terminal output. Declared up front so both the "nothing to install" early return and the
+    // normal completion path can reuse it.
+    const reportPath = flags['report-file'];
+    const writeReport = async (): Promise<void> => {
+      if (!reportPath) {
+        return;
+      }
+
+      await fs.writeFile(reportPath, buildInstallReport(packagesToInstall), 'utf-8');
+
+      this.info(messages.getMessage('info.reportWritten', [reportPath]));
+    };
+
     this.spinner.start('Analyzing project to determine packages to install', '', { stdout: true });
 
     const packageDirectories = this.project?.getPackageDirectories().filter(isDependenciesPackagingDirectory);
@@ -191,9 +223,10 @@ export default class PackageDependenciesInstall extends SfCommand<PackageToInsta
         }
 
         packagesToInstall.push({
-          Status: '',
           PackageName: dependency.package,
+          ExistingSubscriberPackageVersionId: '',
           SubscriberPackageVersionId: subscriberPackageVersionId,
+          Status: '',
         });
       }
     }
@@ -240,8 +273,9 @@ export default class PackageDependenciesInstall extends SfCommand<PackageToInsta
 
         packagesToInstall.push({
           PackageName: devHubDependency.package,
-          Status: '',
+          ExistingSubscriberPackageVersionId: '',
           SubscriberPackageVersionId: subscriberPackageVersionId,
+          Status: '',
         });
       }
 
@@ -258,6 +292,7 @@ export default class PackageDependenciesInstall extends SfCommand<PackageToInsta
 
     if (packagesToInstall?.length === 0) {
       this.info('No packages were found to install');
+      await writeReport();
       return packagesToInstall;
     }
 
@@ -289,62 +324,63 @@ export default class PackageDependenciesInstall extends SfCommand<PackageToInsta
       this.spinner.stop();
     }
 
-    let installedPackages: InstalledPackages[] = [];
+    // Always look up what's currently installed, so the report can show the existing package
+    // alongside the install decision regardless of --install-type.
+    this.spinner.start('Analyzing which packages are installed', '', { stdout: true });
+    const installedPackages = await SubscriberPackageVersion.installedList(targetOrgConnection);
 
-    // If precheck is enabled, get the currently installed packages
-    if (
-      installType[flags['install-type']] === installType.Delta ||
-      installType[flags['install-type']] === installType.Upgrade
-    ) {
-      this.spinner.start('Analyzing which packages are installed', '', { stdout: true });
-      installedPackages = await SubscriberPackageVersion.installedList(targetOrgConnection);
+    for (const packageToInstall of packagesToInstall) {
+      const subscriberPackageVersion = new SubscriberPackageVersion({
+        aliasOrId: packageToInstall.SubscriberPackageVersionId,
+        connection: targetOrgConnection,
+        password: installationKeyMap.get(packageToInstall.SubscriberPackageVersionId) ?? '',
+      });
 
-      for (const packageToInstall of packagesToInstall) {
-        if (isSubscriberPackageVersionInstalled(installedPackages, packageToInstall?.SubscriberPackageVersionId)) {
-          packageToInstall.Status = 'Skipped';
+      const subscriberPackageId = await subscriberPackageVersion.getSubscriberPackageId();
+      const installedPackage = installedPackages.find((pkg) => pkg.SubscriberPackageId === subscriberPackageId);
 
-          this.info(
-            `Package ${packageToInstall?.PackageName} (${packageToInstall?.SubscriberPackageVersionId}) is already installed and will be skipped`,
-          );
+      packageToInstall.ExistingSubscriberPackageVersionId = installedPackage?.SubscriberPackageVersionId ?? '';
 
+      // 'All' always attempts the install regardless of what (if anything) is already there.
+      if (installType[flags['install-type']] === installType.All) {
+        continue;
+      }
+
+      if (installedPackage?.SubscriberPackageVersionId === packageToInstall.SubscriberPackageVersionId) {
+        packageToInstall.Status = 'Skipped';
+
+        this.info(
+          `Package ${packageToInstall.PackageName} (${packageToInstall.SubscriberPackageVersionId}) is already installed and will be skipped`,
+        );
+
+        continue;
+      }
+
+      if (installType[flags['install-type']] === installType.Upgrade) {
+        if (!installedPackage?.SubscriberPackageVersion) {
+          // Not currently installed, so there's nothing to update - proceed with install
           continue;
         }
 
-        if (installType[flags['install-type']] === installType.Upgrade) {
-          const subscriberPackageVersion = new SubscriberPackageVersion({
-            aliasOrId: packageToInstall.SubscriberPackageVersionId,
-            connection: targetOrgConnection,
-            password: installationKeyMap.get(packageToInstall.SubscriberPackageVersionId) ?? '',
-          });
+        const targetVersion = await subscriberPackageVersion.getVersionNumber();
+        const installedVersion = new VersionNumber(
+          installedPackage.SubscriberPackageVersion.MajorVersion,
+          installedPackage.SubscriberPackageVersion.MinorVersion,
+          installedPackage.SubscriberPackageVersion.PatchVersion,
+          installedPackage.SubscriberPackageVersion.BuildNumber,
+        );
 
-          const subscriberPackageId = await subscriberPackageVersion.getSubscriberPackageId();
-          const installedPackage = installedPackages.find((pkg) => pkg.SubscriberPackageId === subscriberPackageId);
+        if (targetVersion.compareTo(installedVersion) <= 0) {
+          packageToInstall.Status = 'Skipped';
 
-          if (!installedPackage?.SubscriberPackageVersion) {
-            // Not currently installed, so there's nothing to update - proceed with install
-            continue;
-          }
-
-          const targetVersion = await subscriberPackageVersion.getVersionNumber();
-          const installedVersion = new VersionNumber(
-            installedPackage.SubscriberPackageVersion.MajorVersion,
-            installedPackage.SubscriberPackageVersion.MinorVersion,
-            installedPackage.SubscriberPackageVersion.PatchVersion,
-            installedPackage.SubscriberPackageVersion.BuildNumber,
+          this.info(
+            `Package ${packageToInstall.PackageName} (${packageToInstall.SubscriberPackageVersionId}) is not newer than the installed version (${installedVersion.toString()}) and will be skipped`,
           );
-
-          if (targetVersion.compareTo(installedVersion) <= 0) {
-            packageToInstall.Status = 'Skipped';
-
-            this.info(
-              `Package ${packageToInstall?.PackageName} (${packageToInstall?.SubscriberPackageVersionId}) is not newer than the installed version (${installedVersion.toString()}) and will be skipped`,
-            );
-          }
         }
       }
-
-      this.spinner.stop();
     }
+
+    this.spinner.stop();
 
     for (const packageToInstall of packagesToInstall) {
       if (packageToInstall.Status === 'Skipped') {
@@ -488,6 +524,8 @@ export default class PackageDependenciesInstall extends SfCommand<PackageToInsta
         }
       }
     }
+
+    await writeReport();
 
     return packagesToInstall;
   }
