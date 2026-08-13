@@ -27,6 +27,7 @@ import {
   PackageInstallOptions,
   SubscriberPackageVersion,
   PackagingSObjects,
+  VersionNumber,
 } from '@salesforce/packaging';
 import { Optional } from '@salesforce/ts-types';
 import { PackageDirDependency } from '../../../../schemas/sfdx-project/packageDirs.js';
@@ -49,7 +50,7 @@ export type PackageToInstall = {
   SubscriberPackageVersionId: string;
 };
 
-const installType = { All: 'all', Delta: 'delta' };
+const installType = { All: 'all', Delta: 'delta', Update: 'update' };
 const securityType = { AllUsers: 'full', AdminsOnly: 'none' };
 const upgradeType = { Delete: 'delete-only', DeprecateOnly: 'deprecate-only', Mixed: 'mixed-mode' };
 
@@ -77,8 +78,8 @@ export default class PackageDependenciesInstall extends SfCommand<PackageToInsta
       char: 'z',
       default: '',
     }),
-    'install-type': Flags.custom<'All' | 'Delta'>({
-      options: ['All', 'Delta'],
+    'install-type': Flags.custom<'All' | 'Delta' | 'Update'>({
+      options: ['All', 'Delta', 'Update'],
     })({
       char: 'i',
       summary: messages.getMessage('flags.install-type.summary'),
@@ -281,7 +282,10 @@ export default class PackageDependenciesInstall extends SfCommand<PackageToInsta
     let installedPackages: InstalledPackages[] = [];
 
     // If precheck is enabled, get the currently installed packages
-    if (installType[flags['install-type']] === installType.Delta) {
+    if (
+      installType[flags['install-type']] === installType.Delta ||
+      installType[flags['install-type']] === installType.Update
+    ) {
       this.spinner.start('Analyzing which packages are installed', '', { stdout: true });
       installedPackages = await SubscriberPackageVersion.installedList(targetOrgConnection);
 
@@ -294,6 +298,38 @@ export default class PackageDependenciesInstall extends SfCommand<PackageToInsta
           );
 
           continue;
+        }
+
+        if (installType[flags['install-type']] === installType.Update) {
+          const subscriberPackageVersion = new SubscriberPackageVersion({
+            aliasOrId: packageToInstall.SubscriberPackageVersionId,
+            connection: targetOrgConnection,
+            password: installationKeyMap.get(packageToInstall.SubscriberPackageVersionId) ?? '',
+          });
+
+          const subscriberPackageId = await subscriberPackageVersion.getSubscriberPackageId();
+          const installedPackage = installedPackages.find((pkg) => pkg.SubscriberPackageId === subscriberPackageId);
+
+          if (!installedPackage?.SubscriberPackageVersion) {
+            // Not currently installed, so there's nothing to update - proceed with install
+            continue;
+          }
+
+          const targetVersion = await subscriberPackageVersion.getVersionNumber();
+          const installedVersion = new VersionNumber(
+            installedPackage.SubscriberPackageVersion.MajorVersion,
+            installedPackage.SubscriberPackageVersion.MinorVersion,
+            installedPackage.SubscriberPackageVersion.PatchVersion,
+            installedPackage.SubscriberPackageVersion.BuildNumber,
+          );
+
+          if (targetVersion.compareTo(installedVersion) <= 0) {
+            packageToInstall.Status = 'Skipped';
+
+            this.info(
+              `Package ${packageToInstall?.PackageName} (${packageToInstall?.SubscriberPackageVersionId}) is not newer than the installed version (${installedVersion.toString()}) and will be skipped`,
+            );
+          }
         }
       }
 
