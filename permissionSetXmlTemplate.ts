@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import { create } from 'xmlbuilder2';
+
 /** One `<objectPermissions>` entry in a PermissionSet metadata file. */
 export type ObjectPermission = {
   object: string;
@@ -63,90 +65,106 @@ export type PermissionSetTemplateData = {
 };
 
 /**
- * @param value - The raw string to escape.
- * @returns `value` with XML special characters (`& < > " '`) replaced by their entity references.
- */
-function escapeXml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
-}
-
-/**
  * Render a complete PermissionSet metadata XML document from template data.
+ *
+ * Element text content is set via `.txt()`, which xmlbuilder2 escapes for us — there's no
+ * hand-rolled escaping (and no risk of it drifting out of sync with what's actually unsafe in
+ * XML text content).
  *
  * @param data - The permission set's label, description, and permission entries.
  * @returns The rendered `<PermissionSet>` XML document, ready to write to a `.permissionset-meta.xml` file.
  */
 export function buildPermissionSetXml(data: PermissionSetTemplateData): string {
-  const objectPermissionsXml = data.objectPermissions
-    .map(
-      (permission) => `  <objectPermissions>
-    <allowCreate>${permission.allowCreate}</allowCreate>
-    <allowDelete>${permission.allowDelete}</allowDelete>
-    <allowEdit>${permission.allowEdit}</allowEdit>
-    <allowRead>${permission.allowRead}</allowRead>
-    <object>${escapeXml(permission.object)}</object>
-    <modifyAllRecords>${permission.modifyAllRecords}</modifyAllRecords>
-    <viewAllRecords>${permission.viewAllRecords}</viewAllRecords>
-    <viewAllFields>${permission.viewAllFields}</viewAllFields>
-  </objectPermissions>`,
-    )
-    .join('\n');
+  const root = create({ version: '1.0', encoding: 'UTF-8' }).ele('PermissionSet', {
+    xmlns: 'http://soap.sforce.com/2006/04/metadata',
+  });
 
-  const fieldPermissionsXml = data.fieldPermissions
-    .map(
-      (permission) => `  <fieldPermissions>
-    <field>${escapeXml(permission.field)}</field>
-    <readable>${permission.readable}</readable>
-    <editable>${permission.editable}</editable>
-  </fieldPermissions>`,
-    )
-    .join('\n');
+  root.ele('label').txt(data.label).up();
 
-  const tabSettingsXml = data.tabSettings
-    .map(
-      (setting) => `  <tabSettings>
-    <tab>${escapeXml(setting.tab)}</tab>
-    <visibility>${setting.visible ? 'Visible' : 'Hidden'}</visibility>
-  </tabSettings>`,
-    )
-    .join('\n');
+  if (data.description) {
+    root.ele('description').txt(data.description).up();
+  }
 
-  const recordTypeVisibilitiesXml = data.recordTypeVisibilities
-    .map(
-      (visibility) => `  <recordTypeVisibilities>
-    <recordType>${escapeXml(visibility.recordType)}</recordType>
-    <visible>${visibility.visible}</visible>
-  </recordTypeVisibilities>`,
-    )
-    .join('\n');
+  for (const permission of data.objectPermissions) {
+    root
+      .ele('objectPermissions')
+      .ele('allowCreate')
+      .txt(String(permission.allowCreate))
+      .up()
+      .ele('allowDelete')
+      .txt(String(permission.allowDelete))
+      .up()
+      .ele('allowEdit')
+      .txt(String(permission.allowEdit))
+      .up()
+      .ele('allowRead')
+      .txt(String(permission.allowRead))
+      .up()
+      .ele('object')
+      .txt(permission.object)
+      .up()
+      .ele('modifyAllRecords')
+      .txt(String(permission.modifyAllRecords))
+      .up()
+      .ele('viewAllRecords')
+      .txt(String(permission.viewAllRecords))
+      .up()
+      .ele('viewAllFields')
+      .txt(String(permission.viewAllFields))
+      .up()
+      .up();
+  }
 
-  const userPermissionsXml = data.userPermissions
-    .map(
-      (permission) => `  <userPermissions>
-    <name>${escapeXml(permission.name)}</name>
-    <enabled>${permission.enabled}</enabled>
-  </userPermissions>`,
-    )
-    .join('\n');
+  for (const permission of data.fieldPermissions) {
+    root
+      .ele('fieldPermissions')
+      .ele('field')
+      .txt(permission.field)
+      .up()
+      .ele('readable')
+      .txt(String(permission.readable))
+      .up()
+      .ele('editable')
+      .txt(String(permission.editable))
+      .up()
+      .up();
+  }
 
-  const sections = [
-    `  <label>${escapeXml(data.label)}</label>`,
-    data.description ? `  <description>${escapeXml(data.description)}</description>` : '',
-    objectPermissionsXml,
-    fieldPermissionsXml,
-    tabSettingsXml,
-    recordTypeVisibilitiesXml,
-    userPermissionsXml,
-  ].filter(Boolean);
+  for (const setting of data.tabSettings) {
+    root
+      .ele('tabSettings')
+      .ele('tab')
+      .txt(setting.tab)
+      .up()
+      .ele('visibility')
+      .txt(setting.visible ? 'Visible' : 'Hidden')
+      .up()
+      .up();
+  }
 
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
-${sections.join('\n')}
-</PermissionSet>
-`;
+  for (const visibility of data.recordTypeVisibilities) {
+    root
+      .ele('recordTypeVisibilities')
+      .ele('recordType')
+      .txt(visibility.recordType)
+      .up()
+      .ele('visible')
+      .txt(String(visibility.visible))
+      .up()
+      .up();
+  }
+
+  for (const permission of data.userPermissions) {
+    root
+      .ele('userPermissions')
+      .ele('name')
+      .txt(permission.name)
+      .up()
+      .ele('enabled')
+      .txt(String(permission.enabled))
+      .up()
+      .up();
+  }
+
+  return root.end({ prettyPrint: true });
 }
