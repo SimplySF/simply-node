@@ -88,14 +88,14 @@ export function buildPermissionSetXml(data: PermissionSetTemplateData): string {
   for (const permission of data.fieldPermissions) {
     root
       .ele('fieldPermissions')
+      .ele('editable')
+      .txt(String(permission.editable))
+      .up()
       .ele('field')
       .txt(permission.field)
       .up()
       .ele('readable')
       .txt(String(permission.readable))
-      .up()
-      .ele('editable')
-      .txt(String(permission.editable))
       .up()
       .up();
   }
