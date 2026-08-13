@@ -85,13 +85,14 @@ export function buildPermissionSetXml(data: PermissionSetTemplateData): string {
   const objectPermissionsXml = data.objectPermissions
     .map(
       (permission) => `  <objectPermissions>
-    <object>${escapeXml(permission.object)}</object>
     <allowCreate>${permission.allowCreate}</allowCreate>
     <allowDelete>${permission.allowDelete}</allowDelete>
     <allowEdit>${permission.allowEdit}</allowEdit>
     <allowRead>${permission.allowRead}</allowRead>
+    <object>${escapeXml(permission.object)}</object>
     <modifyAllRecords>${permission.modifyAllRecords}</modifyAllRecords>
     <viewAllRecords>${permission.viewAllRecords}</viewAllRecords>
+    <viewAllFields>${permission.viewAllFields}</viewAllFields>
   </objectPermissions>`,
     )
     .join('\n');
