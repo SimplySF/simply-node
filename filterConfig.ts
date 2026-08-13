@@ -16,14 +16,17 @@
 
 import { z } from 'zod';
 
+/** A single leaf filter condition: `field <operator> value`. */
 export const FilterConditionSchema = z.object({
   field: z.string(),
   operator: z.enum(['=', '!=', '>', '<', '>=', '<=', 'IN', 'NOT IN', 'LIKE']),
   value: z.unknown(),
 });
 
+/** A parsed, validated filter condition. */
 export type FilterCondition = z.infer<typeof FilterConditionSchema>;
 
+/** A group of filter conditions (and/or nested groups) combined with `AND`/`OR` logic. */
 export type FilterGroup = {
   logic: 'AND' | 'OR';
   filters: Array<FilterCondition | FilterGroup>;
@@ -39,6 +42,8 @@ export const FilterGroupSchema: z.ZodType<FilterGroup> = z.lazy(() =>
   }),
 );
 
+/** The top-level shape of the JSON config file consumed by `simply sobject history` commands' `--filter`. */
 export type FilterConfig = FilterGroup;
 
+/** Schema for {@link FilterConfig}. */
 export const FilterConfigSchema = FilterGroupSchema;
