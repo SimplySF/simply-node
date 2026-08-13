@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import Handlebars from 'handlebars';
+
 /** A queried `ObjectPermissions` record, as attached to a permission set or group in the report. */
 export type ObjectPermissionEntry = {
   SobjectType: string;
@@ -60,113 +62,55 @@ export type GroupedPermissionsData = Map<
   { permissionSets: PermissionSetReportEntry[]; permissionSetGroups: PermissionSetGroupReportEntry[] }
 >;
 
-/**
- * @param value - The raw string to escape.
- * @returns `value` with HTML special characters (`& < > "`) replaced by their entity references.
- */
-function escapeHtml(value: string): string {
-  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
+// Handlebars auto-escapes every `{{expression}}` (unlike `{{{expression}}}`, which is left raw),
+// so none of the templates below need a hand-rolled escapeHtml() call.
+const handlebars = Handlebars.create();
 
-/** @returns An HTML `<table>` of object permissions, or a placeholder `<p>` if `perms` is empty. */
-function renderObjectPermsTable(perms: ObjectPermissionEntry[]): string {
-  if (perms.length === 0) {
-    return '<p>No object permissions.</p>';
-  }
+// `Field` is the fully-qualified `Object.Field` name; the report only displays the field half.
+handlebars.registerHelper('fieldName', (field: string): string => field.split('.')[1] ?? field);
 
-  const rows = perms
-    .map(
-      (permission) =>
-        `<tr><td>${escapeHtml(permission.SobjectType)}</td><td>${permission.PermissionsRead}</td><td>${permission.PermissionsCreate}</td><td>${permission.PermissionsEdit}</td><td>${permission.PermissionsDelete}</td><td>${permission.PermissionsViewAllRecords}</td><td>${permission.PermissionsModifyAllRecords}</td></tr>`,
-    )
-    .join('');
+const objectPermsTableSource = `
+{{~#if perms}}
+<table><thead><tr><th>Object</th><th>Read</th><th>Create</th><th>Edit</th><th>Delete</th><th>View All</th><th>Modify All</th></tr></thead><tbody>{{#each perms}}<tr><td>{{SobjectType}}</td><td>{{PermissionsRead}}</td><td>{{PermissionsCreate}}</td><td>{{PermissionsEdit}}</td><td>{{PermissionsDelete}}</td><td>{{PermissionsViewAllRecords}}</td><td>{{PermissionsModifyAllRecords}}</td></tr>{{/each}}</tbody></table>
+{{~else~}}
+<p>No object permissions.</p>
+{{~/if~}}
+`;
 
-  return `<table><thead><tr><th>Object</th><th>Read</th><th>Create</th><th>Edit</th><th>Delete</th><th>View All</th><th>Modify All</th></tr></thead><tbody>${rows}</tbody></table>`;
-}
+const fieldPermsTableSource = `
+{{~#if perms}}
+<table><thead><tr><th>Object</th><th>Field</th><th>Read</th><th>Edit</th></tr></thead><tbody>{{#each perms}}<tr><td>{{SobjectType}}</td><td>{{fieldName Field}}</td><td>{{PermissionsRead}}</td><td>{{PermissionsEdit}}</td></tr>{{/each}}</tbody></table>
+{{~else~}}
+<p>No field permissions.</p>
+{{~/if~}}
+`;
 
-/** @returns An HTML `<table>` of field permissions, or a placeholder `<p>` if `perms` is empty. */
-function renderFieldPermsTable(perms: FieldPermissionEntry[]): string {
-  if (perms.length === 0) {
-    return '<p>No field permissions.</p>';
-  }
+const permissionSetSource = `
+<details>
+  <summary>{{Label}} ({{Name}})</summary>
+  <div class="content">
+    {{#if Description}}<p>{{Description}}</p>{{/if}}
+    <h4>Object Permissions</h4>
+    {{> objectPermsTable perms=objectPerms}}
+    <h4>Field Permissions</h4>
+    {{> fieldPermsTable perms=fieldPerms}}
+  </div>
+</details>`;
 
-  const rows = perms
-    .map(
-      (permission) =>
-        `<tr><td>${escapeHtml(permission.SobjectType)}</td><td>${escapeHtml(permission.Field.split('.')[1] ?? permission.Field)}</td><td>${permission.PermissionsRead}</td><td>${permission.PermissionsEdit}</td></tr>`,
-    )
-    .join('');
+const permissionSetGroupSource = `
+<details>
+  <summary>{{MasterLabel}} ({{DeveloperName}}) [Group]</summary>
+  <div class="content">
+    {{#if Description}}<p>{{Description}}</p>{{/if}}
+    <p><strong>Components:</strong> {{componentsDisplay}}</p>
+    <h4>Object Permissions</h4>
+    {{> objectPermsTable perms=objectPerms}}
+    <h4>Field Permissions</h4>
+    {{> fieldPermsTable perms=fieldPerms}}
+  </div>
+</details>`;
 
-  return `<table><thead><tr><th>Object</th><th>Field</th><th>Read</th><th>Edit</th></tr></thead><tbody>${rows}</tbody></table>`;
-}
-
-/** @returns A collapsible `<details>` section summarizing one permission set's permissions. */
-function renderPermissionSet(permissionSet: PermissionSetReportEntry): string {
-  return `
-    <details>
-      <summary>${escapeHtml(permissionSet.Label)} (${escapeHtml(permissionSet.Name)})</summary>
-      <div class="content">
-        ${permissionSet.Description ? `<p>${escapeHtml(permissionSet.Description)}</p>` : ''}
-        <h4>Object Permissions</h4>
-        ${renderObjectPermsTable(permissionSet.objectPerms)}
-        <h4>Field Permissions</h4>
-        ${renderFieldPermsTable(permissionSet.fieldPerms)}
-      </div>
-    </details>`;
-}
-
-/** @returns A collapsible `<details>` section summarizing one permission set group's permissions. */
-function renderPermissionSetGroup(permissionSetGroup: PermissionSetGroupReportEntry): string {
-  return `
-    <details>
-      <summary>${escapeHtml(permissionSetGroup.MasterLabel)} (${escapeHtml(permissionSetGroup.DeveloperName)}) [Group]</summary>
-      <div class="content">
-        ${permissionSetGroup.Description ? `<p>${escapeHtml(permissionSetGroup.Description)}</p>` : ''}
-        <p><strong>Components:</strong> ${permissionSetGroup.components.map(escapeHtml).join(', ') || 'None'}</p>
-        <h4>Object Permissions</h4>
-        ${renderObjectPermsTable(permissionSetGroup.objectPerms)}
-        <h4>Field Permissions</h4>
-        ${renderFieldPermsTable(permissionSetGroup.fieldPerms)}
-      </div>
-    </details>`;
-}
-
-/**
- * Render a complete, self-contained HTML report of permission sets and permission set groups,
- * grouped by package, with each permission set/group collapsible for browsing.
- *
- * @param options.username - The org username the report was generated against.
- * @param options.reportDate - The report generation date/time, displayed as-is.
- * @param options.groupedData - The permission sets/groups to render, grouped by package.
- * @returns The rendered HTML document.
- */
-export function buildPermissionsReportHtml(options: {
-  username: string;
-  reportDate: string;
-  groupedData: GroupedPermissionsData;
-}): string {
-  const { username, reportDate, groupedData } = options;
-  const sortedPackages = [...groupedData.keys()].sort();
-
-  const sections = sortedPackages
-    .map((pkg) => {
-      const data = groupedData.get(pkg);
-      if (!data) {
-        return '';
-      }
-
-      return `
-        <div class="package-section" data-package="${escapeHtml(pkg)}">
-          <h2>Package: ${escapeHtml(pkg)}</h2>
-          <h3>Permission Sets (${data.permissionSets.length})</h3>
-          ${data.permissionSets.map(renderPermissionSet).join('')}
-          <h3>Permission Set Groups (${data.permissionSetGroups.length})</h3>
-          ${data.permissionSetGroups.map(renderPermissionSetGroup).join('')}
-        </div>`;
-    })
-    .join('');
-
-  return `<!DOCTYPE html>
+const reportSource = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -187,8 +131,61 @@ export function buildPermissionsReportHtml(options: {
 </head>
 <body>
   <h1>Permissions Report</h1>
-  <p>Org: <strong>${escapeHtml(username)}</strong> | Generated: ${escapeHtml(reportDate)}</p>
-  ${sections}
+  <p>Org: <strong>{{username}}</strong> | Generated: {{reportDate}}</p>
+  {{#each packages}}
+  <div class="package-section" data-package="{{name}}">
+    <h2>Package: {{name}}</h2>
+    <h3>Permission Sets ({{permissionSets.length}})</h3>
+    {{#each permissionSets}}{{> permissionSet}}{{/each}}
+    <h3>Permission Set Groups ({{permissionSetGroups.length}})</h3>
+    {{#each permissionSetGroups}}{{> permissionSetGroup}}{{/each}}
+  </div>
+  {{/each}}
 </body>
 </html>`;
+
+handlebars.registerPartial('objectPermsTable', objectPermsTableSource);
+handlebars.registerPartial('fieldPermsTable', fieldPermsTableSource);
+handlebars.registerPartial('permissionSet', permissionSetSource);
+handlebars.registerPartial('permissionSetGroup', permissionSetGroupSource);
+
+const renderReport = handlebars.compile(reportSource);
+
+/** View model for a single package section, as consumed by the report template. */
+type PackageSection = {
+  name: string;
+  permissionSets: PermissionSetReportEntry[];
+  permissionSetGroups: Array<PermissionSetGroupReportEntry & { componentsDisplay: string }>;
+};
+
+/**
+ * Render a complete, self-contained HTML report of permission sets and permission set groups,
+ * grouped by package, with each permission set/group collapsible for browsing.
+ *
+ * @param options.username - The org username the report was generated against.
+ * @param options.reportDate - The report generation date/time, displayed as-is.
+ * @param options.groupedData - The permission sets/groups to render, grouped by package.
+ * @returns The rendered HTML document.
+ */
+export function buildPermissionsReportHtml(options: {
+  username: string;
+  reportDate: string;
+  groupedData: GroupedPermissionsData;
+}): string {
+  const { username, reportDate, groupedData } = options;
+
+  const packages: PackageSection[] = [...groupedData.keys()].sort().map((name) => {
+    const data = groupedData.get(name);
+
+    return {
+      name,
+      permissionSets: data?.permissionSets ?? [],
+      permissionSetGroups: (data?.permissionSetGroups ?? []).map((group) => ({
+        ...group,
+        componentsDisplay: group.components.length > 0 ? group.components.join(', ') : 'None',
+      })),
+    };
+  });
+
+  return renderReport({ username, reportDate, packages });
 }
