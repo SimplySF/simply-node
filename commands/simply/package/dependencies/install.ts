@@ -52,7 +52,7 @@ export type PackageToInstall = {
 };
 
 /** Maps the `--install-type` flag's display values to the internal values used for comparisons. */
-const installType = { All: 'all', Delta: 'delta', Update: 'update' };
+const installType = { All: 'all', Delta: 'delta', Upgrade: 'upgrade' };
 /** Maps the `--security-type` flag's display values to the `PackageInstallCreateRequest` API values. */
 const securityType = { AllUsers: 'full', AdminsOnly: 'none' };
 /** Maps the `--upgrade-type` flag's display values to the `PackageInstallCreateRequest` API values. */
@@ -87,13 +87,13 @@ export default class PackageDependenciesInstall extends SfCommand<PackageToInsta
       char: 'z',
       default: '',
     }),
-    'install-type': Flags.custom<'All' | 'Delta' | 'Update'>({
-      options: ['All', 'Delta', 'Update'],
+    'install-type': Flags.custom<'All' | 'Delta' | 'Upgrade'>({
+      options: ['All', 'Delta', 'Upgrade'],
     })({
       char: 'i',
       summary: messages.getMessage('flags.install-type.summary'),
       description: messages.getMessage('flags.install-type.description'),
-      default: 'Delta',
+      default: 'Upgrade',
     }),
     'installation-key': Flags.string({
       summary: messages.getMessage('flags.installation-key.summary'),
@@ -294,7 +294,7 @@ export default class PackageDependenciesInstall extends SfCommand<PackageToInsta
     // If precheck is enabled, get the currently installed packages
     if (
       installType[flags['install-type']] === installType.Delta ||
-      installType[flags['install-type']] === installType.Update
+      installType[flags['install-type']] === installType.Upgrade
     ) {
       this.spinner.start('Analyzing which packages are installed', '', { stdout: true });
       installedPackages = await SubscriberPackageVersion.installedList(targetOrgConnection);
@@ -310,7 +310,7 @@ export default class PackageDependenciesInstall extends SfCommand<PackageToInsta
           continue;
         }
 
-        if (installType[flags['install-type']] === installType.Update) {
+        if (installType[flags['install-type']] === installType.Upgrade) {
           const subscriberPackageVersion = new SubscriberPackageVersion({
             aliasOrId: packageToInstall.SubscriberPackageVersionId,
             connection: targetOrgConnection,
