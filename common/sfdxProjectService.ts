@@ -19,6 +19,7 @@ import { DependencyChange } from '../schemas/manage/dependencyChange.js';
 import { ParsedDependency, parseDependency } from '../schemas/manage/parsedDependency.js';
 import { PACKAGE_PREFIX_SUBSCRIBER_PACKAGE_VERSION } from './packageUtils.js';
 
+/** Read/write access to an SFDX project's package dependencies and related plugin config. */
 export type SfdxProjectService = {
   getDependenciesByDirectory(): Map<string, ParsedDependency[]>;
   getDependenciesToIgnore(): string[];
@@ -28,18 +29,27 @@ export type SfdxProjectService = {
   applyChanges(changesByDirectory: Map<string, DependencyChange[]>): Promise<void>;
 };
 
+/**
+ * Load an SFDX project's `sfdx-project.json` and build an {@link SfdxProjectService} over it.
+ *
+ * @param project - The SFDX project to load.
+ * @returns A service for reading/writing the project's package dependencies.
+ */
 export async function buildProjectService(project: SfProject): Promise<SfdxProjectService> {
   const projectJson = await project.retrieveSfProjectJson();
   const contents = projectJson.getContents();
 
+  /** @returns The project's `packageAliases` map, or an empty object if there isn't one. */
   function getAliases(): Record<string, string> {
     return (contents.packageAliases as Record<string, string>) ?? {};
   }
 
+  /** @returns The ID `alias` resolves to, or `alias` itself if it isn't a known alias. */
   function resolveAlias(alias: string): string {
     return project.getPackageIdFromAlias(alias) ?? alias;
   }
 
+  /** @returns The first alias in `packageAliases` that resolves to `id`, if any. */
   function findAlias(id: string): string | undefined {
     const aliases = getAliases();
     for (const [k, v] of Object.entries(aliases)) {
@@ -48,6 +58,7 @@ export async function buildProjectService(project: SfProject): Promise<SfdxProje
     return undefined;
   }
 
+  /** @returns Every package directory's parsed dependencies, keyed by directory path. */
   function getDependenciesByDirectory(): Map<string, ParsedDependency[]> {
     const result = new Map<string, ParsedDependency[]>();
 
@@ -66,6 +77,11 @@ export async function buildProjectService(project: SfProject): Promise<SfdxProje
     return result;
   }
 
+  /**
+   * @param keyPath - A dot-delimited path into `sfdx-project.json`'s contents, e.g.
+   * `plugins.simply.dependencies.ignore`.
+   * @returns The value at `keyPath`, or `undefined` if any segment along the path is missing.
+   */
   function getPluginConfig<T>(keyPath: string): T | undefined {
     const parts = keyPath.split('.');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -78,14 +94,22 @@ export async function buildProjectService(project: SfProject): Promise<SfdxProje
     return current as T;
   }
 
+  /** @returns Package2Ids/aliases configured under `plugins.simply.dependencies.ignore`. */
   function getDependenciesToIgnore(): string[] {
     return getPluginConfig<string[]>('plugins.simply.dependencies.ignore') ?? [];
   }
 
+  /** @returns Branch names configured under `plugins.simply.package.brancheswithreleasedversions`. */
   function getBranchesWithReleasedVersions(): string[] {
     return getPluginConfig<string[]>('plugins.simply.package.brancheswithreleasedversions') ?? [];
   }
 
+  /**
+   * Apply a set of dependency version changes to the in-memory project JSON and write it back to
+   * disk, updating each affected directory's dependency entries and `packageAliases` as needed.
+   *
+   * @param changesByDirectory - The changes to apply, keyed by package directory path.
+   */
   async function applyChanges(changesByDirectory: Map<string, DependencyChange[]>): Promise<void> {
     // Deep-clone both structures so we can mutate them freely before calling set()
     const updatedDirs = JSON.parse(JSON.stringify(contents.packageDirectories ?? [])) as Array<Record<string, unknown>>;

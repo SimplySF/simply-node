@@ -16,6 +16,7 @@
 
 import { z } from 'zod';
 
+/** A single entry in a package directory's `dependencies` array. */
 const PackageDirDependencySchema = z
   .object({
     package: z.string(),
@@ -49,5 +50,7 @@ export const BasePackageDirWithDependenciesSchema = BasePackageDirPropsSchema.ex
     ),
 });
 
+/** A single entry in a package directory's `dependencies` array. */
 export type PackageDirDependency = z.infer<typeof PackageDirDependencySchema>;
+/** A package directory entry that declares a `dependencies` array. */
 export type BasePackageDirWithDependencies = z.infer<typeof BasePackageDirWithDependenciesSchema>;

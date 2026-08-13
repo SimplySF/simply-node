@@ -16,6 +16,7 @@
 
 import { ParsedDependency } from './parsedDependency.js';
 
+/** A proposed (or applied) change to a single dependency's pinned/tracked version. */
 export type DependencyChange = {
   oldAlias: string;
   oldDependency: ParsedDependency;
@@ -26,6 +27,7 @@ export type DependencyChange = {
   isSameAsOld: boolean;
 };
 
+/** Per-package-directory summary returned by `simply package dependencies manage`. */
 export type PackageDependenciesManageResult = {
   packageDirectory: string;
   changes: Array<{

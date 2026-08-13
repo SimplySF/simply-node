@@ -32,6 +32,11 @@ const messages = Messages.loadMessages('@simplysf/simply-package', 'simply.packa
 
 export type { PackageDependenciesManageResult };
 
+/**
+ * Interactively updates package dependency versions in sfdx-project.json by querying the Dev
+ * Hub for available versions. Supports interactive selection or automatic update to the latest
+ * released or latest build version.
+ */
 export default class PackageDependenciesManage extends SfCommand<PackageDependenciesManageResult[]> {
   public static readonly summary = messages.getMessage('summary');
   public static readonly description = messages.getMessage('description');
@@ -61,6 +66,7 @@ export default class PackageDependenciesManage extends SfCommand<PackageDependen
     'target-dev-hub': Flags.requiredHub(),
   };
 
+  /** @returns A per-package-directory summary of the changes made (or proposed and applied). */
   // eslint-disable-next-line complexity
   public async run(): Promise<PackageDependenciesManageResult[]> {
     const { flags } = await this.parse(PackageDependenciesManage);
@@ -199,12 +205,23 @@ export default class PackageDependenciesManage extends SfCommand<PackageDependen
     return results;
   }
 
+  /**
+   * Prompt the user to interactively select a version. Overridable (protected, not `private`)
+   * so tests can stub it instead of driving the real terminal prompt.
+   *
+   * @returns The `value` of the selected {@link VersionChoice}.
+   */
   // eslint-disable-next-line class-methods-use-this
   protected async promptForVersion(message: string, choices: VersionChoice[]): Promise<string> {
     return select({ message, choices, pageSize: 8 });
   }
 }
 
+/**
+ * @param dependency - The dependency to build a display name for.
+ * @param findAlias - Looks up a known alias for an ID, if any.
+ * @returns A human-readable label for the dependency, preferring its alias when known.
+ */
 function buildDisplayName(dependency: ParsedDependency, findAlias: (id: string) => string | undefined): string {
   if (dependency.subscriberPackageVersionId) {
     const alias = findAlias(dependency.subscriberPackageVersionId);
@@ -218,6 +235,18 @@ function buildDisplayName(dependency: ParsedDependency, findAlias: (id: string) 
   return '<unknown dependency>';
 }
 
+/**
+ * Build a {@link DependencyChange} from the user's (or automatic) version selection.
+ *
+ * @param oldAlias - The dependency's current alias/display name, before this change.
+ * @param oldDependency - The dependency's current parsed state, before this change.
+ * @param selectedValue - The selected {@link VersionChoice}'s value: either a pinned
+ * `SubscriberPackageVersionId` (04t) or a non-pinned `package2Id|major.minor.patch.LATEST` spec.
+ * @param getVersionAlias - Resolves a `SubscriberPackageVersionId` to its computed alias.
+ * @param getPackage2Id - Resolves a `SubscriberPackageVersionId` to its owning `Package2Id`.
+ * @returns The resulting change, with `isSameAsOld` set based on whether the selection matches
+ * the dependency's current version.
+ */
 function buildChange(
   oldAlias: string,
   oldDependency: ParsedDependency,

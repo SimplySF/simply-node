@@ -19,40 +19,79 @@ import { SfProject } from '@salesforce/core';
 import { Package, Package2Fields, PackageVersionListResult, PackagingSObjects } from '@salesforce/packaging';
 import { ParsedDependency } from '../schemas/manage/parsedDependency.js';
 
+/** A single selectable entry in an interactive package-version prompt. */
 export type VersionChoice = {
   name: string;
   value: string;
   short: string;
 };
 
-// Map structure: Package2Id → Branch → Major → Minor → Patch → Build → PackageVersionListResult
+/** Map structure: Package2Id → Branch → Major → Minor → Patch → Build → PackageVersionListResult */
 type VersionMap = Map<
   string,
   Map<string, Map<number, Map<number, Map<number, Map<number, PackageVersionListResult>>>>>
 >;
 
+/**
+ * Queryable, in-memory view over a Dev Hub's packages and package versions, built once by
+ * {@link buildVersionService} and then reused for alias resolution, dependency enrichment, and
+ * building interactive/automatic version-selection choices.
+ */
 export type PackageVersionService = {
+  /** @returns Whether this service has data for the given `SubscriberPackageVersionId`. */
   knowsAboutVersion(subscriberPackageVersionId: string): boolean;
+  /** @returns Whether this service has data for the given `Package2Id`. */
   knowsAboutPackage(package2Id: string): boolean;
+  /** @returns The `Package2Id` that owns the given version, if known. */
   getPackage2IdForVersion(subscriberPackageVersionId: string): string | undefined;
+  /** @returns The computed `package@major.minor.patch-build[-branch]` alias for a version, if known. */
   getVersionAlias(subscriberPackageVersionId: string): string | undefined;
+  /** @returns The computed `namespace.Name` (or `Name`) alias for a package, if known. */
   getPackageAlias(package2Id: string): string | undefined;
+  /**
+   * Fill in a dependency's `package2Id`/`versionNumber`/version-component fields from its
+   * `subscriberPackageVersionId`, when it has one but the rest weren't already set.
+   *
+   * @returns The enriched dependency, or the input unchanged if it can't be enriched.
+   */
   enrichDependency(dependency: ParsedDependency): ParsedDependency;
+  /**
+   * Build the full ranked list of interactive version choices for a dependency: latest on the
+   * given feature branch, latest at each version-precision level (patch/minor/major) on the main
+   * and release branches, latest released versions, a non-pinned "LATEST" build choice, and the
+   * dependency's current version.
+   *
+   * @returns The choices, in display order, with duplicates already removed.
+   */
   buildInteractiveChoices(
     dependency: ParsedDependency,
     branch: string,
     branchesWithReleased: string[],
   ): VersionChoice[];
+  /** @returns The latest released version choice for the main branch and each release branch. */
   buildReleasedChoices(dependency: ParsedDependency, branchesWithReleased: string[]): VersionChoice[];
+  /** @returns A single non-pinned "LATEST" build choice for the dependency's current major.minor.patch. */
   buildLatestChoices(dependency: ParsedDependency): VersionChoice[];
+  /** @returns The full version record for a `SubscriberPackageVersionId`, if known. */
   findVersionById(subscriberPackageVersionId: string): PackageVersionListResult | undefined;
 };
 
+/** IDs to scope {@link buildVersionService} to, instead of loading every package/version in the Dev Hub. */
 export type VersionServiceFilterIds = {
   package2Ids: string[];
   subscriberVersionIds: string[];
 };
 
+/**
+ * Load packages and package versions from the Dev Hub and build a {@link PackageVersionService}
+ * over them.
+ *
+ * @param connection - The Dev Hub connection to query.
+ * @param project - The SFDX project, used by `Package.listVersions` for alias resolution.
+ * @param filterIds - When provided, only loads packages/versions relevant to these IDs (plus the
+ * packages owning any given `subscriberVersionIds`) instead of every package in the Dev Hub.
+ * @returns A version service backed by the loaded packages/versions.
+ */
 export async function buildVersionService(
   connection: Connection,
   project: SfProject,
@@ -129,16 +168,19 @@ export async function buildVersionService(
     }
   }
 
+  /** @returns The `namespace.Name` (or bare `Name`) alias for a `Package2` record. */
   function computePackageAlias(pkg: PackagingSObjects.Package2): string {
     return (pkg.NamespacePrefix ? pkg.NamespacePrefix + '.' : '') + pkg.Name;
   }
 
+  /** @returns The `package@major.minor.patch-build[-branch]` alias for a package version. */
   function computeVersionAlias(v: PackageVersionListResult, branch?: string): string {
     const seg = `${v.MajorVersion}.${v.MinorVersion}.${v.PatchVersion}-${v.BuildNumber}` + (branch ? '-' + branch : '');
     const pkgAlias = packageAliasById.get(v.Package2Id) ?? v.Package2Id;
     return pkgAlias + '@' + seg;
   }
 
+  /** Index a package version into `map`, nested by package, branch, and major/minor/patch/build. */
   function sortVersionIntoMap(map: VersionMap, v: PackageVersionListResult): void {
     const branch = v.Branch ?? '';
     const major = parseInt(v.MajorVersion, 10);
@@ -164,7 +206,12 @@ export async function buildVersionService(
     if (!byBuild.has(build)) byBuild.set(build, v);
   }
 
-  // Walks a version map block to the latest (highest-key) entry at any depth
+  /**
+   * Walk a version map block to the latest (highest-key) entry at any depth.
+   *
+   * @param block - A `VersionMap` node at any nesting depth (major/minor/patch/build).
+   * @returns The version record at the highest key, recursing into nested maps as needed.
+   */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function findLatestFromBlock(block: Map<number, any>): PackageVersionListResult {
     const keys = [...block.keys()];
@@ -175,12 +222,19 @@ export async function buildVersionService(
     return entry instanceof Map ? findLatestFromBlock(entry) : (entry as PackageVersionListResult);
   }
 
+  /** How far down a `VersionMap` to descend before returning a block to search for "latest" in. */
   enum ChunkLevel {
     Major = 1,
     Minor,
     Patch,
   }
 
+  /**
+   * Descend into `map` for the given package/branch, stopping at `level` (or as far as the
+   * dependency's known major/minor version components allow).
+   *
+   * @returns The block at the requested depth, or `undefined` if nothing is indexed there.
+   */
   function findBlock(
     map: VersionMap,
     package2Id: string,
@@ -202,6 +256,7 @@ export async function buildVersionService(
     return byMinor.get(dependency.minorVersion!);
   }
 
+  /** @returns A {@link VersionChoice} pointing directly at a specific package version. */
   function makeVersionChoice(v: PackageVersionListResult, label: string, branch?: string): VersionChoice {
     const seg = `${v.MajorVersion}.${v.MinorVersion}.${v.PatchVersion}-${v.BuildNumber}` + (branch ? '-' + branch : '');
     return {
@@ -211,6 +266,7 @@ export async function buildVersionService(
     };
   }
 
+  /** @returns A {@link VersionChoice} whose value is a non-pinned `package2Id|major.minor.patch.LATEST` build spec. */
   function makeLatestChoice(v: PackageVersionListResult, label: string): VersionChoice {
     const seg = `${v.MajorVersion}.${v.MinorVersion}.${v.PatchVersion}.LATEST`;
     return {
@@ -220,6 +276,10 @@ export async function buildVersionService(
     };
   }
 
+  /**
+   * @returns The latest released version choice for a package on the given branch (empty string
+   * for the main branch), or `undefined` if there isn't one or it's already in `seen`.
+   */
   function findLatestReleasedForBranch(
     package2Id: string,
     branch: string,
@@ -237,6 +297,11 @@ export async function buildVersionService(
     return makeVersionChoice(v, label, branch || undefined);
   }
 
+  /**
+   * @returns The latest version choice for a package on the given branch (empty string for the
+   * main branch) at the given precision level, or `undefined` if there isn't one or it's already
+   * in `seen`.
+   */
   function findLatestForBranch(
     package2Id: string,
     branch: string,

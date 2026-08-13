@@ -27,12 +27,17 @@ import {
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('@simplysf/simply-package', 'simply.package.version.cleanup');
 
+/** Outcome of deleting a single (unreleased) package version. */
 export type PackageVersionCleanupResult = {
   Error?: string;
   Success: boolean;
   SubscriberPackageVersionId: string;
 };
 
+/**
+ * Deletes package versions for a given package matching a MAJOR.MINOR.PATCH matcher. Does not
+ * delete released package versions.
+ */
 export default class PackageVersionCleanup extends SfCommand<PackageVersionCleanupResult[]> {
   public static readonly summary = messages.getMessage('summary');
   public static readonly description = messages.getMessage('description');
@@ -59,6 +64,7 @@ export default class PackageVersionCleanup extends SfCommand<PackageVersionClean
     'target-dev-hub': Flags.requiredHub(),
   };
 
+  /** @returns The delete outcome for every unreleased version matching the `--matcher`. */
   public async run(): Promise<PackageVersionCleanupResult[]> {
     const log = await Logger.child(this.ctor.name);
 
@@ -153,6 +159,7 @@ export default class PackageVersionCleanup extends SfCommand<PackageVersionClean
     return results;
   }
 
+  /** Render the deletion results as a table on stdout. */
   private displayDeletionResults(packageCleanupResults: PackageVersionCleanupResult[]): void {
     this.styledHeader('Package Version Cleanup Results');
     this.table({

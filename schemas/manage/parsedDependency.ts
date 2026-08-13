@@ -16,6 +16,10 @@
 
 import { PACKAGE_PREFIX_PACKAGE2, PACKAGE_PREFIX_SUBSCRIBER_PACKAGE_VERSION } from '../../common/packageUtils.js';
 
+/**
+ * A `sfdx-project.json` package dependency entry, resolved and broken down into its component
+ * parts (pinned `SubscriberPackageVersionId`, or `Package2Id` + version components).
+ */
 export type ParsedDependency = {
   subscriberPackageVersionId?: string;
   package2Id?: string;
@@ -28,6 +32,16 @@ export type ParsedDependency = {
   isPinned: boolean;
 };
 
+/**
+ * Parse a resolved dependency (alias already resolved to an ID) into a {@link ParsedDependency}.
+ *
+ * @param resolvedPackage - The dependency's `package` field, already resolved from an alias to
+ * either a `SubscriberPackageVersionId` (04t) or `Package2Id` (0Ho).
+ * @param versionNumber - The dependency's `versionNumber` field, if `resolvedPackage` is a
+ * `Package2Id`. Ignored for pinned `SubscriberPackageVersionId` dependencies.
+ * @returns The parsed dependency. Neither `subscriberPackageVersionId` nor `package2Id` is set
+ * if `resolvedPackage` doesn't match either prefix.
+ */
 export function parseDependency(resolvedPackage: string, versionNumber?: string): ParsedDependency {
   const result: ParsedDependency = { isLatest: false, isPinned: false };
 

@@ -44,18 +44,27 @@ type PackageInstallRequest = PackagingSObjects.PackageInstallRequest;
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('@simplysf/simply-package', 'simply.package.dependencies.install');
 
+/** A single dependency's install outcome: `''`, `'Skipped'`, `'Installing'`, `'Installed'`, or `'Failed'`. */
 export type PackageToInstall = {
   Status: string;
   PackageName: string;
   SubscriberPackageVersionId: string;
 };
 
+/** Maps the `--install-type` flag's display values to the internal values used for comparisons. */
 const installType = { All: 'all', Delta: 'delta', Update: 'update' };
+/** Maps the `--security-type` flag's display values to the `PackageInstallCreateRequest` API values. */
 const securityType = { AllUsers: 'full', AdminsOnly: 'none' };
+/** Maps the `--upgrade-type` flag's display values to the `PackageInstallCreateRequest` API values. */
 const upgradeType = { Delete: 'delete-only', DeprecateOnly: 'deprecate-only', Mixed: 'mixed-mode' };
 
+/** Matches one or more comma-separated `alias:key` pairs, as accepted by `--installation-key`. */
 const installationKeyRegex = new RegExp(/^(\w+:\w+)(,\s*\w+:\w+)*/);
 
+/**
+ * Installs all specified package dependencies in a Salesforce DX project using the
+ * sfdx-project.json definition.
+ */
 export default class PackageDependenciesInstall extends SfCommand<PackageToInstall[]> {
   public static readonly summary = messages.getMessage('summary');
   public static readonly description = messages.getMessage('description');
@@ -141,6 +150,7 @@ export default class PackageDependenciesInstall extends SfCommand<PackageToInsta
     }),
   };
 
+  /** @returns The install outcome for every resolved dependency. */
   public async run(): Promise<PackageToInstall[]> {
     const { flags } = await this.parse(PackageDependenciesInstall);
 
