@@ -57,6 +57,7 @@ export type UserPermission = {
 export type PermissionSetTemplateData = {
   label: string;
   description?: string;
+  hasActivationRequired: boolean;
   objectPermissions: ObjectPermission[];
   fieldPermissions: FieldPermission[];
   tabSettings: TabSetting[];
@@ -71,7 +72,8 @@ export type PermissionSetTemplateData = {
  * hand-rolled escaping (and no risk of it drifting out of sync with what's actually unsafe in
  * XML text content).
  *
- * @param data - The permission set's label, description, and permission entries.
+ * @param data - The permission set's label, description, activation requirement, and permission
+ * entries.
  * @returns The rendered `<PermissionSet>` XML document, ready to write to a `.permissionset-meta.xml` file.
  */
 export function buildPermissionSetXml(data: PermissionSetTemplateData): string {
@@ -79,11 +81,28 @@ export function buildPermissionSetXml(data: PermissionSetTemplateData): string {
     xmlns: 'http://soap.sforce.com/2006/04/metadata',
   });
 
-  root.ele('label').txt(data.label).up();
-
   if (data.description) {
     root.ele('description').txt(data.description).up();
   }
+
+  for (const permission of data.fieldPermissions) {
+    root
+      .ele('fieldPermissions')
+      .ele('field')
+      .txt(permission.field)
+      .up()
+      .ele('readable')
+      .txt(String(permission.readable))
+      .up()
+      .ele('editable')
+      .txt(String(permission.editable))
+      .up()
+      .up();
+  }
+
+  root.ele('hasActivationRequired').txt(String(data.hasActivationRequired)).up();
+
+  root.ele('label').txt(data.label).up();
 
   for (const permission of data.objectPermissions) {
     root
@@ -111,21 +130,6 @@ export function buildPermissionSetXml(data: PermissionSetTemplateData): string {
       .up()
       .ele('viewAllFields')
       .txt(String(permission.viewAllFields))
-      .up()
-      .up();
-  }
-
-  for (const permission of data.fieldPermissions) {
-    root
-      .ele('fieldPermissions')
-      .ele('field')
-      .txt(permission.field)
-      .up()
-      .ele('readable')
-      .txt(String(permission.readable))
-      .up()
-      .ele('editable')
-      .txt(String(permission.editable))
       .up()
       .up();
   }
