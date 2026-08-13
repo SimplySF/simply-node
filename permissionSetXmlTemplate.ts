@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+/** One `<objectPermissions>` entry in a PermissionSet metadata file. */
 export type ObjectPermission = {
   object: string;
   allowCreate: boolean;
@@ -25,27 +26,32 @@ export type ObjectPermission = {
   viewAllFields: boolean;
 };
 
+/** One `<fieldPermissions>` entry in a PermissionSet metadata file. */
 export type FieldPermission = {
   field: string;
   readable: boolean;
   editable: boolean;
 };
 
+/** One `<tabSettings>` entry in a PermissionSet metadata file. */
 export type TabSetting = {
   tab: string;
   visible: boolean;
 };
 
+/** One `<recordTypeVisibilities>` entry in a PermissionSet metadata file. */
 export type RecordTypeVisibility = {
   recordType: string;
   visible: boolean;
 };
 
+/** One `<userPermissions>` entry in a PermissionSet metadata file. */
 export type UserPermission = {
   name: string;
   enabled: boolean;
 };
 
+/** Everything needed to render a complete PermissionSet metadata XML file. */
 export type PermissionSetTemplateData = {
   label: string;
   description?: string;
@@ -56,6 +62,10 @@ export type PermissionSetTemplateData = {
   userPermissions: UserPermission[];
 };
 
+/**
+ * @param value - The raw string to escape.
+ * @returns `value` with XML special characters (`& < > " '`) replaced by their entity references.
+ */
 function escapeXml(value: string): string {
   return value
     .replace(/&/g, '&amp;')
@@ -65,6 +75,12 @@ function escapeXml(value: string): string {
     .replace(/'/g, '&apos;');
 }
 
+/**
+ * Render a complete PermissionSet metadata XML document from template data.
+ *
+ * @param data - The permission set's label, description, and permission entries.
+ * @returns The rendered `<PermissionSet>` XML document, ready to write to a `.permissionset-meta.xml` file.
+ */
 export function buildPermissionSetXml(data: PermissionSetTemplateData): string {
   const objectPermissionsXml = data.objectPermissions
     .map(

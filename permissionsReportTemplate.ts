@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+/** A queried `ObjectPermissions` record, as attached to a permission set or group in the report. */
 export type ObjectPermissionEntry = {
   SobjectType: string;
   PermissionsRead: boolean;
@@ -24,6 +25,7 @@ export type ObjectPermissionEntry = {
   PermissionsModifyAllRecords: boolean;
 };
 
+/** A queried `FieldPermissions` record, as attached to a permission set or group in the report. */
 export type FieldPermissionEntry = {
   SobjectType: string;
   Field: string;
@@ -31,6 +33,7 @@ export type FieldPermissionEntry = {
   PermissionsEdit: boolean;
 };
 
+/** A single permission set's identity and permissions, as rendered in the report. */
 export type PermissionSetReportEntry = {
   Id: string;
   Name: string;
@@ -40,6 +43,7 @@ export type PermissionSetReportEntry = {
   fieldPerms: FieldPermissionEntry[];
 };
 
+/** A single permission set group's identity, member components, and permissions. */
 export type PermissionSetGroupReportEntry = {
   Id: string;
   DeveloperName: string;
@@ -50,15 +54,21 @@ export type PermissionSetGroupReportEntry = {
   fieldPerms: FieldPermissionEntry[];
 };
 
+/** Permission sets and permission set groups, grouped by owning package (namespace or `''` for unpackaged). */
 export type GroupedPermissionsData = Map<
   string,
   { permissionSets: PermissionSetReportEntry[]; permissionSetGroups: PermissionSetGroupReportEntry[] }
 >;
 
+/**
+ * @param value - The raw string to escape.
+ * @returns `value` with HTML special characters (`& < > "`) replaced by their entity references.
+ */
 function escapeHtml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+/** @returns An HTML `<table>` of object permissions, or a placeholder `<p>` if `perms` is empty. */
 function renderObjectPermsTable(perms: ObjectPermissionEntry[]): string {
   if (perms.length === 0) {
     return '<p>No object permissions.</p>';
@@ -74,6 +84,7 @@ function renderObjectPermsTable(perms: ObjectPermissionEntry[]): string {
   return `<table><thead><tr><th>Object</th><th>Read</th><th>Create</th><th>Edit</th><th>Delete</th><th>View All</th><th>Modify All</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
+/** @returns An HTML `<table>` of field permissions, or a placeholder `<p>` if `perms` is empty. */
 function renderFieldPermsTable(perms: FieldPermissionEntry[]): string {
   if (perms.length === 0) {
     return '<p>No field permissions.</p>';
@@ -89,6 +100,7 @@ function renderFieldPermsTable(perms: FieldPermissionEntry[]): string {
   return `<table><thead><tr><th>Object</th><th>Field</th><th>Read</th><th>Edit</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
+/** @returns A collapsible `<details>` section summarizing one permission set's permissions. */
 function renderPermissionSet(permissionSet: PermissionSetReportEntry): string {
   return `
     <details>
@@ -103,6 +115,7 @@ function renderPermissionSet(permissionSet: PermissionSetReportEntry): string {
     </details>`;
 }
 
+/** @returns A collapsible `<details>` section summarizing one permission set group's permissions. */
 function renderPermissionSetGroup(permissionSetGroup: PermissionSetGroupReportEntry): string {
   return `
     <details>
@@ -118,6 +131,15 @@ function renderPermissionSetGroup(permissionSetGroup: PermissionSetGroupReportEn
     </details>`;
 }
 
+/**
+ * Render a complete, self-contained HTML report of permission sets and permission set groups,
+ * grouped by package, with each permission set/group collapsible for browsing.
+ *
+ * @param options.username - The org username the report was generated against.
+ * @param options.reportDate - The report generation date/time, displayed as-is.
+ * @param options.groupedData - The permission sets/groups to render, grouped by package.
+ * @returns The rendered HTML document.
+ */
 export function buildPermissionsReportHtml(options: {
   username: string;
   reportDate: string;
