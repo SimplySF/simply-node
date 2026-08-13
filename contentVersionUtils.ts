@@ -27,6 +27,15 @@ import {
   ContentVersionCreateResult,
 } from './contentVersionTypes.js';
 
+/**
+ * Download a `ContentVersion`'s file data to a local directory.
+ *
+ * @param targetOrgConnection - The org connection to download from.
+ * @param contentVersionDownload - The `ContentVersion` to download; its `Id`, `Title`,
+ * `ContentDocumentId`, and `FileExtension` are used to build the output file path.
+ * @param downloadDirectory - The local directory to write the file into.
+ * @returns The local path the file was written to.
+ */
 export async function downloadContentVersion(
   targetOrgConnection: Connection,
   contentVersionDownload: ContentVersionDownload,
@@ -48,6 +57,16 @@ export async function downloadContentVersion(
   return filePath;
 }
 
+/**
+ * Upload a local file as a new `ContentVersion`.
+ *
+ * @param targetOrgConnection - The org connection to upload to.
+ * @param pathOnClient - The local filesystem path of the file to upload.
+ * @param title - The `ContentVersion` title. Defaults to the file's basename.
+ * @param firstPublishLocationId - The ID of the record/library to attach the resulting
+ * `ContentDocument` to, if any.
+ * @returns The created `ContentVersion`, re-queried to include `ContentDocumentId`.
+ */
 export async function uploadContentVersion(
   targetOrgConnection: Connection,
   pathOnClient: string,

@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+/** The subset of `ContentVersion` fields used when downloading/uploading files. */
 export type ContentVersion = {
   ContentDocumentId: string;
   ContentSize: string;
@@ -27,12 +28,14 @@ export type ContentVersion = {
   Title: string;
 };
 
+/** Request body for creating a `ContentVersion` via the multipart `sobjects/ContentVersion` endpoint. */
 export type ContentVersionCreateRequest = {
   FirstPublishLocationId?: string;
   PathOnClient: string;
   Title?: string;
 };
 
+/** Response body returned by the `sobjects/ContentVersion` create endpoint. */
 export type ContentVersionCreateResult = {
   id: string;
   success: boolean;
@@ -41,11 +44,13 @@ export type ContentVersionCreateResult = {
   message: string;
 };
 
+/** A `ContentVersion` targeted for download, plus the outcome once the download is attempted. */
 export type ContentVersionDownload = ContentVersion & {
   Error?: string;
   FilePath?: string;
 };
 
+/** A local file queued for upload as a `ContentVersion`, plus the outcome once uploaded. */
 export type ContentVersionToUpload = {
   ContentDocumentId?: string;
   Error?: string;
