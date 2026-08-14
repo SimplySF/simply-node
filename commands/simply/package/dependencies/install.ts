@@ -122,15 +122,15 @@ export default class PackageDependenciesInstall extends SfCommand<PackageToInsta
       default: false,
       required: false,
     }),
+    'output-file': Flags.string({
+      summary: messages.getMessage('flags.output-file.summary'),
+      description: messages.getMessage('flags.output-file.description'),
+    }),
     'publish-wait': Flags.duration({
       unit: 'minutes',
       summary: messages.getMessage('flags.publish-wait.summary'),
       char: 'b',
       default: Duration.minutes(0),
-    }),
-    'report-file': Flags.string({
-      summary: messages.getMessage('flags.report-file.summary'),
-      description: messages.getMessage('flags.report-file.description'),
     }),
     'security-type': Flags.custom<'AllUsers' | 'AdminsOnly'>({
       options: ['AllUsers', 'AdminsOnly'],
@@ -192,15 +192,15 @@ export default class PackageDependenciesInstall extends SfCommand<PackageToInsta
     // If requested, write a JSON report of the install outcome to a file alongside the normal
     // terminal output. Declared up front so both the "nothing to install" early return and the
     // normal completion path can reuse it.
-    const reportPath = flags['report-file'];
+    const outputPath = flags['output-file'];
     const writeReport = async (): Promise<void> => {
-      if (!reportPath) {
+      if (!outputPath) {
         return;
       }
 
-      await fs.writeFile(reportPath, buildInstallReport(packagesToInstall), 'utf-8');
+      await fs.writeFile(outputPath, buildInstallReport(packagesToInstall), 'utf-8');
 
-      this.info(messages.getMessage('info.reportWritten', [reportPath]));
+      this.info(messages.getMessage('info.reportWritten', [outputPath]));
     };
 
     this.spinner.start('Analyzing project to determine packages to install', '', { stdout: true });
