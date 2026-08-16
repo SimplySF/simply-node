@@ -16,6 +16,7 @@
 
 import { Messages } from '@salesforce/core';
 import { Flags } from '@salesforce/sf-plugins-core';
+import type { VcsProviderKind } from '../vcs/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('@simplysf/simply-cicd', 'simply.cicd.build');
@@ -54,4 +55,26 @@ export const debugFlag = {
 
 export const disabledFlag = {
   disabled: Flags.boolean({ summary: messages.getMessage('flags.disabled.summary'), default: false }),
+};
+
+/** Flags shared by every build command that adds a temporary authenticated git remote to tag or push. */
+export const gitOpsFlags = {
+  'ci-commit-ref-name': Flags.string({
+    summary: messages.getMessage('flags.ci-commit-ref-name.summary'),
+    required: true,
+  }),
+  'ci-pipeline-id': Flags.string({ summary: messages.getMessage('flags.ci-pipeline-id.summary'), required: true }),
+  'ci-project-path': Flags.string({ summary: messages.getMessage('flags.ci-project-path.summary'), required: true }),
+  'project-access-token': Flags.string({
+    summary: messages.getMessage('flags.project-access-token.summary'),
+    required: true,
+  }),
+};
+
+export const vcsFlags = {
+  'vcs-host': Flags.string({ summary: messages.getMessage('flags.vcs-host.summary'), default: 'gitlab.com' }),
+  'vcs-provider': Flags.custom<VcsProviderKind>({ options: ['gitlab'] })({
+    summary: messages.getMessage('flags.vcs-provider.summary'),
+    default: 'gitlab',
+  }),
 };
