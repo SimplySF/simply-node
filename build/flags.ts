@@ -78,3 +78,19 @@ export const vcsFlags = {
     default: 'gitlab',
   }),
 };
+
+/** Flags shared by the (inherently GitLab-specific) `generate-flow-diff` and `generate-flexipage-diff` commands. */
+export const diffFlags = {
+  'ci-project-id': Flags.string({ summary: messages.getMessage('flags.diff-ci-project-id.summary'), required: true }),
+  'ci-merge-request-iid': Flags.string({
+    summary: messages.getMessage('flags.diff-ci-merge-request-iid.summary'),
+    required: true,
+  }),
+  from: Flags.string({ summary: messages.getMessage('flags.diff-from.summary'), required: true }),
+  to: Flags.string({ summary: messages.getMessage('flags.diff-to.summary'), required: true }),
+  'project-access-token': Flags.string({
+    summary: messages.getMessage('flags.diff-project-access-token.summary'),
+    required: true,
+  }),
+  out: Flags.string({ summary: messages.getMessage('flags.diff-out.summary') }),
+};
