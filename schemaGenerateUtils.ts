@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import type { XmlBuilderOptions } from 'fast-xml-builder';
-
 /** A value that may arrive as a real boolean, or a stringified one (CSV/Excel input is always text). */
 export type BoolLike = boolean | string | number | undefined;
 
@@ -33,8 +31,27 @@ export function toBoolean(value: BoolLike): boolean | undefined {
   return String(value).toLowerCase() === 'true';
 }
 
-/** Standardized XML builder options to keep generated metadata formatted like Salesforce CLI output. */
-export const XML_BUILDER_OPTIONS: XmlBuilderOptions = {
+/**
+ * Treats an empty string the same as `undefined`. CSV/Excel cells arrive as `''` rather than
+ * `undefined` when blank, so a plain `??` fallback wouldn't catch them; use this before `??` (or
+ * in place of `||`) wherever a blank cell should be treated as "not specified".
+ *
+ * @param value - The raw string field value.
+ * @returns `value`, or `undefined` if it was blank/missing.
+ */
+export function blankToUndefined(value: string | undefined): string | undefined {
+  return value === '' ? undefined : value;
+}
+
+/**
+ * Standardized XML builder options to keep generated metadata formatted like Salesforce CLI
+ * output. Deliberately untyped against fast-xml-builder's own option type: its package.json
+ * "exports" serves different (and inconsistent) .d.ts files for its "import" vs "require"
+ * conditions, and the "require" one doesn't declare a named `XmlBuilderOptions` export at all.
+ * The `new XMLBuilder(XML_BUILDER_OPTIONS)` call site (which imports the constructor itself, not
+ * a separate named type) still validates this object's shape.
+ */
+export const XML_BUILDER_OPTIONS = {
   format: true,
   ignoreAttributes: false,
   suppressEmptyNode: true,

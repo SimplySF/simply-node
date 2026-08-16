@@ -49,11 +49,27 @@ function cellToString(raw: ExcelJS.CellValue): string | undefined {
   if (typeof raw === 'object') {
     const richValue = raw as { text?: unknown; result?: unknown; richText?: Array<{ text?: unknown }> };
     if (typeof richValue.text === 'string') return richValue.text;
-    if (richValue.richText) return richValue.richText.map((part) => String(part.text ?? '')).join('');
-    if (richValue.result !== undefined) return String(richValue.result);
+    if (richValue.richText) {
+      return richValue.richText.map((part) => primitiveToString(part.text) ?? '').join('');
+    }
+    if (richValue.result !== undefined) return primitiveToString(richValue.result);
     return undefined;
   }
   return String(raw);
+}
+
+/**
+ * Stringifies a value only when it's a primitive with a meaningful `String()` conversion,
+ * avoiding the `[object Object]` a bare `String()` would produce for anything else.
+ *
+ * @param value - The value to stringify.
+ * @returns The stringified value, or `undefined` if it isn't a string/number/boolean.
+ */
+function primitiveToString(value: unknown): string | undefined {
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  return undefined;
 }
 
 /**
