@@ -24,6 +24,7 @@ type GitLabProjectResponse = {
   archived?: boolean;
   empty_repo?: boolean;
   forked_from_project?: unknown;
+  fork?: boolean;
 };
 
 type GitLabMergeRequestResponse = {
@@ -49,7 +50,7 @@ function normalizeProject(project: GitLabProjectResponse): VcsProject {
     defaultBranch: project.default_branch,
     archived: Boolean(project.archived),
     empty: Boolean(project.empty_repo),
-    isFork: Boolean(project.forked_from_project),
+    isFork: Boolean(project.forked_from_project) || project.fork === true,
     raw: project,
   };
 }
