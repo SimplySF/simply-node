@@ -1,0 +1,183 @@
+/*
+ * Copyright (c) 2026, Clay Chipps; Copyright (c) 2026 Salesforce, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import { execa } from 'execa';
+import chalk from 'chalk';
+import { logger } from '../logger.js';
+import { authenticateOrg } from '../sfAuth.js';
+import { installDeploymentPlugins } from '../sfPlugins.js';
+import type { VcsProviderKind } from '../vcs/index.js';
+import {
+  installPackageDependencies,
+  printDeploymentSummary,
+  runApexTests,
+  runDeploymentSteps,
+  type OrgAuthConfig,
+  type RunApexTestsConfig,
+} from './deployCommon.js';
+
+async function installPackageById(packageId: string, alias: string | undefined): Promise<void> {
+  await execa(
+    'sf',
+    [
+      'package',
+      'install',
+      '--apex-compile',
+      'package',
+      '--package',
+      packageId,
+      '--target-org',
+      alias ?? '',
+      '--wait',
+      '120',
+      '--no-prompt',
+    ],
+    { stdio: 'inherit' },
+  );
+}
+
+async function installProjectPackageFromSubscriberId(
+  subscriberPackageVersionId: string,
+  alias: string | undefined,
+): Promise<void> {
+  logger.info(`Installing package version from --subscriber-package-version-id: ${subscriberPackageVersionId}`);
+  await installPackageById(subscriberPackageVersionId, alias);
+  logger.success(`Successfully installed package ${subscriberPackageVersionId}.`);
+}
+
+async function installProjectPackageFromGitTag(alias: string | undefined): Promise<void> {
+  logger.info('Checking for package version in git tag...');
+  try {
+    const { stdout: currentTagRaw } = await execa('git', ['tag', '--points-at', 'HEAD']);
+    const currentTag = currentTagRaw.split('\n')[0].trim();
+
+    if (!currentTag) {
+      logger.info('No git tag found at HEAD. Skipping main package installation.');
+      return;
+    }
+
+    logger.info(`Found git tag ${currentTag}, checking for package ID...`);
+    const { stdout: tagAnnotation } = await execa('git', ['tag', '-l', '-n1', currentTag]);
+    const parts = tagAnnotation.trim().split(/\s+/);
+
+    if (parts.length <= 1) {
+      logger.info(`Git tag ${currentTag} has no annotation. Skipping main package installation.`);
+      return;
+    }
+
+    const packageId = parts.slice(1).join(' ');
+    if (!packageId.startsWith('04t')) {
+      logger.info('No 04t package version found in git tag annotation. Skipping main package installation.');
+      return;
+    }
+
+    logger.info(`Found package ID ${packageId} in tag. Installing...`);
+    await installPackageById(packageId, alias);
+    logger.success(`Successfully installed package ${packageId} from git tag.`);
+  } catch (error) {
+    logger.warn(
+      `Could not determine package version from git tag: ${(error as Error).message}. Skipping main package installation.`,
+    );
+  }
+}
+
+export type InstallProjectPackageConfig = OrgAuthConfig & {
+  subscriberPackageVersionId?: string;
+  debug?: boolean;
+};
+
+/**
+ * Installs the project's own package into the target org: prioritizes `--subscriber-package-version-id`
+ * if given, else looks for a `04t...` package ID annotated on the git tag pointing at HEAD.
+ */
+async function installProjectPackage(config: InstallProjectPackageConfig): Promise<void> {
+  const { alias, authUrl, clientId, instanceUrl, jwtKeyFile, subscriberPackageVersionId, username, debug } = config;
+  await authenticateOrg({ alias, authUrl, clientId, instanceUrl, jwtKeyFile, username, debug });
+  logger.info('Installing main package...');
+
+  if (subscriberPackageVersionId?.startsWith('04t')) {
+    await installProjectPackageFromSubscriberId(subscriberPackageVersionId, alias);
+  } else {
+    await installProjectPackageFromGitTag(alias);
+  }
+}
+
+export type DeployProjectOptions = OrgAuthConfig &
+  RunApexTestsConfig &
+  InstallProjectPackageConfig & {
+    stage: string;
+    deployConfigFile?: string;
+    deployRulesFile?: string;
+    deployProgressFile?: string;
+    startFrom?: string;
+    tests?: string;
+    ciJobToken: string;
+    vcsHost: string;
+    vcsProvider: VcsProviderKind;
+    installType?: 'All' | 'Delta' | 'Upgrade';
+  };
+
+/**
+ * Runs a single-package "project" deployment stage: `install-packaged` installs dependencies plus
+ * the project's own package, `run-apex-tests` delegates to the shared Apex test runner, and every
+ * other stage runs through the resumable deployment-steps loop against `config/deploy.json`.
+ */
+export async function deployProject(options: DeployProjectOptions): Promise<void> {
+  const { stage, ...config } = options;
+
+  logger.raw('\n' + '='.repeat(80));
+  logger.info(`>>> Starting Deployment Stage: ${chalk.bold(stage)} <<<`);
+  logger.raw('='.repeat(80) + '\n');
+
+  const startTime = Date.now();
+  try {
+    if (options.debug) {
+      logger.debug(`Incoming parameters: ${stage}`, options);
+    }
+
+    await installDeploymentPlugins(options.debug);
+
+    if (stage === 'install-packaged') {
+      await installPackageDependencies(config);
+      await installProjectPackage(config);
+    } else if (stage === 'run-apex-tests') {
+      await runApexTests(config);
+    } else {
+      const { deployProgress } = await runDeploymentSteps({
+        ...config,
+        isProjectDeployment: true,
+        stage,
+        deployConfigFile: config.deployConfigFile ?? 'config/deploy.json',
+        deployProgressFile: config.deployProgressFile ?? 'DEPLOY_PROGRESS.json',
+        deployRulesFile: config.deployRulesFile ?? 'config/deploy-rules.json',
+      });
+      printDeploymentSummary(deployProgress, stage);
+    }
+
+    const durationSeconds = Number(((Date.now() - startTime) / 1000).toFixed(2));
+    logger.raw('\n' + '='.repeat(80));
+    logger.success(`Completed stage ${chalk.bold(stage)} in ${durationSeconds}s`);
+    logger.raw('='.repeat(80) + '\n');
+  } catch (error) {
+    const durationSeconds = Number(((Date.now() - startTime) / 1000).toFixed(2));
+    const job = (error as Error & { job?: string }).job;
+    logger.raw('\n' + '='.repeat(80));
+    logger.error(`Failed stage ${chalk.bold(stage)}${job ? ` for ${chalk.bold(job)}` : ''} after ${durationSeconds}s`);
+    logger.raw((error as Error).message);
+    logger.raw('='.repeat(80) + '\n');
+    throw error;
+  }
+}
