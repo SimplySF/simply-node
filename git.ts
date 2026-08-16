@@ -1,0 +1,107 @@
+/*
+ * Copyright (c) 2026, Clay Chipps; Copyright (c) 2026 Salesforce, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import { promises as fs } from 'node:fs';
+import path from 'node:path';
+import { execa } from 'execa';
+import type { VcsProvider } from './vcs/types.js';
+import { logger } from './logger.js';
+
+export type Deployment = {
+  name: string;
+  slug: string;
+  ref?: string;
+};
+
+export type CloneRepoOptions = {
+  ciJobToken: string;
+  vcsHost: string;
+  vcsProvider: VcsProvider;
+};
+
+/**
+ * Clones a repository based on deployment metadata and options. If a specific branch or tag
+ * (ref) is not specified, it attempts to deduce the ref from package dependencies in
+ * `sfdx-project.json` in the current working directory.
+ */
+export async function cloneRepo(deployment: Deployment, options: CloneRepoOptions): Promise<string> {
+  const { name, slug } = deployment;
+  let { ref } = deployment;
+
+  if (!ref) {
+    try {
+      const sfdxProjectContent = await fs.readFile('sfdx-project.json', 'utf-8');
+      const sfdxProject = JSON.parse(sfdxProjectContent) as {
+        packageDirectories?: Array<{ default?: boolean; dependencies?: Array<{ package?: string }> }>;
+      };
+      const defaultPackageDir = sfdxProject.packageDirectories?.find((d) => d.default);
+      if (defaultPackageDir?.dependencies) {
+        const dependency = defaultPackageDir.dependencies.find((dep) => dep.package?.startsWith(`${name}@`));
+        if (dependency?.package) {
+          const versionPart = dependency.package.split('@')[1];
+          if (versionPart) {
+            const transformedVersion = versionPart.replace(
+              /^(?<version>\d+\.\d+\.\d+)-(?<build>\d+)$/,
+              '$<version>.$<build>',
+            );
+            ref = `v${transformedVersion}`;
+          }
+        }
+      }
+    } catch (e) {
+      const err = e as NodeJS.ErrnoException;
+      if (err.code !== 'ENOENT') {
+        logger.warn(`Could not deduce ref from sfdx-project.json for ${name}: ${err.message}`);
+      }
+    }
+  }
+
+  const repoUrl = options.vcsProvider.buildCiCloneUrl(options.vcsHost, options.ciJobToken, slug);
+  const targetDir = path.join(process.cwd(), name);
+  await fs.rm(targetDir, { recursive: true, force: true });
+
+  const refMessage = ref ? `#${ref}` : ' (default branch)';
+  logger.info(`Cloning ${slug}${refMessage} into ${name}`);
+  try {
+    const cloneArgs = ['clone', '--depth', '1'];
+    if (ref) {
+      cloneArgs.push('-b', ref);
+    }
+    cloneArgs.push(repoUrl, name);
+    await execa('git', cloneArgs);
+    return targetDir;
+  } catch (e) {
+    logger.error(`Failed to clone ${slug}${refMessage}.`);
+    throw e;
+  }
+}
+
+/** Adds a temporary authenticated git remote for CI push/tag operations. Returns the remote's alias. */
+export async function addGitRemote(
+  ciPipelineId: string,
+  accessToken: string,
+  ciProjectPath: string,
+  vcsHost: string,
+  vcsProvider: VcsProvider,
+): Promise<string> {
+  if (!accessToken) {
+    throw new Error('accessToken is required for Git remote operations.');
+  }
+  const remoteAlias = `GITREMOTE${ciPipelineId}`;
+  const remoteUrl = vcsProvider.buildAuthenticatedRemoteUrl(vcsHost, accessToken, ciProjectPath);
+  await execa('git', ['remote', 'add', remoteAlias, remoteUrl]);
+  return remoteAlias;
+}
