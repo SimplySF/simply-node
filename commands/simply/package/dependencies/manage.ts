@@ -26,6 +26,7 @@ import {
   VersionServiceFilterIds,
 } from '../../../../common/packageVersionService.js';
 import { buildProjectService } from '../../../../common/sfdxProjectService.js';
+import { isSubscriberPackageVersionId } from '../../../../common/packageUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('@simplysf/simply-package', 'simply.package.dependencies.manage');
@@ -255,7 +256,7 @@ function buildChange(
   getPackage2Id: (id: string) => string | undefined,
 ): DependencyChange {
   // Pinned selection: value is a SubscriberPackageVersionId (04t)
-  if (selectedValue.startsWith('04t')) {
+  if (isSubscriberPackageVersionId(selectedValue)) {
     const newAlias = getVersionAlias(selectedValue) ?? selectedValue;
     const newPackage2Id = getPackage2Id(selectedValue);
     return {

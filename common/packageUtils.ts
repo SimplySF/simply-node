@@ -20,42 +20,18 @@ import { BasePackageDirWithDependencies } from '../schemas/sfdx-project/packageD
 
 type PackageInstallRequest = PackagingSObjects.PackageInstallRequest;
 
-/** ID prefix for a `Package2` (a 2GP package definition). */
-export const PACKAGE_PREFIX_PACKAGE2 = '0Ho';
-/** ID prefix for a `Package2Version` (a 2GP package version, as known to the Dev Hub). */
-export const PACKAGE_PREFIX_PACKAGE2_VERSION = '05i';
-/** ID prefix for a `SubscriberPackage` (a package as installed/installable in a subscriber org). */
-export const PACKAGE_PREFIX_SUBSCRIBER_PACKAGE = '033';
-/** ID prefix for a `SubscriberPackageVersion` (an installable version of a subscriber package). */
-export const PACKAGE_PREFIX_SUBSCRIBER_PACKAGE_VERSION = '04t';
-
-/**
- * @param inputToEvaluate - The ID (or other string) to check.
- * @returns Whether `inputToEvaluate` looks like a `Package2Id`.
- */
-export const isPackage2Id = (inputToEvaluate: string): boolean =>
-  inputToEvaluate ? inputToEvaluate.startsWith(PACKAGE_PREFIX_PACKAGE2) : false;
-
-/**
- * @param inputToEvaluate - The ID (or other string) to check.
- * @returns Whether `inputToEvaluate` looks like a `Package2VersionId`.
- */
-export const isPackage2VersionId = (inputToEvaluate: string): boolean =>
-  inputToEvaluate ? inputToEvaluate.startsWith(PACKAGE_PREFIX_PACKAGE2_VERSION) : false;
-
-/**
- * @param inputToEvaluate - The ID (or other string) to check.
- * @returns Whether `inputToEvaluate` looks like a `SubscriberPackageId`.
- */
-export const isSubscriberPackageId = (inputToEvaluate: string): boolean =>
-  inputToEvaluate ? inputToEvaluate.startsWith(PACKAGE_PREFIX_SUBSCRIBER_PACKAGE) : false;
-
-/**
- * @param inputToEvaluate - The ID (or other string) to check.
- * @returns Whether `inputToEvaluate` looks like a `SubscriberPackageVersionId`.
- */
-export const isSubscriberPackageVersionId = (inputToEvaluate: string): boolean =>
-  inputToEvaluate ? inputToEvaluate.startsWith(PACKAGE_PREFIX_SUBSCRIBER_PACKAGE_VERSION) : false;
+// The package ID prefixes and their predicates live in @simplysf/simply-core so simply-cicd can
+// share them. Re-exported here so this module stays the one import site for package helpers.
+export {
+  isPackage2Id,
+  isPackage2VersionId,
+  isSubscriberPackageId,
+  isSubscriberPackageVersionId,
+  PACKAGE_PREFIX_PACKAGE2,
+  PACKAGE_PREFIX_PACKAGE2_VERSION,
+  PACKAGE_PREFIX_SUBSCRIBER_PACKAGE,
+  PACKAGE_PREFIX_SUBSCRIBER_PACKAGE_VERSION,
+} from '@simplysf/simply-core';
 
 /**
  * Format a `PackageInstallRequest`'s errors as a single human-readable, numbered-list string.
