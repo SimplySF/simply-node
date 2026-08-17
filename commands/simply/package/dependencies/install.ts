@@ -19,6 +19,7 @@
 /* eslint-disable no-unsafe-finally */
 import fs from 'node:fs/promises';
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { requireConnection, targetOrgFlags } from '@simplysf/simply-plugin-kit';
 import { AuthInfo, Connection, Lifecycle, Messages, SfError } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
 import {
@@ -94,7 +95,7 @@ export default class PackageDependenciesInstall extends SfCommand<PackageToInsta
       description: messages.getMessage('flags.apex-compile.description'),
       char: 'a',
     }),
-    'api-version': Flags.orgApiVersion(),
+    ...targetOrgFlags,
     branch: Flags.string({
       summary: messages.getMessage('flags.branch.summary'),
       description: messages.getMessage('flags.branch.description'),
@@ -151,7 +152,6 @@ export default class PackageDependenciesInstall extends SfCommand<PackageToInsta
       summary: messages.getMessage('flags.target-dev-hub.summary'),
       char: 'v',
     }),
-    'target-org': Flags.requiredOrg(),
     'upgrade-type': Flags.custom<'DeprecateOnly' | 'Mixed' | 'Delete'>({
       options: ['DeprecateOnly', 'Mixed', 'Delete'],
     })({
@@ -173,11 +173,7 @@ export default class PackageDependenciesInstall extends SfCommand<PackageToInsta
     const { flags } = await this.parse(PackageDependenciesInstall);
 
     // Authorize to the target org
-    const targetOrgConnection = flags['target-org']?.getConnection(flags['api-version']);
-
-    if (!targetOrgConnection) {
-      throw messages.createError('error.targetOrgConnectionFailed');
-    }
+    const targetOrgConnection = requireConnection(flags);
 
     // Validate minimum api version
     const apiVersion = parseInt(targetOrgConnection.getApiVersion(), 10);
