@@ -27,25 +27,21 @@ export const devHubFlags = {
     summary: messages.getMessage('flags.dev-hub-name.summary'),
     multiple: true,
     required: true,
-    env: 'SIMPLY_CICD_DEV_HUB_NAME',
   }),
   'dev-hub-username': Flags.string({
     summary: messages.getMessage('flags.dev-hub-username.summary'),
     multiple: true,
     required: true,
-    env: 'SIMPLY_CICD_DEV_HUB_USERNAME',
   }),
   'dev-hub-client-id': Flags.string({
     summary: messages.getMessage('flags.dev-hub-client-id.summary'),
     multiple: true,
     required: true,
-    env: 'SIMPLY_CICD_DEV_HUB_CLIENT_ID',
   }),
   'dev-hub-instance-url': Flags.string({
     summary: messages.getMessage('flags.dev-hub-instance-url.summary'),
     multiple: true,
     required: true,
-    env: 'SIMPLY_CICD_DEV_HUB_INSTANCE_URL',
   }),
 };
 
