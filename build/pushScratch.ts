@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import { promises as fs } from 'node:fs';
 import { execa } from 'execa';
+import { getDefaultPackageDirectory, readSfdxProject } from '@simplysf/simply-core';
 import { logger } from '../logger.js';
 import { authenticateOrg } from '../sfAuth.js';
 import { readScratchOrgInfo } from './scratchOrgInfo.js';
@@ -64,10 +64,7 @@ export async function pushToScratch(options: PushScratchOptions): Promise<void> 
   }
   if (options.scratchOrgSourceDir) {
     pushArgs.push('--source-dir', options.scratchOrgSourceDir);
-    const sfdxProjectJson = JSON.parse(await fs.readFile('sfdx-project.json', 'utf-8')) as {
-      packageDirectories: Array<{ default?: boolean; seedMetadata?: { path?: string } }>;
-    };
-    const seedMetadataDir = sfdxProjectJson.packageDirectories.find((d) => d.default)?.seedMetadata?.path;
+    const seedMetadataDir = getDefaultPackageDirectory(await readSfdxProject())?.seedMetadata?.path;
     if (seedMetadataDir) {
       pushArgs.push('--source-dir', seedMetadataDir);
     }

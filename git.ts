@@ -17,6 +17,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { execa } from 'execa';
+import { getDefaultPackageDirectory, readSfdxProject } from '@simplysf/simply-core';
 import type { VcsProvider } from './vcs/types.js';
 import { logger } from './logger.js';
 
@@ -43,11 +44,7 @@ export async function cloneRepo(deployment: Deployment, options: CloneRepoOption
 
   if (!ref) {
     try {
-      const sfdxProjectContent = await fs.readFile('sfdx-project.json', 'utf-8');
-      const sfdxProject = JSON.parse(sfdxProjectContent) as {
-        packageDirectories?: Array<{ default?: boolean; dependencies?: Array<{ package?: string }> }>;
-      };
-      const defaultPackageDir = sfdxProject.packageDirectories?.find((d) => d.default);
+      const defaultPackageDir = getDefaultPackageDirectory(await readSfdxProject());
       if (defaultPackageDir?.dependencies) {
         const dependency = defaultPackageDir.dependencies.find((dep) => dep.package?.startsWith(`${name}@`));
         if (dependency?.package) {

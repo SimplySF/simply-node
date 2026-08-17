@@ -16,17 +16,10 @@
 
 import { promises as fs } from 'node:fs';
 import { execa } from 'execa';
+import { getDefaultPackageDirectory, readSfdxProject, type SfdxProject } from '@simplysf/simply-core';
 import { logger } from '../logger.js';
 import { authenticateDevHubs } from '../sfAuth.js';
 import type { DevHubConfig } from './devHubs.js';
-
-type SfdxProjectJson = {
-  packageDirectories: Array<{
-    default?: boolean;
-    definitionFile?: string;
-    packageMetadataAccess?: { permissionSets?: string[]; permissionSetLicenses?: string[] };
-  }>;
-};
 
 type SfPermsetAssignResult = { status: number; failures?: unknown };
 
@@ -68,8 +61,8 @@ async function assignPermissionSetLicenses(licenses: string[]): Promise<void> {
   }
 }
 
-async function assignPermissions(sfdxProjectJson: SfdxProjectJson): Promise<void> {
-  const defaultPackageDir = sfdxProjectJson.packageDirectories.find((d) => d.default);
+async function assignPermissions(sfdxProjectJson: SfdxProject): Promise<void> {
+  const defaultPackageDir = getDefaultPackageDirectory(sfdxProjectJson);
   const access = defaultPackageDir?.packageMetadataAccess;
   if (!access) {
     return;
@@ -186,8 +179,8 @@ export async function createScratchOrg(
 ): Promise<ScratchOrgCreateResult> {
   await authenticateDevHubs(devHubs, options.jwtKeyFile, options.debug);
 
-  const sfdxProjectJson = JSON.parse(await fs.readFile('sfdx-project.json', 'utf-8')) as SfdxProjectJson;
-  const defaultPackageDir = sfdxProjectJson.packageDirectories.find((d) => d.default);
+  const sfdxProjectJson = await readSfdxProject();
+  const defaultPackageDir = getDefaultPackageDirectory(sfdxProjectJson);
   const definitionFile = defaultPackageDir?.definitionFile ?? options.scratchDefinitionFile;
   if (!definitionFile) {
     throw new Error('You must specify a definitionFile in the default package directory in sfdx-project.json');

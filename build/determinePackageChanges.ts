@@ -16,11 +16,8 @@
 
 import { promises as fs } from 'node:fs';
 import { execa } from 'execa';
+import { getDefaultPackageDirectory, readSfdxProject } from '@simplysf/simply-core';
 import { logger } from '../logger.js';
-
-type SfdxProjectJson = {
-  packageDirectories?: Array<{ default?: boolean; path?: string; versionNumber?: string }>;
-};
 
 /** Narrows a full `versionNumber` (e.g. `6.40.0.NEXT`) down to a `major.minor.patch*` git tag match pattern. */
 export function buildTagMatchPattern(versionNumber?: string): string {
@@ -65,13 +62,8 @@ async function detectChangesSincePackagePath(packagePath: string, lastTag: strin
 type PackageChangeDetection = { packageChanged: boolean; lastTag: string };
 
 async function detectPackageChanges(): Promise<PackageChangeDetection> {
-  const projectJsonRaw = await fs.readFile('sfdx-project.json', 'utf-8');
-  const projectJson = JSON.parse(projectJsonRaw) as SfdxProjectJson;
-  if (!Array.isArray(projectJson.packageDirectories)) {
-    throw new Error('Invalid or missing packageDirectories array in sfdx-project.json');
-  }
-
-  const defaultDir = projectJson.packageDirectories.find((dir) => dir.default);
+  const projectJson = await readSfdxProject();
+  const defaultDir = getDefaultPackageDirectory(projectJson);
   if (!defaultDir?.path) {
     logger.warn('No default package directory found in sfdx-project.json. Defaulting to PACKAGE_CHANGED=FALSE.');
     return { packageChanged: false, lastTag: '' };

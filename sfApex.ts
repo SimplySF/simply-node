@@ -17,6 +17,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { execa } from 'execa';
+import { readSfdxProject } from '@simplysf/simply-core';
 import { logger } from './logger.js';
 
 export type HasApexTestsOptions = {
@@ -44,12 +45,8 @@ type ApexTestResult = {
 export async function hasApexTests(options?: HasApexTestsOptions): Promise<boolean> {
   let packageDirs = ['force-app'];
   try {
-    const sfdxProjectJson = JSON.parse(await fs.readFile('sfdx-project.json', 'utf-8')) as {
-      packageDirectories?: Array<{ path?: string }>;
-    };
-    if (Array.isArray(sfdxProjectJson.packageDirectories)) {
-      packageDirs = sfdxProjectJson.packageDirectories.map((d) => d.path).filter((p): p is string => Boolean(p));
-    }
+    const sfdxProjectJson = await readSfdxProject();
+    packageDirs = sfdxProjectJson.packageDirectories.map((d) => d.path).filter((p): p is string => Boolean(p));
   } catch {
     if (options?.debugMode) {
       logger.warn('Could not read sfdx-project.json to identify package directories. Using default force-app.');

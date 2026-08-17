@@ -16,6 +16,7 @@
 
 import { execa } from 'execa';
 import chalk from 'chalk';
+import { isSubscriberPackageVersionId } from '@simplysf/simply-core';
 import { logger } from '../logger.js';
 import { authenticateOrg } from '../sfAuth.js';
 import { installDeploymentPlugins } from '../sfPlugins.js';
@@ -79,7 +80,7 @@ async function installProjectPackageFromGitTag(alias: string | undefined): Promi
     }
 
     const packageId = parts.slice(1).join(' ');
-    if (!packageId.startsWith('04t')) {
+    if (!isSubscriberPackageVersionId(packageId)) {
       logger.info('No 04t package version found in git tag annotation. Skipping main package installation.');
       return;
     }
@@ -108,7 +109,7 @@ async function installProjectPackage(config: InstallProjectPackageConfig): Promi
   await authenticateOrg({ alias, authUrl, clientId, instanceUrl, jwtKeyFile, username, debug });
   logger.info('Installing main package...');
 
-  if (subscriberPackageVersionId?.startsWith('04t')) {
+  if (subscriberPackageVersionId && isSubscriberPackageVersionId(subscriberPackageVersionId)) {
     await installProjectPackageFromSubscriberId(subscriberPackageVersionId, alias);
   } else {
     await installProjectPackageFromGitTag(alias);

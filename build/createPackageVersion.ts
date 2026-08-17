@@ -16,15 +16,11 @@
 
 import { promises as fs } from 'node:fs';
 import { execa } from 'execa';
+import { getDefaultPackageDirectory, getPluginConfig, readSfdxProject, type SfdxProject } from '@simplysf/simply-core';
 import { addGitRemote } from '../git.js';
 import { logger } from '../logger.js';
 import { authenticateOrg } from '../sfAuth.js';
 import { getVcsProvider, type VcsProviderKind } from '../vcs/index.js';
-
-type SfdxProjectJson = {
-  packageDirectories: Array<{ default?: boolean; definitionFile?: string; package?: string; branch?: string }>;
-  plugins?: { simply?: { coverageRequirement?: { minimumCoverageRequired?: string } } };
-};
 
 type PackageVersionCreateReport = { Status: string; Error?: string; SubscriberPackageVersionId?: string };
 
@@ -62,12 +58,15 @@ function determineVersionTag(
   return `${versionTag}-${ciCommitRefName}`;
 }
 
-function resolveMinimumCoverage(codeCoverageMinimum: string | undefined, sfdxProjectJson: SfdxProjectJson): number {
+function resolveMinimumCoverage(codeCoverageMinimum: string | undefined, sfdxProjectJson: SfdxProject): number {
   let minCoverage = parseInt(codeCoverageMinimum ?? '75', 10);
   if (Number.isNaN(minCoverage)) {
     minCoverage = 75;
   }
-  const projectMinCoverage = sfdxProjectJson.plugins?.simply?.coverageRequirement?.minimumCoverageRequired;
+  const projectMinCoverage = getPluginConfig<string>(
+    sfdxProjectJson,
+    'plugins.simply.coverageRequirement.minimumCoverageRequired',
+  );
   if (projectMinCoverage) {
     const parsedProjectMin = parseInt(projectMinCoverage, 10);
     if (!Number.isNaN(parsedProjectMin)) {
@@ -165,8 +164,8 @@ export async function createPackageVersion(options: CreatePackageVersionOptions)
     debug: options.debug,
   });
 
-  const sfdxProjectJson = JSON.parse(await fs.readFile('sfdx-project.json', 'utf-8')) as SfdxProjectJson;
-  const defaultPackageDir = sfdxProjectJson.packageDirectories.find((d) => d.default);
+  const sfdxProjectJson = await readSfdxProject();
+  const defaultPackageDir = getDefaultPackageDirectory(sfdxProjectJson);
   const { definitionFile, package: packageAlias, branch: branchAttribute } = defaultPackageDir ?? {};
   if (!definitionFile || !packageAlias) {
     throw new Error(

@@ -16,18 +16,15 @@
 
 import { promises as fs } from 'node:fs';
 import { execa } from 'execa';
+import { getDefaultPackageDirectory, isSubscriberPackageVersionId, readSfdxProject } from '@simplysf/simply-core';
 import { addGitRemote } from '../git.js';
 import { logger } from '../logger.js';
 import { getVcsProvider, type VcsProviderKind } from '../vcs/index.js';
 import { buildTagMatchPattern } from './determinePackageChanges.js';
 
-type SfdxProjectJson = { packageDirectories?: Array<{ default?: boolean; versionNumber?: string }> };
-
 async function resolveTagMatchPattern(): Promise<string> {
   try {
-    const projectJsonRaw = await fs.readFile('sfdx-project.json', 'utf-8');
-    const projectJson = JSON.parse(projectJsonRaw) as SfdxProjectJson;
-    const defaultDir = projectJson.packageDirectories?.find((dir) => dir.default);
+    const defaultDir = getDefaultPackageDirectory(await readSfdxProject());
     return buildTagMatchPattern(defaultDir?.versionNumber);
   } catch {
     logger.info('Could not read version prefix from sfdx-project.json. Defaulting to match pattern v*');
@@ -58,7 +55,7 @@ async function resolveLastTag(explicitLastTag: string | undefined): Promise<stri
 
 function extractPackageId(tagAnnotation: string): string {
   const parts = tagAnnotation.trim().split(/\s+/);
-  return parts.find((part) => part.startsWith('04t') && (part.length === 15 || part.length === 18)) ?? '';
+  return parts.find((part) => isSubscriberPackageVersionId(part) && (part.length === 15 || part.length === 18)) ?? '';
 }
 
 function computeNextTag(lastTag: string): string {
