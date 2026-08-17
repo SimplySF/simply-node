@@ -15,8 +15,8 @@
  */
 
 import { promises as fs } from 'node:fs';
-import { execa } from 'execa';
 import { getDefaultPackageDirectory, readSfdxProject, type SfdxProject } from '@simplysf/simply-core';
+import { runSf, runSfJson } from '../exec/sfCli.js';
 import { logger } from '../logger.js';
 import { authenticateDevHubs } from '../sfAuth.js';
 import type { DevHubConfig } from './devHubs.js';
@@ -30,8 +30,7 @@ async function assignPermissionSets(permissionSets: string[]): Promise<void> {
   logger.info('Assigning permission sets...');
   const args = ['org', 'assign', 'permset', '--json', ...permissionSets.flatMap((ps) => ['--name', ps])];
   try {
-    const { stdout } = await execa('sf', args);
-    const result = JSON.parse(stdout) as SfPermsetAssignResult;
+    const result = await runSfJson<SfPermsetAssignResult>(args);
     if (result.status !== 0) {
       throw new Error(`Permission set assignment failed: ${JSON.stringify(result.failures)}`);
     }
@@ -49,8 +48,7 @@ async function assignPermissionSetLicenses(licenses: string[]): Promise<void> {
   logger.info('Assigning permission set licenses...');
   const args = ['org', 'assign', 'permset-license', '--json', ...licenses.flatMap((psl) => ['--name', psl])];
   try {
-    const { stdout } = await execa('sf', args);
-    const result = JSON.parse(stdout) as SfPermsetAssignResult;
+    const result = await runSfJson<SfPermsetAssignResult>(args);
     if (result.status !== 0) {
       throw new Error(`Permission set license assignment failed: ${JSON.stringify(result.failures)}`);
     }
@@ -72,16 +70,22 @@ async function assignPermissions(sfdxProjectJson: SfdxProject): Promise<void> {
 }
 
 async function checkHubRemainingScratchOrgs(hubUsername: string): Promise<number | undefined> {
-  const { stdout } = await execa('sf', ['org', 'list', 'limits', '--target-org', hubUsername, '--json']);
-  const limits = JSON.parse(stdout) as { result: Array<{ name: string; remaining: number }> };
+  const limits = await runSfJson<{ result: Array<{ name: string; remaining: number }> }>([
+    'org',
+    'list',
+    'limits',
+    '--target-org',
+    hubUsername,
+    '--json',
+  ]);
   return limits.result.find((l) => l.name === 'DailyScratchOrgs')?.remaining;
 }
 
 async function trySetDefaultCountry(): Promise<void> {
   try {
-    await execa('sf', ['data', 'query', '--query', 'SELECT CountryCode FROM User', '--json']);
+    await runSf(['data', 'query', '--query', 'SELECT CountryCode FROM User', '--json']);
     logger.info('State/Country picklists detected. Setting default country for user...');
-    await execa('sf', [
+    await runSf([
       'data',
       'update',
       'record',
@@ -112,7 +116,7 @@ async function attemptScratchOrgCreation(
   }
   logger.info(`Attempting to create scratch org with Dev Hub ${hub.name} (${remaining} remaining).`);
 
-  const { stdout } = await execa('sf', [
+  const { stdout } = await runSf([
     'org',
     'create',
     'scratch',

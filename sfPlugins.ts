@@ -20,6 +20,7 @@ import path from 'node:path';
 import { execa } from 'execa';
 import { DEFAULT_DEPLOYMENT_PLUGINS } from '../config/defaultDeploymentPlugins.js';
 import { TRUSTED_PLUGINS } from '../config/trustedPlugins.js';
+import { runSf } from './exec/sfCli.js';
 import { logger } from './logger.js';
 
 /** Installs a Salesforce CLI plugin. */
@@ -27,7 +28,7 @@ export async function installPlugin(plugin: string, debug = false, cwd: string =
   logger.info(`Installing ${plugin} plugin...`);
   try {
     configureTrustedPublishers(debug);
-    await execa('sf', ['plugins', 'install', plugin], { stdio: 'pipe', cwd });
+    await runSf(['plugins', 'install', plugin], { stdio: 'pipe', cwd });
     logger.success(`Successfully installed ${plugin} plugin.`);
   } catch (error) {
     logger.error(`Failed to install ${plugin} plugin.`);
@@ -65,7 +66,7 @@ export async function installDeploymentPlugins(debug = false, cwd: string = proc
     return;
   }
 
-  const { stdout } = await execa('sf', ['plugins'], { cwd });
+  const { stdout } = await runSf(['plugins'], { cwd });
   const installedPlugins = stdout.split('\n').map((line) => line.split(' ')[0]);
 
   for (const plugin of allPlugins) {

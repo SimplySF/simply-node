@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { execa } from 'execa';
+import { runSf } from './exec/sfCli.js';
 import { logger } from './logger.js';
 
 export type InstallPackageDependenciesConfig = {
@@ -53,7 +53,7 @@ export async function installPackageDependencies(config: InstallPackageDependenc
       args.push('--no-prompt');
     }
 
-    await execa('sf', args, { stdio: 'inherit' });
+    await runSf(args, { stdio: 'inherit' });
     logger.success('Packaged dependencies installed successfully.');
   } catch (error) {
     logger.error('Failed to install packaged dependencies.');

@@ -68,12 +68,28 @@ export function validateWithSchema<T>(schema: z.ZodType<T>, data: unknown, fileN
   return result.data;
 }
 
+/**
+ * Read a JSON file and validate it against a zod schema.
+ *
+ * @param filePath - The file to read. Its name appears in the error on a schema violation.
+ * @param schema - The schema to validate against.
+ * @returns The validated contents.
+ * @throws {Error} With one bullet per schema issue, via {@link validateWithSchema}.
+ * @throws {NodeJS.ErrnoException} If the file can't be read — callers check for `ENOENT` to
+ * treat a missing file as non-fatal.
+ * @throws {SyntaxError} If the file isn't valid JSON.
+ */
+export async function loadValidatedJsonFile<T>(filePath: string, schema: z.ZodType<T>): Promise<T> {
+  const contents = await fs.readFile(filePath, 'utf-8');
+
+  return validateWithSchema(schema, JSON.parse(contents) as unknown, filePath);
+}
+
 /** Validates a deployment configuration against a set of deployment rules (e.g. "prod must run postDeploy"). */
 export async function validateDeploymentRules(deploymentConfig: DeployConfig, rulesFile: string): Promise<void> {
   let rulesConfig: DeployRules;
   try {
-    const rulesContent = await fs.readFile(rulesFile, 'utf-8');
-    rulesConfig = validateWithSchema(deployRulesSchema, JSON.parse(rulesContent) as unknown, rulesFile);
+    rulesConfig = await loadValidatedJsonFile(rulesFile, deployRulesSchema);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       logger.info(`Deployment rules file not found at ${rulesFile}. Skipping rules validation.`);
@@ -306,8 +322,7 @@ export async function runApexTests(config: RunApexTestsConfig): Promise<void> {
 
 async function loadProgress(deployProgressFile: string): Promise<DeployProgress> {
   try {
-    const progressContent = await fs.readFile(deployProgressFile, 'utf-8');
-    return validateWithSchema(deployProgressSchema, JSON.parse(progressContent) as unknown, deployProgressFile);
+    return await loadValidatedJsonFile(deployProgressFile, deployProgressSchema);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       return {};
@@ -321,12 +336,7 @@ type LoadDeployConfigResult = { found: true; config: DeployConfig } | { found: f
 
 async function loadDeployConfig(deployConfigFile: string, deployRulesFile: string): Promise<LoadDeployConfigResult> {
   try {
-    const fileContent = await fs.readFile(deployConfigFile, 'utf-8');
-    const deploymentConfig = validateWithSchema(
-      deployConfigSchema,
-      JSON.parse(fileContent) as unknown,
-      deployConfigFile,
-    );
+    const deploymentConfig = await loadValidatedJsonFile(deployConfigFile, deployConfigSchema);
     await validateDeploymentRules(deploymentConfig, deployRulesFile);
     return { found: true, config: deploymentConfig };
   } catch (error) {

@@ -17,6 +17,7 @@
 import { promises as fs } from 'node:fs';
 import { execa } from 'execa';
 import { getDefaultPackageDirectory, getPluginConfig, readSfdxProject, type SfdxProject } from '@simplysf/simply-core';
+import { runSf } from '../exec/sfCli.js';
 import { addGitRemote } from '../git.js';
 import { logger } from '../logger.js';
 import { authenticateOrg } from '../sfAuth.js';
@@ -79,7 +80,7 @@ function resolveMinimumCoverage(codeCoverageMinimum: string | undefined, sfdxPro
 async function pollPackageVersionCreation(createRequestId: string): Promise<string> {
   for (;;) {
     // eslint-disable-next-line no-await-in-loop -- each poll must wait for the previous one's result before deciding to continue
-    const { stdout: reportStdout } = await execa('sf', [
+    const { stdout: reportStdout } = await runSf([
       'package',
       'version',
       'create',
@@ -174,7 +175,7 @@ export async function createPackageVersion(options: CreatePackageVersionOptions)
   }
 
   const branchArgs = determineBranchArgs(branchAttribute, options.ciCommitRefName, options.packageReleaseBranchPrefix);
-  const { stdout: createStdout } = await execa('sf', [
+  const { stdout: createStdout } = await runSf([
     'package',
     'version',
     'create',
@@ -199,7 +200,7 @@ export async function createPackageVersion(options: CreatePackageVersionOptions)
   const subscriberPackageVersionId = await pollPackageVersionCreation(createRequestId);
   await fs.writeFile('subscriberPackageVersionId.env', `SUBSCRIBER_PACKAGE_VERSION_ID=${subscriberPackageVersionId}`);
 
-  const { stdout: versionReportStdout } = await execa('sf', [
+  const { stdout: versionReportStdout } = await runSf([
     'package',
     'version',
     'report',

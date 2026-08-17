@@ -16,7 +16,7 @@
 
 import path from 'node:path';
 import { promises as fs } from 'node:fs';
-import { execa } from 'execa';
+import { runSf } from '../exec/sfCli.js';
 import { logger } from '../logger.js';
 import { authenticateDevHubs } from '../sfAuth.js';
 import type { DevHubConfig } from './devHubs.js';
@@ -27,7 +27,7 @@ async function cleanupScratchOrgsForHub(hubUsername: string): Promise<void> {
   try {
     const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
     const query = `SELECT Id FROM ActiveScratchOrg WHERE CreatedDate < ${threeHoursAgo}`;
-    const { stdout } = await execa('sf', [
+    const { stdout } = await runSf([
       'data',
       'query',
       '--query',
@@ -45,8 +45,7 @@ async function cleanupScratchOrgsForHub(hubUsername: string): Promise<void> {
     const lines = fileContent.trim().split('\n');
     if (lines.length > 1) {
       logger.info(`Found ${lines.length - 1} old scratch orgs in ${hubUsername}. Deleting...`);
-      await execa(
-        'sf',
+      await runSf(
         [
           'data',
           'bulk',

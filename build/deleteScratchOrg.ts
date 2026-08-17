@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { execa } from 'execa';
+import { runSf } from '../exec/sfCli.js';
 import { logger } from '../logger.js';
 import { authenticateOrg } from '../sfAuth.js';
 import type { DevHubConfig } from './devHubs.js';
@@ -58,7 +58,7 @@ export async function deleteScratchOrg(options: DeleteScratchOrgOptions, devHubs
       debug: options.debug,
     });
 
-    await execa('sf', ['org', 'delete', 'scratch', '--no-prompt'], { stdio: 'inherit' });
+    await runSf(['org', 'delete', 'scratch', '--no-prompt'], { stdio: 'inherit' });
     logger.success('Scratch org deleted.');
   } catch (e) {
     logger.error('Failed to delete scratch org. It may need to be deleted manually.', (e as Error).message);

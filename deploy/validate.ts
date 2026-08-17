@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-import { promises as fs } from 'node:fs';
 import type { z } from 'zod';
 import { logger } from '../logger.js';
 import { deployConfigSchema } from '../schemas/deployConfig.js';
 import { deployRulesSchema } from '../schemas/deployRules.js';
-import { determineDeployConfigFile, validateWithSchema } from './deployCommon.js';
+import { determineDeployConfigFile, loadValidatedJsonFile } from './deployCommon.js';
 
 export type ValidateDeployFilesOptions = {
   deployConfigFile?: string;
@@ -29,8 +28,7 @@ export type ValidateDeployFilesOptions = {
 
 async function validateFile<T>(filePath: string, schema: z.ZodType<T>): Promise<void> {
   try {
-    const content = await fs.readFile(filePath, 'utf-8');
-    validateWithSchema(schema, JSON.parse(content) as unknown, filePath);
+    await loadValidatedJsonFile(filePath, schema);
     logger.success(`Validation successful for ${filePath}`);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {

@@ -15,12 +15,11 @@
  */
 
 import { execa } from 'execa';
-import chalk from 'chalk';
 import { isSubscriberPackageVersionId } from '@simplysf/simply-core';
 import { logger } from '../logger.js';
 import { authenticateOrg } from '../sfAuth.js';
-import { installDeploymentPlugins } from '../sfPlugins.js';
 import type { VcsProviderKind } from '../vcs/index.js';
+import { runDeployStage } from './runDeployStage.js';
 import {
   installPackageDependencies,
   printDeploymentSummary,
@@ -139,18 +138,7 @@ export type DeployProjectOptions = OrgAuthConfig &
 export async function deployProject(options: DeployProjectOptions): Promise<void> {
   const { stage, ...config } = options;
 
-  logger.raw('\n' + '='.repeat(80));
-  logger.info(`>>> Starting Deployment Stage: ${chalk.bold(stage)} <<<`);
-  logger.raw('='.repeat(80) + '\n');
-
-  const startTime = Date.now();
-  try {
-    if (options.debug) {
-      logger.debug(`Incoming parameters: ${stage}`, options);
-    }
-
-    await installDeploymentPlugins(options.debug);
-
+  await runDeployStage(stage, options, async () => {
     if (stage === 'install-packaged') {
       await installPackageDependencies(config);
       await installProjectPackage(config);
@@ -167,18 +155,5 @@ export async function deployProject(options: DeployProjectOptions): Promise<void
       });
       printDeploymentSummary(deployProgress, stage);
     }
-
-    const durationSeconds = Number(((Date.now() - startTime) / 1000).toFixed(2));
-    logger.raw('\n' + '='.repeat(80));
-    logger.success(`Completed stage ${chalk.bold(stage)} in ${durationSeconds}s`);
-    logger.raw('='.repeat(80) + '\n');
-  } catch (error) {
-    const durationSeconds = Number(((Date.now() - startTime) / 1000).toFixed(2));
-    const job = (error as Error & { job?: string }).job;
-    logger.raw('\n' + '='.repeat(80));
-    logger.error(`Failed stage ${chalk.bold(stage)}${job ? ` for ${chalk.bold(job)}` : ''} after ${durationSeconds}s`);
-    logger.raw((error as Error).message);
-    logger.raw('='.repeat(80) + '\n');
-    throw error;
-  }
+  });
 }

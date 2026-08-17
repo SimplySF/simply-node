@@ -16,6 +16,7 @@
 
 import { execa } from 'execa';
 import { getDefaultPackageDirectory, readSfdxProject } from '@simplysf/simply-core';
+import { runSf } from '../exec/sfCli.js';
 import { logger } from '../logger.js';
 import { authenticateOrg } from '../sfAuth.js';
 import { readScratchOrgInfo } from './scratchOrgInfo.js';
@@ -70,6 +71,6 @@ export async function pushToScratch(options: PushScratchOptions): Promise<void> 
     }
   }
 
-  await execa('sf', pushArgs, { stdio: 'inherit' });
+  await runSf(pushArgs, { stdio: 'inherit' });
   logger.success('Source pushed to scratch org.');
 }

@@ -17,7 +17,7 @@
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { execa } from 'execa';
+import { runSf } from './exec/sfCli.js';
 import { logger } from './logger.js';
 
 export type AuthenticateOrgOptions = {
@@ -82,7 +82,7 @@ export async function authenticateOrg(options: AuthenticateOrgOptions): Promise<
       authArgs.push('--set-default-dev-hub');
     }
 
-    const { stdout } = await execa('sf', authArgs);
+    const { stdout } = await runSf(authArgs);
 
     if (debug) {
       logger.raw(stdout);

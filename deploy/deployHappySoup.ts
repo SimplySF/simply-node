@@ -15,14 +15,14 @@
  */
 
 import { promises as fs } from 'node:fs';
-import chalk from 'chalk';
 import { execa } from 'execa';
+import { runSf } from '../exec/sfCli.js';
 import { addGitRemote } from '../git.js';
 import { logger } from '../logger.js';
 import { authenticateOrg } from '../sfAuth.js';
-import { installDeploymentPlugins } from '../sfPlugins.js';
 import { getVcsProvider } from '../vcs/index.js';
 import type { VcsProviderKind } from '../vcs/index.js';
+import { runDeployStage } from './runDeployStage.js';
 import {
   determineDeployConfigFile,
   installPackageDependencies,
@@ -152,7 +152,7 @@ async function tagDeployment(config: TagDeploymentConfig): Promise<void> {
   const remoteAlias = await addGitRemote(ciPipelineId, projectAccessToken, ciProjectPath, vcsHost, vcsProvider);
   await authenticateOrg({ alias, authUrl, clientId, instanceUrl, jwtKeyFile, username, debug });
 
-  const { stdout: orgDisplay } = await execa('sf', ['org', 'display', '--target-org', alias ?? '', '--json']);
+  const { stdout: orgDisplay } = await runSf(['org', 'display', '--target-org', alias ?? '', '--json']);
   const instanceUrlResult = (JSON.parse(orgDisplay) as { result: { instanceUrl: string } }).result.instanceUrl;
   const instanceSlug = instanceUrlResult.split('.')[0];
   const orgDomainPrefix = instanceSlug.replace('https://', '');
@@ -231,32 +231,8 @@ async function runHappySoupStage(
 export async function deployHappySoup(options: DeployHappySoupOptions): Promise<void> {
   const { stage, ...config } = options;
 
-  logger.raw('\n' + '='.repeat(80));
-  logger.info(`>>> Starting Deployment Stage: ${chalk.bold(stage)} <<<`);
-  logger.raw('='.repeat(80) + '\n');
-
-  const startTime = Date.now();
-  try {
-    if (options.debug) {
-      logger.debug(`Incoming parameters: ${stage}`, options);
-    }
-
-    await installDeploymentPlugins(options.debug);
-
+  await runDeployStage(stage, options, async () => {
     const deployConfigFile = determineDeployConfigFile(config.sourceBranchName, config.deployConfigFile);
     await runHappySoupStage(stage, config, deployConfigFile);
-
-    const durationSeconds = Number(((Date.now() - startTime) / 1000).toFixed(2));
-    logger.raw('\n' + '='.repeat(80));
-    logger.success(`Completed Stage: ${chalk.bold(stage)} in ${durationSeconds}s`);
-    logger.raw('='.repeat(80) + '\n');
-  } catch (error) {
-    const durationSeconds = Number(((Date.now() - startTime) / 1000).toFixed(2));
-    const job = (error as Error & { job?: string }).job;
-    logger.raw('\n' + '='.repeat(80));
-    logger.error(`Failed stage ${chalk.bold(stage)}${job ? ` for ${chalk.bold(job)}` : ''} after ${durationSeconds}s`);
-    logger.raw((error as Error).message);
-    logger.raw('='.repeat(80) + '\n');
-    throw error;
-  }
+  });
 }

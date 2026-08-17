@@ -18,6 +18,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { execa } from 'execa';
 import { readSfdxProject } from '@simplysf/simply-core';
+import { runSf } from './exec/sfCli.js';
 import { logger } from './logger.js';
 
 export type HasApexTestsOptions = {
@@ -114,7 +115,7 @@ export async function runApexTests(options: RunApexTestsOptions): Promise<void> 
   let execError: Error | undefined;
 
   try {
-    await execa('sf', args, { stdio: 'pipe' });
+    await runSf(args, { stdio: 'pipe' });
   } catch (e) {
     execError = e as Error;
   }
