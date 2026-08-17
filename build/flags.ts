@@ -27,34 +27,50 @@ export const devHubFlags = {
     summary: messages.getMessage('flags.dev-hub-name.summary'),
     multiple: true,
     required: true,
+    env: 'SIMPLY_CICD_DEV_HUB_NAME',
   }),
   'dev-hub-username': Flags.string({
     summary: messages.getMessage('flags.dev-hub-username.summary'),
     multiple: true,
     required: true,
+    env: 'SIMPLY_CICD_DEV_HUB_USERNAME',
   }),
   'dev-hub-client-id': Flags.string({
     summary: messages.getMessage('flags.dev-hub-client-id.summary'),
     multiple: true,
     required: true,
+    env: 'SIMPLY_CICD_DEV_HUB_CLIENT_ID',
   }),
   'dev-hub-instance-url': Flags.string({
     summary: messages.getMessage('flags.dev-hub-instance-url.summary'),
     multiple: true,
     required: true,
+    env: 'SIMPLY_CICD_DEV_HUB_INSTANCE_URL',
   }),
 };
 
 export const jwtKeyFileFlag = {
-  'jwt-key-file': Flags.string({ summary: messages.getMessage('flags.jwt-key-file.summary'), required: true }),
+  'jwt-key-file': Flags.string({
+    summary: messages.getMessage('flags.jwt-key-file.summary'),
+    required: true,
+    env: 'SIMPLY_CICD_JWT_KEY_FILE',
+  }),
 };
 
 export const debugFlag = {
-  debug: Flags.boolean({ summary: messages.getMessage('flags.debug.summary'), default: false }),
+  debug: Flags.boolean({
+    summary: messages.getMessage('flags.debug.summary'),
+    default: false,
+    env: 'SIMPLY_CICD_DEBUG',
+  }),
 };
 
 export const disabledFlag = {
-  disabled: Flags.boolean({ summary: messages.getMessage('flags.disabled.summary'), default: false }),
+  disabled: Flags.boolean({
+    summary: messages.getMessage('flags.disabled.summary'),
+    default: false,
+    env: 'SIMPLY_CICD_DISABLED',
+  }),
 };
 
 /** Flags shared by every build command that adds a temporary authenticated git remote to tag or push. */
@@ -62,35 +78,56 @@ export const gitOpsFlags = {
   'ci-commit-ref-name': Flags.string({
     summary: messages.getMessage('flags.ci-commit-ref-name.summary'),
     required: true,
+    env: 'SIMPLY_CICD_CI_COMMIT_REF_NAME',
   }),
-  'ci-pipeline-id': Flags.string({ summary: messages.getMessage('flags.ci-pipeline-id.summary'), required: true }),
-  'ci-project-path': Flags.string({ summary: messages.getMessage('flags.ci-project-path.summary'), required: true }),
+  'ci-pipeline-id': Flags.string({
+    summary: messages.getMessage('flags.ci-pipeline-id.summary'),
+    required: true,
+    env: 'SIMPLY_CICD_CI_PIPELINE_ID',
+  }),
+  'ci-project-path': Flags.string({
+    summary: messages.getMessage('flags.ci-project-path.summary'),
+    required: true,
+    env: 'SIMPLY_CICD_CI_PROJECT_PATH',
+  }),
   'project-access-token': Flags.string({
     summary: messages.getMessage('flags.project-access-token.summary'),
     required: true,
+    env: 'SIMPLY_CICD_PROJECT_ACCESS_TOKEN',
   }),
 };
 
 export const vcsFlags = {
-  'vcs-host': Flags.string({ summary: messages.getMessage('flags.vcs-host.summary'), default: 'gitlab.com' }),
+  'vcs-host': Flags.string({
+    summary: messages.getMessage('flags.vcs-host.summary'),
+    default: 'gitlab.com',
+    env: 'SIMPLY_CICD_VCS_HOST',
+  }),
   'vcs-provider': Flags.custom<VcsProviderKind>({ options: ['gitlab'] })({
     summary: messages.getMessage('flags.vcs-provider.summary'),
     default: 'gitlab',
+    env: 'SIMPLY_CICD_VCS_PROVIDER',
   }),
 };
 
 /** Flags shared by the (inherently GitLab-specific) `generate-flow-diff` and `generate-flexipage-diff` commands. */
 export const diffFlags = {
-  'ci-project-id': Flags.string({ summary: messages.getMessage('flags.diff-ci-project-id.summary'), required: true }),
+  'ci-project-id': Flags.string({
+    summary: messages.getMessage('flags.diff-ci-project-id.summary'),
+    required: true,
+    env: 'SIMPLY_CICD_CI_PROJECT_ID',
+  }),
   'ci-merge-request-iid': Flags.string({
     summary: messages.getMessage('flags.diff-ci-merge-request-iid.summary'),
     required: true,
+    env: 'SIMPLY_CICD_CI_MERGE_REQUEST_IID',
   }),
   from: Flags.string({ summary: messages.getMessage('flags.diff-from.summary'), required: true }),
   to: Flags.string({ summary: messages.getMessage('flags.diff-to.summary'), required: true }),
   'project-access-token': Flags.string({
     summary: messages.getMessage('flags.diff-project-access-token.summary'),
     required: true,
+    env: 'SIMPLY_CICD_PROJECT_ACCESS_TOKEN',
   }),
   out: Flags.string({ summary: messages.getMessage('flags.diff-out.summary') }),
 };
