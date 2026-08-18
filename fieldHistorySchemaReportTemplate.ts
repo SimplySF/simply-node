@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import Handlebars from 'handlebars';
+import { BADGE_CSS, COLLAPSIBLE_SECTION_CSS, createReportHandlebars, renderReportPage } from '@simplysf/simply-report';
 
 /** A single field-history-tracked field, as rendered in the report. */
 export type FieldHistorySchemaEntry = {
@@ -29,9 +29,7 @@ export type FieldHistorySchemaEntry = {
 /** Tracked fields, grouped by owning package (namespace/subscriber package name, or `'Local (Unpackaged)'`). */
 export type GroupedFieldHistorySchemaData = Map<string, FieldHistorySchemaEntry[]>;
 
-// Handlebars auto-escapes every `{{expression}}` (unlike `{{{expression}}}`, which is left raw),
-// so the template below doesn't need a hand-rolled escapeHtml() call.
-const handlebars = Handlebars.create();
+const handlebars = createReportHandlebars();
 
 const fieldRowSource = `
 <tr class="field-row">
@@ -57,39 +55,26 @@ const packageSectionSource = `
   </details>
 </div>`;
 
-const reportSource = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Field History Tracking Report</title>
-<style>
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1200px; margin: 0 auto; padding: 20px; background-color: #f4f7f6; }
-  h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
-  .package-section { background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; padding: 15px; }
-  details { margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; }
-  summary { padding: 12px; cursor: pointer; font-weight: bold; background: #eee; outline: none; }
-  summary:hover { background: #e0e0e0; }
-  .content { padding: 15px; background: white; }
-  table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; }
-  th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-  th { background-color: #f8f9fa; position: sticky; top: 0; }
-  tr:hover { background-color: #f5f5f5; }
-  .badge { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 0.8em; margin-right: 2px; color: white; background-color: #95a5a6; }
-  .badge-ns { background-color: #3498db; }
-  .search-container { margin-bottom: 20px; position: sticky; top: 10px; z-index: 100; }
-  input[type="text"] { padding: 12px; width: 100%; max-width: 400px; border: 2px solid #3498db; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-</style>
-</head>
-<body>
-  <h1>Field History Tracking Report</h1>
+const reportSource = renderReportPage({
+  title: 'Field History Tracking Report',
+  css: [
+    COLLAPSIBLE_SECTION_CSS,
+    '  table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; }',
+    '  th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }',
+    '  th { background-color: #f8f9fa; position: sticky; top: 0; }',
+    '  tr:hover { background-color: #f5f5f5; }',
+    BADGE_CSS,
+    '  .badge-ns { background-color: #3498db; }',
+    '  .search-container { margin-bottom: 20px; position: sticky; top: 10px; z-index: 100; }',
+    '  input[type="text"] { padding: 12px; width: 100%; max-width: 400px; border: 2px solid #3498db; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }',
+  ].join('\n'),
+  body: `  <h1>Field History Tracking Report</h1>
   <p>Org: <strong>{{username}}</strong> | Tracked Fields: {{fieldCount}} | Generated: {{reportDate}}</p>
   <div class="search-container">
     <input type="text" id="searchInput" onkeyup="filterFields()" placeholder="Search objects or fields across all packages...">
   </div>
-  {{#each packages}}{{> packageSection}}{{/each}}
-  <script>
-    function filterFields() {
+  {{#each packages}}{{> packageSection}}{{/each}}`,
+  script: `    function filterFields() {
       const input = document.getElementById("searchInput");
       const filter = input.value.toUpperCase();
       const sections = document.querySelectorAll(".package-section");
@@ -115,12 +100,9 @@ const reportSource = `<!DOCTYPE html>
           details.open = false;
         }
       });
-    }
-  </script>
-</body>
-</html>`;
+    }`,
+});
 
-handlebars.registerHelper('eq', (a: unknown, b: unknown): boolean => a === b);
 handlebars.registerPartial('fieldRow', fieldRowSource);
 handlebars.registerPartial('packageSection', packageSectionSource);
 
