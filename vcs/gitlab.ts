@@ -284,6 +284,11 @@ export class GitLabProvider implements VcsProvider {
     }
   }
 
+  // eslint-disable-next-line class-methods-use-this -- part of the VcsProvider instance contract; the path scheme needs no instance state
+  public buildChangeRequestUrl(projectUrl: string, changeRequestIid: string | number): string {
+    return `${projectUrl.replace(/\/+$/, '')}/-/merge_requests/${changeRequestIid}`;
+  }
+
   public buildAuthenticatedRemoteUrl(token: string, projectPath: string): string {
     return `https://oauth2:${token}@${this.host}/${projectPath}.git`;
   }

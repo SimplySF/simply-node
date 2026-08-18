@@ -170,6 +170,12 @@ export interface VcsProvider {
   /** Fetches project/repo-level CI variables. Returns an empty array if unreadable. */
   getProjectVariables(project: VcsProjectRef): Promise<VcsProjectVariable[]>;
 
+  /**
+   * Builds the browser URL for a merge/pull request, given the project's own web URL. The path
+   * differs per platform — GitLab nests it under `/-/merge_requests/`, GitHub under `/pull/`.
+   */
+  buildChangeRequestUrl(projectUrl: string, changeRequestIid: string | number): string;
+
   /** Builds a token-authenticated remote URL suitable for push/tag operations (e.g. `git remote add`). */
   buildAuthenticatedRemoteUrl(token: string, projectPath: string): string;
 

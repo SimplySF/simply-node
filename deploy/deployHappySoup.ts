@@ -21,7 +21,7 @@ import { addGitRemote } from '../git.js';
 import { logger } from '../logger.js';
 import { authenticateOrg } from '../sfAuth.js';
 import { createVcsProvider } from '../vcs/index.js';
-import type { VcsProviderKind } from '../vcs/index.js';
+import type { VcsProvider, VcsProviderKind } from '../vcs/index.js';
 import { runDeployStage } from './runDeployStage.js';
 import {
   determineDeployConfigFile,
@@ -120,13 +120,23 @@ export type TagDeploymentConfig = OrgAuthConfig & {
   vcsProvider: VcsProviderKind;
 };
 
-function buildDeploymentTagMessage(orgDomainPrefix: string, currentTime: string, config: TagDeploymentConfig): string {
+function buildDeploymentTagMessage(
+  orgDomainPrefix: string,
+  currentTime: string,
+  config: TagDeploymentConfig,
+  vcsProvider: VcsProvider,
+): string {
   let message = `deployed to org ${orgDomainPrefix} at ${currentTime}`;
   if (config.ciPipelineUrl) {
     message += ` Associated pipeline - ${config.ciPipelineUrl}`;
   }
   if (config.ciMergeRequestProjectUrl && config.ciMergeRequestIid) {
-    message += ` Associated merge request - ${config.ciMergeRequestProjectUrl}/-/merge_requests/${config.ciMergeRequestIid}`;
+    // Both the wording and the URL path differ per platform, so both come from the provider.
+    const changeRequestUrl = vcsProvider.buildChangeRequestUrl(
+      config.ciMergeRequestProjectUrl,
+      config.ciMergeRequestIid,
+    );
+    message += ` Associated ${vcsProvider.terminology.changeRequest} - ${changeRequestUrl}`;
   }
   return message;
 }
@@ -161,7 +171,7 @@ async function tagDeployment(config: TagDeploymentConfig): Promise<void> {
   }
 
   const currentTime = formatDeploymentTimestamp(new Date());
-  const gitMessage = buildDeploymentTagMessage(orgDomainPrefix, currentTime, config);
+  const gitMessage = buildDeploymentTagMessage(orgDomainPrefix, currentTime, config, vcsProvider);
   const tagName = `deployed--${orgDomainPrefix}-${currentTime}`;
 
   await execa('git', ['tag', '-m', gitMessage, tagName]);
