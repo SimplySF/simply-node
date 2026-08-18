@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import Handlebars from 'handlebars';
+import { createReportHandlebars, renderReportPage } from '@simplysf/simply-report';
 
 /** A single object-to-object relationship, as rendered in the report's relationship table. */
 export type SchemaRelationship = {
@@ -47,41 +47,34 @@ export type SchemaDiagramEdge = {
   font: { align: 'middle' };
 };
 
-const handlebars = Handlebars.create();
+const handlebars = createReportHandlebars();
 
-const schemaReportSource = `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Salesforce Schema Report</title>
-    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1400px; margin: 0 auto; padding: 20px; background-color: #f4f7f6; }
-        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
-        .tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; }
-        .tab { padding: 10px 20px; cursor: pointer; border: 1px solid transparent; border-bottom: none; border-radius: 4px 4px 0 0; font-weight: bold; }
-        .tab.active { background-color: white; border-color: #ddd; margin-bottom: -2px; color: #3498db; }
-        .tab-content { display: none; background: white; padding: 20px; border-radius: 0 0 8px 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .tab-content.active { display: block; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background-color: #f8f9fa; position: sticky; top: 0; }
-        tr:hover { background-color: #f1f1f1; }
-        #network { width: 100%; height: 80vh; background-color: #ffffff; border: 1px solid #eee; border-radius: 4px; }
-        .badge { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 0.8em; margin-right: 2px; color: white; background-color: #95a5a6; }
-        .badge-md { background-color: #e74c3c; }
-        .controls { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; }
-        input[type="text"] { padding: 8px; width: 100%; max-width: 300px; border: 1px solid #ddd; border-radius: 4px; }
-        .legend { display: flex; gap: 15px; font-size: 0.8em; margin-top: 10px; color: #666; }
-        .legend-item { display: flex; align-items: center; gap: 5px; }
-        .line { width: 20px; height: 2px; }
-        .solid { background-color: #333; }
-        .dashed { border-top: 2px dashed #333; }
-    </style>
-</head>
-<body>
-    <h1>Salesforce Schema Report</h1>
+const schemaReportSource = renderReportPage({
+  title: 'Salesforce Schema Report',
+  maxWidth: '1400px',
+  head: '    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>',
+  css: [
+    '    .tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; }',
+    '    .tab { padding: 10px 20px; cursor: pointer; border: 1px solid transparent; border-bottom: none; border-radius: 4px 4px 0 0; font-weight: bold; }',
+    '    .tab.active { background-color: white; border-color: #ddd; margin-bottom: -2px; color: #3498db; }',
+    '    .tab-content { display: none; background: white; padding: 20px; border-radius: 0 0 8px 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }',
+    '    .tab-content.active { display: block; }',
+    '    table { width: 100%; border-collapse: collapse; font-size: 0.9em; }',
+    '    th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }',
+    '    th { background-color: #f8f9fa; position: sticky; top: 0; }',
+    '    tr:hover { background-color: #f1f1f1; }',
+    '    #network { width: 100%; height: 80vh; background-color: #ffffff; border: 1px solid #eee; border-radius: 4px; }',
+    '    .badge { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 0.8em; margin-right: 2px; color: white; background-color: #95a5a6; }',
+    '    .badge-md { background-color: #e74c3c; }',
+    '    .controls { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; }',
+    '    input[type="text"] { padding: 8px; width: 100%; max-width: 300px; border: 1px solid #ddd; border-radius: 4px; }',
+    '    .legend { display: flex; gap: 15px; font-size: 0.8em; margin-top: 10px; color: #666; }',
+    '    .legend-item { display: flex; align-items: center; gap: 5px; }',
+    '    .line { width: 20px; height: 2px; }',
+    '    .solid { background-color: #333; }',
+    '    .dashed { border-top: 2px dashed #333; }',
+  ].join('\n'),
+  body: `    <h1>Salesforce Schema Report</h1>
     <p>Org: <strong>{{username}}</strong> | Objects: {{objectsCount}} | Relationships: {{relationshipsCount}}</p>
 
     <div class="tabs">
@@ -278,10 +271,8 @@ const schemaReportSource = `<!DOCTYPE html>
                 tr[i].style.display = text.toUpperCase().indexOf(filter) > -1 ? "" : "none";
             }
         }
-    </script>
-</body>
-</html>
-`;
+    </script>`,
+});
 
 const renderSchemaReport = handlebars.compile(schemaReportSource);
 
