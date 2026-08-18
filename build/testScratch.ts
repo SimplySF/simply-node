@@ -29,9 +29,9 @@ export type RunScratchApexTestsOptions = {
 /**
  * Authenticates to the scratch org and runs its Apex tests.
  *
- * The original coi-cicd `--disable-apex-tests` flag was checked against the wrong option name
- * internally (it re-checked the generic `--disabled` flag), making it a no-op. Here it actually
- * gates the test run.
+ * The original `--disable-apex-tests` flag was checked against the wrong option name internally
+ * (it re-checked the generic `--disabled` flag), making it a no-op. Here it actually gates the
+ * test run.
  */
 export async function runScratchApexTests(options: RunScratchApexTestsOptions): Promise<void> {
   if (options.disableApexTests) {
