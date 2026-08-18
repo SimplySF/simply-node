@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import Handlebars from 'handlebars';
+import { COLLAPSIBLE_SECTION_CSS, createReportHandlebars, renderReportPage } from '@simplysf/simply-report';
 
 /** A queried `ObjectPermissions` record, as attached to a permission set or group in the report. */
 export type ObjectPermissionEntry = {
@@ -62,9 +62,7 @@ export type GroupedPermissionsData = Map<
   { permissionSets: PermissionSetReportEntry[]; permissionSetGroups: PermissionSetGroupReportEntry[] }
 >;
 
-// Handlebars auto-escapes every `{{expression}}` (unlike `{{{expression}}}`, which is left raw),
-// so none of the templates below need a hand-rolled escapeHtml() call.
-const handlebars = Handlebars.create();
+const handlebars = createReportHandlebars();
 
 // `Field` is the fully-qualified `Object.Field` name; the report only displays the field half.
 handlebars.registerHelper('fieldName', (field: string): string => field.split('.')[1] ?? field);
@@ -110,27 +108,15 @@ const permissionSetGroupSource = `
   </div>
 </details>`;
 
-const reportSource = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Permissions Report</title>
-<style>
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1200px; margin: 0 auto; padding: 20px; background-color: #f4f7f6; }
-  h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
-  .package-section { background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; padding: 15px; }
-  details { margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; }
-  summary { padding: 12px; cursor: pointer; font-weight: bold; background: #eee; outline: none; }
-  summary:hover { background: #e0e0e0; }
-  .content { padding: 15px; background: white; }
-  table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 15px; font-size: 0.9em; }
-  th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-  th { background-color: #f8f9fa; }
-</style>
-</head>
-<body>
-  <h1>Permissions Report</h1>
+const reportSource = renderReportPage({
+  title: 'Permissions Report',
+  css: [
+    COLLAPSIBLE_SECTION_CSS,
+    '  table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 15px; font-size: 0.9em; }',
+    '  th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }',
+    '  th { background-color: #f8f9fa; }',
+  ].join('\n'),
+  body: `  <h1>Permissions Report</h1>
   <p>Org: <strong>{{username}}</strong> | Generated: {{reportDate}}</p>
   {{#each packages}}
   <div class="package-section" data-package="{{name}}">
@@ -140,9 +126,8 @@ const reportSource = `<!DOCTYPE html>
     <h3>Permission Set Groups ({{permissionSetGroups.length}})</h3>
     {{#each permissionSetGroups}}{{> permissionSetGroup}}{{/each}}
   </div>
-  {{/each}}
-</body>
-</html>`;
+  {{/each}}`,
+});
 
 handlebars.registerPartial('objectPermsTable', objectPermsTableSource);
 handlebars.registerPartial('fieldPermsTable', fieldPermsTableSource);
