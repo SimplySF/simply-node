@@ -21,7 +21,7 @@ import { runSf } from '../exec/sfCli.js';
 import { addGitRemote } from '../git.js';
 import { logger } from '../logger.js';
 import { authenticateOrg } from '../sfAuth.js';
-import { getVcsProvider, type VcsProviderKind } from '../vcs/index.js';
+import { createVcsProvider, type VcsProviderKind } from '../vcs/index.js';
 
 type PackageVersionCreateReport = { Status: string; Error?: string; SubscriberPackageVersionId?: string };
 
@@ -143,16 +143,14 @@ export async function createPackageVersion(options: CreatePackageVersionOptions)
   }
 
   logger.info('Creating new package version...');
-  const vcsProvider = getVcsProvider(
-    options.vcsProvider,
-    `https://${options.vcsHost}/api/v4`,
-    options.projectAccessToken,
-  );
+  const vcsProvider = createVcsProvider(options.vcsProvider, {
+    host: options.vcsHost,
+    token: options.projectAccessToken,
+  });
   const remoteAlias = await addGitRemote(
     options.ciPipelineId,
     options.projectAccessToken,
     options.ciProjectPath,
-    options.vcsHost,
     vcsProvider,
   );
 

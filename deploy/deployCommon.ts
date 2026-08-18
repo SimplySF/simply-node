@@ -28,7 +28,7 @@ import { installDeploymentPlugins } from '../sfPlugins.js';
 import { deployConfigSchema, type DeployConfig } from '../schemas/deployConfig.js';
 import { deployProgressSchema, type DeployProgress } from '../schemas/deployProgress.js';
 import { deployRulesSchema, type DeployRules } from '../schemas/deployRules.js';
-import { getVcsProvider } from '../vcs/index.js';
+import { createVcsProvider } from '../vcs/index.js';
 import type { VcsProvider, VcsProviderKind } from '../vcs/index.js';
 
 export type OrgAuthConfig = {
@@ -436,7 +436,7 @@ async function runDeploymentJob(
         ? process.cwd()
         : await cloneRepo(
             { name: deployment.name, slug: deployment.slug ?? '', ref: deployment.ref },
-            { ciJobToken: config.ciJobToken, vcsHost: config.vcsHost, vcsProvider },
+            { ciJobToken: config.ciJobToken, vcsProvider },
           );
 
     await installDeploymentPlugins(config.debug, repoDir);
@@ -510,7 +510,7 @@ export async function runDeploymentSteps(config: RunDeploymentStepsConfig): Prom
     return { deployProgress: progress };
   }
 
-  const vcsProvider = getVcsProvider(config.vcsProvider, `https://${config.vcsHost}/api/v4`, config.ciJobToken);
+  const vcsProvider = createVcsProvider(config.vcsProvider, { host: config.vcsHost, token: config.ciJobToken });
 
   for (const deployment of deploymentsToRun) {
     // eslint-disable-next-line no-await-in-loop

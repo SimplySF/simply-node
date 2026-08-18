@@ -14,7 +14,18 @@
  * limitations under the License.
  */
 
-import type { VcsBranch, VcsCommit, VcsMergeRequest, VcsProject, VcsProjectVariable, VcsProvider } from './types.js';
+import type {
+  VcsBranch,
+  VcsCiContext,
+  VcsCommit,
+  VcsMergeRequest,
+  VcsProject,
+  VcsProjectRef,
+  VcsProjectVariable,
+  VcsProvider,
+  VcsProviderOptions,
+  VcsTerminology,
+} from './types.js';
 
 type GitLabProjectResponse = {
   id: number;
@@ -45,6 +56,7 @@ type GitLabProjectVariableResponse = {
 function normalizeProject(project: GitLabProjectResponse): VcsProject {
   return {
     id: project.id,
+    key: String(project.id),
     name: project.name,
     pathWithNamespace: project.path_with_namespace,
     defaultBranch: project.default_branch,
@@ -68,23 +80,51 @@ function normalizeMergeRequest(mergeRequest: GitLabMergeRequestResponse): VcsMer
   };
 }
 
+/** GitLab addresses projects by numeric ID or URL-encoded path; both arrive here already usable. */
+function projectSegment(project: VcsProjectRef): string {
+  const key = typeof project === 'object' ? project.key : String(project);
+  return encodeURIComponent(key);
+}
+
 /** A `VcsProvider` implementation for GitLab, backed by the GitLab REST API v4. */
 export class GitLabProvider implements VcsProvider {
+  public readonly kind = 'gitlab' as const;
+
+  public readonly terminology: VcsTerminology = {
+    changeRequest: 'merge request',
+    changeRequestShort: 'MR',
+    projectVariable: 'GitLab CI/CD variable',
+  };
+
+  public readonly host: string;
+
   private readonly apiUrl: string;
   private readonly token: string;
 
-  public constructor(apiUrl: string, token: string) {
-    if (!apiUrl) {
-      throw new Error('GitLab API URL is required.');
+  public constructor(options: VcsProviderOptions) {
+    const { host, token, apiUrl } = options;
+    if (!host && !apiUrl) {
+      throw new Error('GitLab host is required.');
     }
     if (!token) {
       throw new Error('GitLab access token is required.');
     }
-    this.apiUrl = apiUrl.replace(/\/+$/, '');
+    this.apiUrl = (apiUrl ?? `https://${host}/api/v4`).replace(/\/+$/, '');
+    // When only an API URL is supplied (the dependabot path), recover the host from it so the
+    // remote-URL builders stay usable.
+    this.host = host || new URL(this.apiUrl).host;
     this.token = token;
   }
 
-  public async getGroupProjects(groupId: string | number): Promise<VcsProject[]> {
+  // eslint-disable-next-line class-methods-use-this -- part of the VcsProvider instance contract; GitLab's CI variables are process-global
+  public getCiContext(): VcsCiContext {
+    return {
+      projectPath: process.env.CI_PROJECT_PATH,
+      projectId: process.env.CI_PROJECT_ID,
+    };
+  }
+
+  public async listProjects(groupId: string | number): Promise<VcsProject[]> {
     let projects: GitLabProjectResponse[] = [];
     let page = 1;
     let hasMore = true;
@@ -121,15 +161,17 @@ export class GitLabProvider implements VcsProvider {
     return projects.map(normalizeProject);
   }
 
-  public async getFileContent(projectId: string | number, filePath: string, ref: string): Promise<string> {
+  public async getFileContent(project: VcsProjectRef, filePath: string, ref: string): Promise<string> {
     const encodedFilePath = encodeURIComponent(filePath);
-    const endpoint = `/projects/${projectId}/repository/files/${encodedFilePath}/raw?ref=${encodeURIComponent(ref)}`;
+    const endpoint = `/projects/${projectSegment(project)}/repository/files/${encodedFilePath}/raw?ref=${encodeURIComponent(
+      ref,
+    )}`;
     return this.getRawText(endpoint);
   }
 
-  public async branchExists(projectId: string | number, branchName: string): Promise<boolean> {
+  public async branchExists(project: VcsProjectRef, branchName: string): Promise<boolean> {
     const encodedBranch = encodeURIComponent(branchName);
-    const endpoint = `/projects/${projectId}/repository/branches/${encodedBranch}`;
+    const endpoint = `/projects/${projectSegment(project)}/repository/branches/${encodedBranch}`;
     try {
       await this.request(endpoint, { method: 'GET' });
       return true;
@@ -142,8 +184,8 @@ export class GitLabProvider implements VcsProvider {
     }
   }
 
-  public async createBranch(projectId: string | number, branchName: string, ref: string): Promise<VcsBranch> {
-    const endpoint = `/projects/${projectId}/repository/branches`;
+  public async createBranch(project: VcsProjectRef, branchName: string, ref: string): Promise<VcsBranch> {
+    const endpoint = `/projects/${projectSegment(project)}/repository/branches`;
     const response = await this.request(endpoint, {
       method: 'POST',
       body: { branch: branchName, ref },
@@ -153,13 +195,13 @@ export class GitLabProvider implements VcsProvider {
   }
 
   public async commitFile(
-    projectId: string | number,
+    project: VcsProjectRef,
     branchName: string,
     commitMessage: string,
     filePath: string,
     content: string,
   ): Promise<VcsCommit> {
-    const endpoint = `/projects/${projectId}/repository/commits`;
+    const endpoint = `/projects/${projectSegment(project)}/repository/commits`;
     /* eslint-disable camelcase -- GitLab API field names */
     const response = await this.request(endpoint, {
       method: 'POST',
@@ -175,11 +217,13 @@ export class GitLabProvider implements VcsProvider {
   }
 
   public async findOpenMergeRequest(
-    projectId: string | number,
+    project: VcsProjectRef,
     sourceBranch: string,
     targetBranch: string,
   ): Promise<VcsMergeRequest | undefined> {
-    const endpoint = `/projects/${projectId}/merge_requests?state=opened&source_branch=${encodeURIComponent(
+    const endpoint = `/projects/${projectSegment(
+      project,
+    )}/merge_requests?state=opened&source_branch=${encodeURIComponent(
       sourceBranch,
     )}&target_branch=${encodeURIComponent(targetBranch)}`;
     const mergeRequests = (await this.getJson(endpoint)) as GitLabMergeRequestResponse[];
@@ -187,14 +231,14 @@ export class GitLabProvider implements VcsProvider {
   }
 
   public async createMergeRequest(
-    projectId: string | number,
+    project: VcsProjectRef,
     sourceBranch: string,
     targetBranch: string,
     title: string,
     description: string,
-    labels?: string,
+    labels?: string[],
   ): Promise<VcsMergeRequest> {
-    const endpoint = `/projects/${projectId}/merge_requests`;
+    const endpoint = `/projects/${projectSegment(project)}/merge_requests`;
     /* eslint-disable camelcase -- GitLab API field names */
     const body: Record<string, unknown> = {
       source_branch: sourceBranch,
@@ -204,32 +248,35 @@ export class GitLabProvider implements VcsProvider {
       remove_source_branch: true,
     };
     /* eslint-enable camelcase */
-    if (labels) {
-      body.labels = labels;
+    if (labels?.length) {
+      body.labels = labels.join(',');
     }
     const response = await this.request(endpoint, { method: 'POST', body });
     return normalizeMergeRequest((await response.json()) as GitLabMergeRequestResponse);
   }
 
   public async updateMergeRequest(
-    projectId: string | number,
-    mergeRequestId: number,
+    project: VcsProjectRef,
+    mergeRequest: VcsMergeRequest,
     title: string,
     description: string,
-    labels?: string,
+    labels?: string[],
   ): Promise<VcsMergeRequest> {
-    const endpoint = `/projects/${projectId}/merge_requests/${mergeRequestId}`;
+    // GitLab's per-merge-request endpoints take the project-scoped `iid`, not the global `id`.
+    const endpoint = `/projects/${projectSegment(project)}/merge_requests/${mergeRequest.iid}`;
     const body: Record<string, unknown> = { title, description };
-    if (labels) {
-      body.labels = labels;
+    if (labels?.length) {
+      body.labels = labels.join(',');
     }
     const response = await this.request(endpoint, { method: 'PUT', body });
     return normalizeMergeRequest((await response.json()) as GitLabMergeRequestResponse);
   }
 
-  public async getProjectVariables(projectId: string | number): Promise<VcsProjectVariable[]> {
+  public async getProjectVariables(project: VcsProjectRef): Promise<VcsProjectVariable[]> {
     try {
-      const variables = (await this.getJson(`/projects/${projectId}/variables`)) as GitLabProjectVariableResponse[];
+      const variables = (await this.getJson(
+        `/projects/${projectSegment(project)}/variables`,
+      )) as GitLabProjectVariableResponse[];
       return variables.map((variable) => ({ key: variable.key, value: variable.value, raw: variable }));
     } catch {
       // If we don't have permission to read variables, treat it as "no variables".
@@ -237,14 +284,12 @@ export class GitLabProvider implements VcsProvider {
     }
   }
 
-  // eslint-disable-next-line class-methods-use-this -- part of the VcsProvider instance contract; GitLab's URL scheme needs no instance state
-  public buildAuthenticatedRemoteUrl(host: string, token: string, projectPath: string): string {
-    return `https://oauth2:${token}@${host}/${projectPath}.git`;
+  public buildAuthenticatedRemoteUrl(token: string, projectPath: string): string {
+    return `https://oauth2:${token}@${this.host}/${projectPath}.git`;
   }
 
-  // eslint-disable-next-line class-methods-use-this -- part of the VcsProvider instance contract; GitLab's URL scheme needs no instance state
-  public buildCiCloneUrl(host: string, ciJobToken: string, projectPath: string): string {
-    return `https://gitlab-ci-token:${ciJobToken}@${host}/${projectPath}.git`;
+  public buildCiCloneUrl(ciJobToken: string, projectPath: string): string {
+    return `https://gitlab-ci-token:${ciJobToken}@${this.host}/${projectPath}.git`;
   }
 
   private async request(

@@ -15,24 +15,25 @@
  */
 
 import { GitLabProvider } from './gitlab.js';
-import type { VcsProvider, VcsProviderKind } from './types.js';
+import { registerVcsProvider } from './registry.js';
 
-/** Builds a `VcsProvider` for the given platform. Only `gitlab` is implemented today. */
-export function getVcsProvider(kind: VcsProviderKind, apiUrl: string, token: string): VcsProvider {
-  switch (kind) {
-    case 'gitlab':
-      return new GitLabProvider(apiUrl, token);
-    default:
-      throw new Error(`VCS provider "${kind as string}" is not yet supported.`);
-  }
-}
+registerVcsProvider('gitlab', (options) => new GitLabProvider(options));
+
+export { createVcsProvider, listVcsProviderKinds, registerVcsProvider } from './registry.js';
+
+export { GitLabProvider } from './gitlab.js';
 
 export type {
   VcsBranch,
+  VcsCiContext,
   VcsCommit,
   VcsMergeRequest,
   VcsProject,
+  VcsProjectRef,
   VcsProjectVariable,
   VcsProvider,
+  VcsProviderFactory,
   VcsProviderKind,
+  VcsProviderOptions,
+  VcsTerminology,
 } from './types.js';

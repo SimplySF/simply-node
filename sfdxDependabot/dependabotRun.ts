@@ -134,6 +134,18 @@ export function filterProject(project: VcsProject, options: FilterProjectOptions
   return { keep: true };
 }
 
+/** Splits the comma-separated label option into the label list the VCS provider expects. */
+export function splitLabels(labels: string | undefined): string[] | undefined {
+  if (!labels?.trim()) {
+    return undefined;
+  }
+  const parsed = labels
+    .split(',')
+    .map((label) => label.trim())
+    .filter(Boolean);
+  return parsed.length > 0 ? parsed : undefined;
+}
+
 export type GenerateMrDescriptionInput = {
   packageName: string;
   oldVersions: string[];
@@ -245,7 +257,7 @@ export async function discoverEligibleProjects(
   logger.info(`Discovering projects in GitLab group/path: ${rootGroupId}...`);
   let allProjects: VcsProject[];
   try {
-    allProjects = await vcsProvider.getGroupProjects(rootGroupId);
+    allProjects = await vcsProvider.listProjects(rootGroupId);
   } catch (error) {
     throw new Error(`Failed to access GitLab root group "${rootGroupId}": ${(error as Error).message}`);
   }
@@ -299,7 +311,7 @@ export async function processProject(
   let sfdxProjectContent: string;
   try {
     sfdxProjectContent = await vcsProvider.getFileContent(
-      project.id,
+      project,
       'sfdx-project.json',
       project.defaultBranch ?? 'HEAD',
     );
@@ -314,7 +326,7 @@ export async function processProject(
 
   let isExplicitlyEnabled = false;
   try {
-    const variables = await vcsProvider.getProjectVariables(project.id);
+    const variables = await vcsProvider.getProjectVariables(project);
     const enabledVar = variables.find((variable) => variable.key === 'SFDX_DEPENDABOT_ENABLED');
     if (enabledVar?.value === 'TRUE') {
       isExplicitlyEnabled = true;
@@ -393,10 +405,10 @@ export async function applyProjectUpdate(
   const projectPath = project.pathWithNamespace;
   const defaultBranch = project.defaultBranch ?? 'HEAD';
 
-  const branchAlreadyExists = await vcsProvider.branchExists(project.id, branchName);
+  const branchAlreadyExists = await vcsProvider.branchExists(project, branchName);
   if (!branchAlreadyExists) {
     logger.info(`Creating branch ${branchName} in ${projectPath}...`);
-    await vcsProvider.createBranch(project.id, branchName, defaultBranch);
+    await vcsProvider.createBranch(project, branchName, defaultBranch);
   } else {
     logger.info(`Branch ${branchName} already exists in ${projectPath}.`);
   }
@@ -404,7 +416,7 @@ export async function applyProjectUpdate(
   let branchNeedsCommit = true;
   if (branchAlreadyExists) {
     try {
-      const branchContent = await vcsProvider.getFileContent(project.id, 'sfdx-project.json', branchName);
+      const branchContent = await vcsProvider.getFileContent(project, 'sfdx-project.json', branchName);
       const branchUpdateCheck = updateSfdxProject(
         branchContent,
         packageName,
@@ -423,17 +435,11 @@ export async function applyProjectUpdate(
   if (branchNeedsCommit) {
     logger.info(`Committing updated sfdx-project.json to ${branchName} in ${projectPath}...`);
     const commitMessage = `chore: bump ${packageName} dependency to ${packageVersion}`;
-    await vcsProvider.commitFile(
-      project.id,
-      branchName,
-      commitMessage,
-      'sfdx-project.json',
-      updateResult.newJsonContent,
-    );
+    await vcsProvider.commitFile(project, branchName, commitMessage, 'sfdx-project.json', updateResult.newJsonContent);
   }
 
   logger.info(`Checking for existing open MR for branch ${branchName} in ${projectPath}...`);
-  const existingMr = await vcsProvider.findOpenMergeRequest(project.id, branchName, defaultBranch);
+  const existingMr = await vcsProvider.findOpenMergeRequest(project, branchName, defaultBranch);
 
   const mrTitle = `chore: bump ${packageName} to ${packageVersion}`;
   const mrDescription = generateMrDescription({
@@ -448,11 +454,11 @@ export async function applyProjectUpdate(
       `Found existing open MR for ${projectPath}: ${existingMr.webUrl ?? 'unknown URL'}. Updating MR title, description, and labels...`,
     );
     const updatedMr = await vcsProvider.updateMergeRequest(
-      project.id,
-      existingMr.iid,
+      project,
+      existingMr,
       mrTitle,
       mrDescription,
-      options.mrLabels,
+      splitLabels(options.mrLabels),
     );
     logger.success(`Successfully updated Merge Request in ${projectPath}: ${updatedMr.webUrl ?? 'unknown URL'}`);
     counters.mergeRequestsAlreadyOpen++;
@@ -460,12 +466,12 @@ export async function applyProjectUpdate(
   } else {
     logger.info(`Creating new MR for branch ${branchName} in ${projectPath}...`);
     const createdMr = await vcsProvider.createMergeRequest(
-      project.id,
+      project,
       branchName,
       defaultBranch,
       mrTitle,
       mrDescription,
-      options.mrLabels,
+      splitLabels(options.mrLabels),
     );
     logger.success(`Successfully created Merge Request in ${projectPath}: ${createdMr.webUrl ?? 'unknown URL'}`);
     counters.mergeRequestsCreated++;

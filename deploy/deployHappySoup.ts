@@ -20,7 +20,7 @@ import { runSf } from '../exec/sfCli.js';
 import { addGitRemote } from '../git.js';
 import { logger } from '../logger.js';
 import { authenticateOrg } from '../sfAuth.js';
-import { getVcsProvider } from '../vcs/index.js';
+import { createVcsProvider } from '../vcs/index.js';
 import type { VcsProviderKind } from '../vcs/index.js';
 import { runDeployStage } from './runDeployStage.js';
 import {
@@ -84,8 +84,8 @@ async function deploymentCloseOut(config: DeploymentCloseOutConfig): Promise<voi
     vcsProvider: vcsProviderKind,
   } = config;
 
-  const vcsProvider = getVcsProvider(vcsProviderKind, `https://${vcsHost}/api/v4`, projectAccessToken);
-  const remoteAlias = await addGitRemote(ciPipelineId, projectAccessToken, ciProjectPath, vcsHost, vcsProvider);
+  const vcsProvider = createVcsProvider(vcsProviderKind, { host: vcsHost, token: projectAccessToken });
+  const remoteAlias = await addGitRemote(ciPipelineId, projectAccessToken, ciProjectPath, vcsProvider);
   await execa('git', ['fetch']);
   await execa('git', ['switch', ciCommitRefName]);
 
@@ -148,8 +148,8 @@ async function tagDeployment(config: TagDeploymentConfig): Promise<void> {
     vcsProvider: vcsProviderKind,
   } = config;
 
-  const vcsProvider = getVcsProvider(vcsProviderKind, `https://${vcsHost}/api/v4`, projectAccessToken);
-  const remoteAlias = await addGitRemote(ciPipelineId, projectAccessToken, ciProjectPath, vcsHost, vcsProvider);
+  const vcsProvider = createVcsProvider(vcsProviderKind, { host: vcsHost, token: projectAccessToken });
+  const remoteAlias = await addGitRemote(ciPipelineId, projectAccessToken, ciProjectPath, vcsProvider);
   await authenticateOrg({ alias, authUrl, clientId, instanceUrl, jwtKeyFile, username, debug });
 
   const { stdout: orgDisplay } = await runSf(['org', 'display', '--target-org', alias ?? '', '--json']);

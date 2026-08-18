@@ -19,7 +19,7 @@ import { execa } from 'execa';
 import { getDefaultPackageDirectory, isSubscriberPackageVersionId, readSfdxProject } from '@simplysf/simply-core';
 import { addGitRemote } from '../git.js';
 import { logger } from '../logger.js';
-import { getVcsProvider, type VcsProviderKind } from '../vcs/index.js';
+import { createVcsProvider, type VcsProviderKind } from '../vcs/index.js';
 import { buildTagMatchPattern } from './determinePackageChanges.js';
 
 async function resolveTagMatchPattern(): Promise<string> {
@@ -106,16 +106,14 @@ export async function createFallbackTag(options: CreateFallbackTagOptions): Prom
   const nextTag = computeNextTag(lastTag);
   logger.info(`Next fallback tag determined: ${nextTag}`);
 
-  const vcsProvider = getVcsProvider(
-    options.vcsProvider,
-    `https://${options.vcsHost}/api/v4`,
-    options.projectAccessToken,
-  );
+  const vcsProvider = createVcsProvider(options.vcsProvider, {
+    host: options.vcsHost,
+    token: options.projectAccessToken,
+  });
   const remoteAlias = await addGitRemote(
     options.ciPipelineId,
     options.projectAccessToken,
     options.ciProjectPath,
-    options.vcsHost,
     vcsProvider,
   );
 

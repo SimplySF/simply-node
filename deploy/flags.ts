@@ -16,7 +16,7 @@
 
 import { Messages } from '@salesforce/core';
 import { Flags } from '@salesforce/sf-plugins-core';
-import type { VcsProviderKind } from '../vcs/index.js';
+import { listVcsProviderKinds, type VcsProviderKind } from '../vcs/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('@simplysf/simply-cicd', 'simply.cicd.deploy');
@@ -52,7 +52,7 @@ export const vcsFlags = {
     default: 'gitlab.com',
     env: 'SIMPLY_CICD_VCS_HOST',
   }),
-  'vcs-provider': Flags.custom<VcsProviderKind>({ options: ['gitlab'] })({
+  'vcs-provider': Flags.custom<VcsProviderKind>({ options: listVcsProviderKinds() })({
     summary: messages.getMessage('flags.vcs-provider.summary'),
     default: 'gitlab',
     env: 'SIMPLY_CICD_VCS_PROVIDER',

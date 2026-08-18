@@ -29,7 +29,6 @@ export type Deployment = {
 
 export type CloneRepoOptions = {
   ciJobToken: string;
-  vcsHost: string;
   vcsProvider: VcsProvider;
 };
 
@@ -66,7 +65,7 @@ export async function cloneRepo(deployment: Deployment, options: CloneRepoOption
     }
   }
 
-  const repoUrl = options.vcsProvider.buildCiCloneUrl(options.vcsHost, options.ciJobToken, slug);
+  const repoUrl = options.vcsProvider.buildCiCloneUrl(options.ciJobToken, slug);
   const targetDir = path.join(process.cwd(), name);
   await fs.rm(targetDir, { recursive: true, force: true });
 
@@ -91,14 +90,13 @@ export async function addGitRemote(
   ciPipelineId: string,
   accessToken: string,
   ciProjectPath: string,
-  vcsHost: string,
   vcsProvider: VcsProvider,
 ): Promise<string> {
   if (!accessToken) {
     throw new Error('accessToken is required for Git remote operations.');
   }
   const remoteAlias = `GITREMOTE${ciPipelineId}`;
-  const remoteUrl = vcsProvider.buildAuthenticatedRemoteUrl(vcsHost, accessToken, ciProjectPath);
+  const remoteUrl = vcsProvider.buildAuthenticatedRemoteUrl(accessToken, ciProjectPath);
   await execa('git', ['remote', 'add', remoteAlias, remoteUrl]);
   return remoteAlias;
 }

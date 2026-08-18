@@ -15,11 +15,16 @@
  */
 
 /** The set of source-control-hosting platforms `simply-cicd` knows how to talk to. */
-export type VcsProviderKind = 'gitlab';
+export type VcsProviderKind = 'gitlab' | 'github';
 
 /** A repository/project, normalized across VCS platforms. */
 export type VcsProject = {
   id: number;
+  /**
+   * How this provider addresses the project in its own API: the numeric ID for GitLab,
+   * `owner/repo` for GitHub. Prefer this over `id` when passing a project to provider methods.
+   */
+  key: string;
   name: string;
   pathWithNamespace: string;
   defaultBranch?: string;
@@ -29,6 +34,12 @@ export type VcsProject = {
   /** The raw, platform-specific API response this was derived from. */
   raw: unknown;
 };
+
+/**
+ * A project as accepted by `VcsProvider` methods: either a normalized `VcsProject` or a bare
+ * provider-native key (a GitLab numeric ID, a GitHub `owner/repo`).
+ */
+export type VcsProjectRef = string | number | Pick<VcsProject, 'key'>;
 
 /** A branch, normalized across VCS platforms. */
 export type VcsBranch = {
@@ -42,7 +53,10 @@ export type VcsCommit = {
   raw: unknown;
 };
 
-/** A merge/pull request, normalized across VCS platforms. */
+/**
+ * A merge/pull request, normalized across VCS platforms. `iid` is the number the platform shows
+ * users and accepts in its per-request endpoints — GitLab's `iid`, GitHub's PR `number`.
+ */
 export type VcsMergeRequest = {
   id: number;
   iid: number;
@@ -62,25 +76,62 @@ export type VcsProjectVariable = {
 };
 
 /**
- * A source-control-hosting platform client, abstracted so that platforms beyond GitLab (e.g.
- * GitHub) can be added later without changing any command that consumes a `VcsProvider`.
+ * What a platform calls a proposed change, for user-facing log and message text. GitLab says
+ * "merge request"/"MR"; GitHub says "pull request"/"PR".
+ */
+export type VcsTerminology = {
+  changeRequest: string;
+  changeRequestShort: string;
+  /** What the platform calls the repo-scoped CI variables read by `getProjectVariables`. */
+  projectVariable: string;
+};
+
+/** The upstream repository identity, as read from the platform's own CI environment variables. */
+export type VcsCiContext = {
+  projectPath?: string;
+  projectId?: string;
+};
+
+/** Everything a provider needs to talk to a specific instance of its platform. */
+export type VcsProviderOptions = {
+  /** The instance hostname, e.g. `gitlab.com` or `github.com`. */
+  host: string;
+  token: string;
+  /** Overrides the provider's derived API base URL. Rarely needed outside self-hosted instances. */
+  apiUrl?: string;
+};
+
+/**
+ * A source-control-hosting platform client, abstracted so that commands never encode one
+ * platform's API shape, URL scheme, or vocabulary.
  */
 export interface VcsProvider {
-  /** Lists all projects/repos under a group/org, including subgroups, paginating as needed. */
-  getGroupProjects(groupId: string | number): Promise<VcsProject[]>;
+  readonly kind: VcsProviderKind;
+
+  /** The platform's vocabulary, for composing user-facing text. */
+  readonly terminology: VcsTerminology;
+
+  /** The instance hostname this provider was built for. */
+  readonly host: string;
+
+  /** Reads the upstream repository's identity from this platform's CI environment variables. */
+  getCiContext(): VcsCiContext;
+
+  /** Lists all projects/repos under a group/org, including subgroups where the platform has them. */
+  listProjects(groupId: string | number): Promise<VcsProject[]>;
 
   /** Fetches the raw content of a file from a project at a given ref. */
-  getFileContent(projectId: string | number, filePath: string, ref: string): Promise<string>;
+  getFileContent(project: VcsProjectRef, filePath: string, ref: string): Promise<string>;
 
   /** Returns whether a branch exists in a project. */
-  branchExists(projectId: string | number, branchName: string): Promise<boolean>;
+  branchExists(project: VcsProjectRef, branchName: string): Promise<boolean>;
 
   /** Creates a branch from a reference point (usually the project's default branch). */
-  createBranch(projectId: string | number, branchName: string, ref: string): Promise<VcsBranch>;
+  createBranch(project: VcsProjectRef, branchName: string, ref: string): Promise<VcsBranch>;
 
   /** Commits new content for a single file to a branch. */
   commitFile(
-    projectId: string | number,
+    project: VcsProjectRef,
     branchName: string,
     commitMessage: string,
     filePath: string,
@@ -89,36 +140,39 @@ export interface VcsProvider {
 
   /** Finds an existing open merge/pull request with the given source and target branch, if any. */
   findOpenMergeRequest(
-    projectId: string | number,
+    project: VcsProjectRef,
     sourceBranch: string,
     targetBranch: string,
   ): Promise<VcsMergeRequest | undefined>;
 
   /** Creates a new merge/pull request. */
   createMergeRequest(
-    projectId: string | number,
+    project: VcsProjectRef,
     sourceBranch: string,
     targetBranch: string,
     title: string,
     description: string,
-    labels?: string,
+    labels?: string[],
   ): Promise<VcsMergeRequest>;
 
   /** Updates an existing merge/pull request's title, description, and labels. */
   updateMergeRequest(
-    projectId: string | number,
-    mergeRequestId: number,
+    project: VcsProjectRef,
+    mergeRequest: VcsMergeRequest,
     title: string,
     description: string,
-    labels?: string,
+    labels?: string[],
   ): Promise<VcsMergeRequest>;
 
   /** Fetches project/repo-level CI variables. Returns an empty array if unreadable. */
-  getProjectVariables(projectId: string | number): Promise<VcsProjectVariable[]>;
+  getProjectVariables(project: VcsProjectRef): Promise<VcsProjectVariable[]>;
 
   /** Builds a token-authenticated remote URL suitable for push/tag operations (e.g. `git remote add`). */
-  buildAuthenticatedRemoteUrl(host: string, token: string, projectPath: string): string;
+  buildAuthenticatedRemoteUrl(token: string, projectPath: string): string;
 
   /** Builds a CI-job-token-authenticated remote URL suitable for a read-only `git clone`. */
-  buildCiCloneUrl(host: string, ciJobToken: string, projectPath: string): string;
+  buildCiCloneUrl(ciJobToken: string, projectPath: string): string;
 }
+
+/** Constructs a provider for one instance of a platform. */
+export type VcsProviderFactory = (options: VcsProviderOptions) => VcsProvider;
