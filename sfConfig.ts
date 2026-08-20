@@ -15,7 +15,15 @@
  */
 
 import fs from 'node:fs';
+import type { VcsProviderKind } from './vcs/types.js';
 import { logger } from './logger.js';
+
+/** Where a packaged dependency's source lives, for happy-soup story lookups. */
+export type PackageOriginOverride = {
+  vcsProvider: VcsProviderKind;
+  host?: string;
+  projectPath: string;
+};
 
 type SfDevRcConfig = {
   almProjectKey?: string;
@@ -24,7 +32,25 @@ type SfDevRcConfig = {
   jiraProjectKey?: string;
   /** @deprecated Renamed to `almProjectKeys`. Still read, but warns. */
   jiraProjectKeys?: string[];
+  /**
+   * Maps a package name to the VCS project its source lives in, for happy-soup dependency story
+   * lookups. Only needed for packages whose `sf package version report` `Description` doesn't hold
+   * a recognizable CI pipeline URL (e.g. externally-vendored packages not built by this pipeline).
+   */
+  packageOriginOverrides?: Record<string, PackageOriginOverride>;
 };
+
+/** Reads and parses `.sfdevrc.json`, or returns `undefined` if it's missing or invalid. */
+function readSfDevRcConfig(): SfDevRcConfig | undefined {
+  try {
+    if (!fs.existsSync('.sfdevrc.json')) {
+      return undefined;
+    }
+    return JSON.parse(fs.readFileSync('.sfdevrc.json', 'utf8')) as SfDevRcConfig;
+  } catch {
+    return undefined;
+  }
+}
 
 /** Collects a single-key and multi-key field into one deduplicated, non-empty list. */
 function collectKeys(single: string | undefined, multiple: string[] | undefined): string[] {
@@ -75,4 +101,13 @@ export function getAlmProjectKeys(passedProjectKey?: string): string[] {
   }
 
   return passedProjectKey ? [passedProjectKey] : [];
+}
+
+/**
+ * Looks up an explicit VCS project override for a package name from `.sfdevrc.json`'s
+ * `packageOriginOverrides`. Returns `undefined` if the file, the field, or an entry for this
+ * package doesn't exist.
+ */
+export function getPackageOriginOverride(packageName: string): PackageOriginOverride | undefined {
+  return readSfDevRcConfig()?.packageOriginOverrides?.[packageName];
 }

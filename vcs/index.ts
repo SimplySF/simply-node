@@ -30,6 +30,7 @@ export type {
   VcsBranch,
   VcsCiContext,
   VcsCommit,
+  VcsCommitLogEntry,
   VcsMergeRequest,
   VcsProject,
   VcsProjectRef,

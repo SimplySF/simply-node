@@ -320,7 +320,7 @@ export async function runApexTests(config: RunApexTestsConfig): Promise<void> {
   await runApexTestsCommon({ alias, testLevel, testSuite, wait, debugMode: config.debugMode });
 }
 
-async function loadProgress(deployProgressFile: string): Promise<DeployProgress> {
+export async function loadProgress(deployProgressFile: string): Promise<DeployProgress> {
   try {
     return await loadValidatedJsonFile(deployProgressFile, deployProgressSchema);
   } catch (error) {

@@ -32,7 +32,29 @@ export type GetCommitStoriesOptions = {
   almProvider?: AlmProvider;
 };
 
-const NOT_AVAILABLE: CommitStories = { stories: 'N/A', storiesWithUrl: 'N/A' };
+export const NOT_AVAILABLE: CommitStories = { stories: 'N/A', storiesWithUrl: 'N/A' };
+
+/**
+ * Hands a commit log to the configured `AlmProvider` to recognize its own reference format, and
+ * returns both a plain string and (if `almBaseUrl` is provided) an HTML list with hyperlinks.
+ * Shared by the local-git (`getCommitStories`) and remote-API (`getRemoteCommitStories`) lookups so
+ * the ALM-provider glue isn't duplicated between them.
+ */
+export function renderIssuesFromCommitLog(
+  commitLog: string,
+  almProjectKey: string | undefined,
+  options?: GetCommitStoriesOptions,
+): CommitStories {
+  const almProvider = options?.almProvider ?? createAlmProvider('jira');
+  const issues = almProvider.extractIssues(commitLog, getAlmProjectKeys(almProjectKey));
+
+  if (issues.length === 0) {
+    return NOT_AVAILABLE;
+  }
+
+  const { plain, html } = almProvider.render(issues, options?.almBaseUrl);
+  return { stories: plain, storiesWithUrl: html };
+}
 
 /**
  * Retrieves issue references from the commit logs between two tags/commits. Fetches the git
@@ -68,15 +90,7 @@ export async function getCommitStories(
       return NOT_AVAILABLE;
     }
 
-    const almProvider = options?.almProvider ?? createAlmProvider('jira');
-    const issues = almProvider.extractIssues(commits, getAlmProjectKeys(almProjectKey));
-
-    if (issues.length === 0) {
-      return NOT_AVAILABLE;
-    }
-
-    const { plain, html } = almProvider.render(issues, options?.almBaseUrl);
-    return { stories: plain, storiesWithUrl: html };
+    return renderIssuesFromCommitLog(commits, almProjectKey, options);
   } catch (error) {
     logger.error(`Error getting commit stories: ${(error as Error).message}`);
     if (options?.debug) {

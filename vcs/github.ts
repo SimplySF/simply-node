@@ -18,6 +18,7 @@ import type {
   VcsBranch,
   VcsCiContext,
   VcsCommit,
+  VcsCommitLogEntry,
   VcsMergeRequest,
   VcsProject,
   VcsProjectRef,
@@ -52,6 +53,10 @@ type GitHubVariableResponse = { name: string; value: string };
 type GitHubContentResponse = { sha: string };
 
 type GitHubRefResponse = { object: { sha: string } };
+
+type GitHubCommitResponse = { sha: string; commit: { message: string } };
+
+type GitHubCompareResponse = { commits: GitHubCommitResponse[] };
 
 function normalizeProject(repo: GitHubRepoResponse): VcsProject {
   return {
@@ -183,6 +188,16 @@ export class GitHubProvider implements VcsProvider {
     const endpoint = `${repoPath(project)}/contents/${encodeFilePath(filePath)}?ref=${encodeURIComponent(ref)}`;
     const response = await this.request(endpoint, { headers: { Accept: 'application/vnd.github.raw' } });
     return response.text();
+  }
+
+  public async compareRefs(project: VcsProjectRef, from: string, to: string): Promise<VcsCommitLogEntry[]> {
+    const endpoint = `${repoPath(project)}/compare/${encodeURIComponent(from)}...${encodeURIComponent(to)}`;
+    const response = (await this.getJson(endpoint)) as GitHubCompareResponse;
+    return (response.commits ?? []).map((commit) => ({
+      sha: commit.sha,
+      message: commit.commit.message,
+      raw: commit,
+    }));
   }
 
   public async branchExists(project: VcsProjectRef, branchName: string): Promise<boolean> {

@@ -53,6 +53,13 @@ export type VcsCommit = {
   raw: unknown;
 };
 
+/** A single commit as returned by a ref-to-ref comparison, normalized across VCS platforms. */
+export type VcsCommitLogEntry = {
+  sha?: string;
+  message: string;
+  raw: unknown;
+};
+
 /**
  * A merge/pull request, normalized across VCS platforms. `iid` is the number the platform shows
  * users and accepts in its per-request endpoints — GitLab's `iid`, GitHub's PR `number`.
@@ -99,6 +106,13 @@ export type VcsProviderOptions = {
   token: string;
   /** Overrides the provider's derived API base URL. Rarely needed outside self-hosted instances. */
   apiUrl?: string;
+  /**
+   * What kind of token `token` is, so the provider can pick the right auth header. Only GitLab
+   * distinguishes: a personal/project access token uses `PRIVATE-TOKEN`, a `CI_JOB_TOKEN` uses
+   * `JOB-TOKEN`. Defaults to `'personal'`. GitHub ignores this — a `GITHUB_TOKEN` and a PAT both
+   * authenticate the same way.
+   */
+  tokenKind?: 'personal' | 'job';
 };
 
 /**
@@ -125,6 +139,9 @@ export interface VcsProvider {
 
   /** Fetches the raw content of a file from a project at a given ref. */
   getFileContent(project: VcsProjectRef, filePath: string, ref: string): Promise<string>;
+
+  /** Lists the commits reachable from `to` but not from `from` (e.g. between two tags/SHAs). */
+  compareRefs(project: VcsProjectRef, from: string, to: string): Promise<VcsCommitLogEntry[]>;
 
   /** Returns whether a branch exists in a project. */
   branchExists(project: VcsProjectRef, branchName: string): Promise<boolean>;

@@ -15,19 +15,27 @@
  */
 
 import { promises as fs } from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { execa } from 'execa';
 import { runSf } from '../exec/sfCli.js';
 import { addGitRemote } from '../git.js';
 import { logger } from '../logger.js';
 import { authenticateOrg } from '../sfAuth.js';
+import {
+  installPackageDependencies as installPackageDependenciesCommon,
+  resolveUpgradedPackages,
+} from '../sfPackages.js';
 import { createVcsProvider } from '../vcs/index.js';
 import type { VcsProvider, VcsProviderKind } from '../vcs/index.js';
+import type { UpgradedPackage } from '../schemas/deployProgress.js';
 import { runDeployStage } from './runDeployStage.js';
 import {
   determineDeployConfigFile,
-  installPackageDependencies,
+  loadProgress,
   printDeploymentSummary,
   runDeploymentSteps,
+  updateProgress,
   type OrgAuthConfig,
   type RunDeploymentStepsConfig,
 } from './deployCommon.js';
@@ -194,6 +202,9 @@ export type DeployHappySoupOptions = OrgAuthConfig & {
   vcsProvider: VcsProviderKind;
   installType?: 'All' | 'Delta' | 'Upgrade';
   wait?: string;
+  devhubToolingUsername?: string;
+  devhubToolingClientId?: string;
+  devhubToolingInstanceUrl?: string;
   projectAccessToken?: string;
   ciPipelineId?: string;
   ciProjectPath?: string;
@@ -204,13 +215,43 @@ export type DeployHappySoupOptions = OrgAuthConfig & {
   deployReleaseDate?: string;
 };
 
+/**
+ * Authenticates to the target org, installs its packaged dependencies, and — for every dependency
+ * that upgraded an already-installed package — resolves the previous/target version's origin
+ * commit SHA and pipeline URL via `sf package version report`. Detection only: the remote commit
+ * compare and story extraction happen later, at notify time (`notify happy-soup`), once the origin
+ * repo per package can be resolved.
+ */
+async function installPackagedAndDetectUpgrades(
+  config: Omit<DeployHappySoupOptions, 'stage'>,
+): Promise<UpgradedPackage[]> {
+  const { alias, authUrl, clientId, instanceUrl, jwtKeyFile, username, wait, installType } = config;
+  await authenticateOrg({ alias, authUrl, clientId, instanceUrl, jwtKeyFile, username });
+
+  const outputFile = path.join(await fs.mkdtemp(path.join(os.tmpdir(), 'happy-soup-install-')), 'report.json');
+  await installPackageDependenciesCommon({ alias, wait, installType, outputFile });
+
+  return resolveUpgradedPackages(outputFile, {
+    devhubToolingUsername: config.devhubToolingUsername,
+    devhubToolingClientId: config.devhubToolingClientId,
+    devhubToolingInstanceUrl: config.devhubToolingInstanceUrl,
+    jwtKeyFile: config.jwtKeyFile,
+    debug: config.debug,
+  });
+}
+
 async function runHappySoupStage(
   stage: string,
   config: Omit<DeployHappySoupOptions, 'stage'>,
   deployConfigFile: string | undefined,
 ): Promise<void> {
   if (stage === 'install-packaged') {
-    await installPackageDependencies(config);
+    const upgradedPackages = await installPackagedAndDetectUpgrades(config);
+
+    const deployProgressFile = config.deployProgressFile ?? 'DEPLOY_PROGRESS.json';
+    const progress = await loadProgress(deployProgressFile);
+    progress.upgradedPackages = upgradedPackages;
+    await updateProgress(deployProgressFile, progress);
   } else if (stage === 'tag-deployment') {
     // The CLI layer requires projectAccessToken/ciPipelineId/ciProjectPath for this stage.
     await tagDeployment(config as TagDeploymentConfig);

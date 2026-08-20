@@ -40,6 +40,12 @@ export const NOTIFY_TEMPLATES = {
   <tr><td>{{environmentName}}</td><td>{{refName}}</td><td><a
         href="{{pipelineUrl}}"
       >{{pipelineId}}</a></td></tr>
+{{#if upgradedPackages.length}}
+  <tr><td colspan="3">Upgraded Packages</td></tr>
+{{#each upgradedPackages}}
+  <tr><td colspan="1">{{packageName}}</td><td colspan="2">{{{storiesLinked}}}</td></tr>
+{{/each}}
+{{/if}}
 </table>
 `,
   'happy-soup-starting-stage-notification': `<table>
@@ -58,6 +64,12 @@ export const NOTIFY_TEMPLATES = {
   <tr><td>{{environmentName}}</td><td>{{refName}}</td><td><a
         href="{{pipelineUrl}}"
       >{{pipelineId}}</a></td></tr>
+{{#if upgradedPackages.length}}
+  <tr><td colspan="3">Upgraded Packages</td></tr>
+{{#each upgradedPackages}}
+  <tr><td colspan="1">{{packageName}}</td><td colspan="2">{{{storiesLinked}}}</td></tr>
+{{/each}}
+{{/if}}
 </table>
 `,
   'project-failure-notification': `<table>

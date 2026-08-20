@@ -18,6 +18,7 @@ import type {
   VcsBranch,
   VcsCiContext,
   VcsCommit,
+  VcsCommitLogEntry,
   VcsMergeRequest,
   VcsProject,
   VcsProjectRef,
@@ -51,6 +52,15 @@ type GitLabMergeRequestResponse = {
 type GitLabProjectVariableResponse = {
   key: string;
   value: string;
+};
+
+type GitLabCommitResponse = {
+  id: string;
+  message: string;
+};
+
+type GitLabCompareResponse = {
+  commits: GitLabCommitResponse[];
 };
 
 function normalizeProject(project: GitLabProjectResponse): VcsProject {
@@ -103,9 +113,10 @@ export class GitLabProvider implements VcsProvider {
 
   public readonly apiUrl: string;
   private readonly token: string;
+  private readonly tokenKind: 'personal' | 'job';
 
   public constructor(options: VcsProviderOptions) {
-    const { host, token, apiUrl } = options;
+    const { host, token, apiUrl, tokenKind } = options;
     if (!token) {
       throw new Error('GitLab access token is required.');
     }
@@ -114,6 +125,7 @@ export class GitLabProvider implements VcsProvider {
     // remote-URL builders stay usable.
     this.host = host ?? new URL(this.apiUrl).host;
     this.token = token;
+    this.tokenKind = tokenKind ?? 'personal';
   }
 
   // eslint-disable-next-line class-methods-use-this -- part of the VcsProvider instance contract; GitLab's CI variables are process-global
@@ -167,6 +179,14 @@ export class GitLabProvider implements VcsProvider {
       ref,
     )}`;
     return this.getRawText(endpoint);
+  }
+
+  public async compareRefs(project: VcsProjectRef, from: string, to: string): Promise<VcsCommitLogEntry[]> {
+    const endpoint = `/projects/${projectSegment(project)}/repository/compare?from=${encodeURIComponent(
+      from,
+    )}&to=${encodeURIComponent(to)}`;
+    const response = (await this.getJson(endpoint)) as GitLabCompareResponse;
+    return (response.commits ?? []).map((commit) => ({ sha: commit.id, message: commit.message, raw: commit }));
   }
 
   public async branchExists(project: VcsProjectRef, branchName: string): Promise<boolean> {
@@ -302,8 +322,9 @@ export class GitLabProvider implements VcsProvider {
     options: { body?: unknown; headers?: Record<string, string>; method?: string } = {},
   ): Promise<Response> {
     const url = endpoint.startsWith('http') ? endpoint : `${this.apiUrl}${endpoint}`;
+    const tokenHeader = this.tokenKind === 'job' ? 'JOB-TOKEN' : 'PRIVATE-TOKEN';
     const headers: Record<string, string> = {
-      'PRIVATE-TOKEN': this.token,
+      [tokenHeader]: this.token,
       'Content-Type': 'application/json',
       ...options.headers,
     };
