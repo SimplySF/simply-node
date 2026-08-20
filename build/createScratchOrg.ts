@@ -18,8 +18,7 @@ import { promises as fs } from 'node:fs';
 import { getDefaultPackageDirectory, readSfdxProject, type SfdxProject } from '@simplysf/simply-core';
 import { runSf, runSfJson } from '../exec/sfCli.js';
 import { logger } from '../logger.js';
-import { authenticateDevHubs } from '../sfAuth.js';
-import type { DevHubConfig } from './devHubs.js';
+import { resolveDevHubs, type ResolvedDevHub } from './devHubs.js';
 
 type SfPermsetAssignResult = { status: number; failures?: unknown };
 
@@ -105,16 +104,16 @@ async function trySetDefaultCountry(): Promise<void> {
 export type ScratchOrgCreateResult = Record<string, unknown>;
 
 async function attemptScratchOrgCreation(
-  hub: DevHubConfig,
+  hub: ResolvedDevHub,
   definitionFile: string,
   duration: string,
 ): Promise<ScratchOrgCreateResult | undefined> {
   const remaining = await checkHubRemainingScratchOrgs(hub.username);
   if (remaining === undefined || remaining <= 0) {
-    logger.warn(`Dev Hub ${hub.name} has no remaining scratch orgs. Skipping.`);
+    logger.warn(`Dev Hub ${hub.alias} has no remaining scratch orgs. Skipping.`);
     return undefined;
   }
-  logger.info(`Attempting to create scratch org with Dev Hub ${hub.name} (${remaining} remaining).`);
+  logger.info(`Attempting to create scratch org with Dev Hub ${hub.alias} (${remaining} remaining).`);
 
   const { stdout } = await runSf([
     'org',
@@ -133,7 +132,7 @@ async function attemptScratchOrgCreation(
   ]);
   const createResult = (JSON.parse(stdout) as { result: ScratchOrgCreateResult }).result;
   await fs.writeFile('SCRATCH_ORG_INFO.json', JSON.stringify(createResult, null, 2));
-  logger.success(`Scratch org created successfully using Dev Hub ${hub.name}.`);
+  logger.success(`Scratch org created successfully using Dev Hub ${hub.alias}.`);
   return createResult;
 }
 
@@ -166,7 +165,6 @@ function extractScratchOrgErrorMessage(error: unknown): string {
 }
 
 export type CreateScratchOrgOptions = {
-  jwtKeyFile: string;
   debug?: boolean;
   scratchDefinitionFile?: string;
   scratchDurationDays?: string;
@@ -176,12 +174,14 @@ export type CreateScratchOrgOptions = {
  * Creates a scratch org, trying each Dev Hub in order until one has remaining daily capacity.
  * Writes `SCRATCH_ORG_INFO.json`, best-effort sets a default country, and assigns permission
  * sets/licenses declared in the default package directory's `packageMetadataAccess`.
+ *
+ * Every Dev Hub alias passed in must already be authenticated by the calling pipeline.
  */
 export async function createScratchOrg(
   options: CreateScratchOrgOptions,
-  devHubs: DevHubConfig[],
+  devHubAliases: string[],
 ): Promise<ScratchOrgCreateResult> {
-  await authenticateDevHubs(devHubs, options.jwtKeyFile, options.debug);
+  const devHubs = await resolveDevHubs(devHubAliases);
 
   const sfdxProjectJson = await readSfdxProject();
   const defaultPackageDir = getDefaultPackageDirectory(sfdxProjectJson);
@@ -193,10 +193,6 @@ export async function createScratchOrg(
   const duration = options.scratchDurationDays ?? '1';
 
   for (const hub of devHubs) {
-    if (!hub.username) {
-      continue;
-    }
-
     try {
       // eslint-disable-next-line no-await-in-loop -- each Dev Hub is only attempted after the previous one is exhausted
       const createResult = await attemptScratchOrgCreation(hub, definitionFile, duration);
@@ -209,13 +205,13 @@ export async function createScratchOrg(
       await assignPermissions(sfdxProjectJson);
       return createResult;
     } catch (error) {
-      logger.error(`Scratch org creation failed with Dev Hub ${hub.name}:`);
+      logger.error(`Scratch org creation failed with Dev Hub ${hub.alias}:`);
       const errorMessage = extractScratchOrgErrorMessage(error);
       if (isScratchOrgLimitError(errorMessage)) {
-        logger.warn(`Dev Hub ${hub.name} reached its daily limit. Trying next Dev Hub...`);
+        logger.warn(`Dev Hub ${hub.alias} reached its daily limit. Trying next Dev Hub...`);
         continue;
       }
-      throw new Error(`Scratch org creation failed with a non-recoverable error using Dev Hub ${hub.name}.`);
+      throw new Error(`Scratch org creation failed with a non-recoverable error using Dev Hub ${hub.alias}.`);
     }
   }
 

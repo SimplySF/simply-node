@@ -17,42 +17,49 @@
 import { runSf } from '../exec/sfCli.js';
 import { logger } from '../logger.js';
 import { authenticateOrg } from '../sfAuth.js';
-import type { DevHubConfig } from './devHubs.js';
+import { resolveDevHubs } from './devHubs.js';
+import { ensureScratchOrgSession } from './scratchOrgAuth.js';
 import { readScratchOrgInfo } from './scratchOrgInfo.js';
 
 export type DeleteScratchOrgOptions = {
-  jwtKeyFile: string;
+  /** Required only when the Dev Hub and/or scratch org were JWT-authenticated (no refresh token available). */
+  jwtKeyFile?: string;
   debug?: boolean;
 };
 
 /**
  * Authenticates to the Dev Hub that owns the scratch org and deletes it.
  *
- * Deletion failures are logged, not thrown, matching the original behavior: a scratch org that
- * fails to delete just needs manual cleanup later, and shouldn't fail an otherwise-successful pipeline run.
+ * `devHubAlias` must already be authenticated by the calling pipeline. Deletion failures are
+ * logged, not thrown, matching the original behavior: a scratch org that fails to delete just
+ * needs manual cleanup later, and shouldn't fail an otherwise-successful pipeline run.
  */
-export async function deleteScratchOrg(options: DeleteScratchOrgOptions, devHubs: DevHubConfig[]): Promise<void> {
+export async function deleteScratchOrg(options: DeleteScratchOrgOptions, devHubAlias: string): Promise<void> {
   logger.info('Deleting scratch org...');
   try {
     const scratchOrgInfo = await readScratchOrgInfo();
-    const devHubUsername = scratchOrgInfo.authFields.devHubUsername;
-    const devHubConfig = devHubs.find((h) => h.username === devHubUsername);
-    if (!devHubConfig) {
-      throw new Error(`Could not find Dev Hub configuration for username: ${devHubUsername ?? 'unknown'}`);
+    const [hub] = await resolveDevHubs([devHubAlias]);
+    if (hub.username !== scratchOrgInfo.authFields.devHubUsername) {
+      throw new Error(
+        `--dev-hub ${devHubAlias} (${hub.username}) does not match the Dev Hub that created this scratch org (${scratchOrgInfo.authFields.devHubUsername ?? 'unknown'}).`,
+      );
     }
 
-    await authenticateOrg({
-      username: devHubUsername,
-      clientId: devHubConfig.clientId,
-      instanceUrl: devHubConfig.instanceUrl,
-      jwtKeyFile: options.jwtKeyFile,
-      setDefaultDevHub: true,
-      debug: options.debug,
-    });
-    await authenticateOrg({
-      username: scratchOrgInfo.authFields.username,
-      clientId: scratchOrgInfo.authFields.clientId,
-      instanceUrl: scratchOrgInfo.authFields.instanceUrl,
+    if (hub.privateKeyFile) {
+      // JWT-authenticated Dev Hub: no refresh token exists, so re-mint a session explicitly.
+      // A refresh-token-authenticated Dev Hub needs no action here — @salesforce/core refreshes
+      // its already-persisted session automatically.
+      await authenticateOrg({
+        username: hub.username,
+        clientId: hub.clientId,
+        instanceUrl: hub.instanceUrl,
+        jwtKeyFile: hub.privateKeyFile,
+        setDefaultDevHub: true,
+        debug: options.debug,
+      });
+    }
+
+    await ensureScratchOrgSession(scratchOrgInfo.authFields, {
       jwtKeyFile: options.jwtKeyFile,
       setDefault: true,
       debug: options.debug,

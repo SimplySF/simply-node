@@ -18,7 +18,7 @@ import { execa } from 'execa';
 import { getDefaultPackageDirectory, readSfdxProject } from '@simplysf/simply-core';
 import { runSf } from '../exec/sfCli.js';
 import { logger } from '../logger.js';
-import { authenticateOrg } from '../sfAuth.js';
+import { ensureScratchOrgSession } from './scratchOrgAuth.js';
 import { readScratchOrgInfo } from './scratchOrgInfo.js';
 
 const INCOMPATIBLE_METADATA_PATTERNS = [
@@ -38,7 +38,8 @@ async function removeIncompatibleMetadata(): Promise<void> {
 }
 
 export type PushScratchOptions = {
-  jwtKeyFile: string;
+  /** Required only when the scratch org's Dev Hub was JWT-authenticated (no refresh token available). */
+  jwtKeyFile?: string;
   debug?: boolean;
   ignoreWarnings?: boolean;
   scratchOrgSourceDir?: string;
@@ -48,10 +49,7 @@ export type PushScratchOptions = {
 export async function pushToScratch(options: PushScratchOptions): Promise<void> {
   logger.info('Pushing source to scratch org...');
   const scratchOrgInfo = await readScratchOrgInfo();
-  await authenticateOrg({
-    username: scratchOrgInfo.authFields.username,
-    clientId: scratchOrgInfo.authFields.clientId,
-    instanceUrl: scratchOrgInfo.authFields.instanceUrl,
+  await ensureScratchOrgSession(scratchOrgInfo.authFields, {
     jwtKeyFile: options.jwtKeyFile,
     setDefault: true,
     debug: options.debug,

@@ -15,12 +15,13 @@
  */
 
 import { logger } from '../logger.js';
-import { authenticateOrg } from '../sfAuth.js';
 import { runApexTests as runApexTestsCommon } from '../sfApex.js';
+import { ensureScratchOrgSession } from './scratchOrgAuth.js';
 import { readScratchOrgInfo } from './scratchOrgInfo.js';
 
 export type RunScratchApexTestsOptions = {
-  jwtKeyFile: string;
+  /** Required only when the scratch org's Dev Hub was JWT-authenticated (no refresh token available). */
+  jwtKeyFile?: string;
   debug?: boolean;
   /** Skips just the Apex test run, independent of the job-level --disabled flag. */
   disableApexTests?: boolean;
@@ -41,10 +42,7 @@ export async function runScratchApexTests(options: RunScratchApexTestsOptions): 
 
   logger.info('Authenticating to scratch org for tests...');
   const scratchOrgInfo = await readScratchOrgInfo();
-  await authenticateOrg({
-    username: scratchOrgInfo.authFields.username,
-    clientId: scratchOrgInfo.authFields.clientId,
-    instanceUrl: scratchOrgInfo.authFields.instanceUrl,
+  await ensureScratchOrgSession(scratchOrgInfo.authFields, {
     jwtKeyFile: options.jwtKeyFile,
     setDefault: true,
     debug: options.debug,
