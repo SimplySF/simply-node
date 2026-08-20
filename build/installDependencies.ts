@@ -15,12 +15,13 @@
  */
 
 import { logger } from '../logger.js';
-import { authenticateOrg } from '../sfAuth.js';
 import { installPackageDependencies as installPackageDependenciesCommon } from '../sfPackages.js';
+import { ensureScratchOrgSession } from './scratchOrgAuth.js';
 import { readScratchOrgInfo } from './scratchOrgInfo.js';
 
 export type InstallDependenciesOptions = {
-  jwtKeyFile: string;
+  /** Required only when the scratch org's Dev Hub was JWT-authenticated (no refresh token available). */
+  jwtKeyFile?: string;
   debug?: boolean;
   installType?: 'All' | 'Delta' | 'Upgrade';
 };
@@ -29,10 +30,7 @@ export type InstallDependenciesOptions = {
 export async function installDependencies(options: InstallDependenciesOptions): Promise<void> {
   logger.info('Installing package dependencies into scratch org...');
   const scratchOrgInfo = await readScratchOrgInfo();
-  await authenticateOrg({
-    username: scratchOrgInfo.authFields.username,
-    clientId: scratchOrgInfo.authFields.clientId,
-    instanceUrl: scratchOrgInfo.authFields.instanceUrl,
+  await ensureScratchOrgSession(scratchOrgInfo.authFields, {
     jwtKeyFile: options.jwtKeyFile,
     setDefault: true,
     debug: options.debug,

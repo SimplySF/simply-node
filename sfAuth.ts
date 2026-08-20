@@ -103,36 +103,3 @@ export async function authenticateOrg(options: AuthenticateOrgOptions): Promise<
     throw error; // Re-throw for build steps that should fail hard.
   }
 }
-
-export type DevHubConfig = {
-  username?: string;
-  clientId?: string;
-  instanceUrl?: string;
-};
-
-/**
- * Authenticates multiple Dev Hub organizations in parallel using the JWT flow. Only attempts
- * authentication for Dev Hubs that have `username`, `clientId`, and `instanceUrl` provided.
- * Returns the usernames of the Dev Hubs that authenticated successfully.
- */
-export async function authenticateDevHubs(
-  devHubs: DevHubConfig[],
-  jwtKeyFile: string,
-  debug?: boolean,
-): Promise<string[]> {
-  const authPromises = devHubs.map((hub) => {
-    if (hub.username && hub.clientId && hub.instanceUrl) {
-      return authenticateOrg({
-        username: hub.username,
-        clientId: hub.clientId,
-        instanceUrl: hub.instanceUrl,
-        jwtKeyFile,
-        debug,
-      });
-    }
-    return Promise.resolve(undefined);
-  });
-
-  const results = await Promise.all(authPromises);
-  return results.filter((r): r is AuthenticateOrgResult => Boolean(r?.success)).map((r) => r.username as string);
-}

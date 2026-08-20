@@ -22,6 +22,10 @@ export type ScratchOrgInfo = {
     clientId: string;
     instanceUrl: string;
     devHubUsername?: string;
+    /** Present when the owning Dev Hub wasn't JWT-authenticated. */
+    refreshToken?: string;
+    /** Present alongside `refreshToken` for a custom connected app. */
+    clientSecret?: string;
   };
 };
 

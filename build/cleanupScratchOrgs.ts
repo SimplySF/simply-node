@@ -18,8 +18,7 @@ import path from 'node:path';
 import { promises as fs } from 'node:fs';
 import { runSf } from '../exec/sfCli.js';
 import { logger } from '../logger.js';
-import { authenticateDevHubs } from '../sfAuth.js';
-import type { DevHubConfig } from './devHubs.js';
+import { resolveDevHubs } from './devHubs.js';
 
 async function cleanupScratchOrgsForHub(hubUsername: string): Promise<void> {
   logger.info(`Querying for scratch orgs in ${hubUsername}...`);
@@ -80,23 +79,18 @@ async function cleanupScratchOrgsForHub(hubUsername: string): Promise<void> {
   }
 }
 
-export type CleanupScratchOrgsOptions = {
-  jwtKeyFile: string;
-  debug?: boolean;
-};
-
-/** Cleans up scratch orgs older than 3 hours from every Dev Hub that can be authenticated. */
-export async function cleanupScratchOrgs(options: CleanupScratchOrgsOptions, devHubs: DevHubConfig[]): Promise<void> {
+/**
+ * Cleans up scratch orgs older than 3 hours from every given Dev Hub.
+ *
+ * Every Dev Hub alias passed in must already be authenticated by the calling pipeline.
+ */
+export async function cleanupScratchOrgs(devHubAliases: string[]): Promise<void> {
   logger.info('Starting cleanup of old scratch orgs...');
-  const authenticatedHubs = await authenticateDevHubs(devHubs, options.jwtKeyFile, options.debug);
-  if (authenticatedHubs.length === 0) {
-    logger.warn('No DevHubs could be authenticated. Skipping cleanup.');
-    return;
-  }
+  const devHubs = await resolveDevHubs(devHubAliases);
 
-  for (const hubUsername of authenticatedHubs) {
+  for (const hub of devHubs) {
     // eslint-disable-next-line no-await-in-loop -- cleanup runs per hub sequentially, matching the original
-    await cleanupScratchOrgsForHub(hubUsername);
+    await cleanupScratchOrgsForHub(hub.username);
   }
 
   logger.success('Scratch org cleanup complete.');
