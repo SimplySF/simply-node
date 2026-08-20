@@ -20,7 +20,6 @@ import { getDefaultPackageDirectory, getPluginConfig, readSfdxProject, type Sfdx
 import { runSf } from '../exec/sfCli.js';
 import { addGitRemote } from '../git.js';
 import { logger } from '../logger.js';
-import { authenticateOrg } from '../sfAuth.js';
 import { createVcsProvider, type VcsProviderKind } from '../vcs/index.js';
 
 type PackageVersionCreateReport = { Status: string; Error?: string; SubscriberPackageVersionId?: string };
@@ -77,7 +76,7 @@ function resolveMinimumCoverage(codeCoverageMinimum: string | undefined, sfdxPro
   return minCoverage;
 }
 
-async function pollPackageVersionCreation(createRequestId: string): Promise<string> {
+async function pollPackageVersionCreation(createRequestId: string, packagingDevhub: string): Promise<string> {
   for (;;) {
     // eslint-disable-next-line no-await-in-loop -- each poll must wait for the previous one's result before deciding to continue
     const { stdout: reportStdout } = await runSf([
@@ -87,6 +86,8 @@ async function pollPackageVersionCreation(createRequestId: string): Promise<stri
       'report',
       '--package-create-request-id',
       createRequestId,
+      '--target-dev-hub',
+      packagingDevhub,
       '--json',
     ]);
     const report = (JSON.parse(reportStdout) as { result: PackageVersionCreateReport[] }).result[0];
@@ -114,10 +115,8 @@ export type CreatePackageVersionOptions = {
   ciPipelineUrl: string;
   ciProjectPath: string;
   projectAccessToken: string;
-  packagingDevhubUsername: string;
-  packagingDevhubClientId: string;
-  packagingDevhubInstanceUrl: string;
-  jwtKeyFile: string;
+  /** The packaging DevHub's alias. Must already be authenticated. */
+  packagingDevhub: string;
   debug?: boolean;
   alwaysCreatePackage?: boolean;
   packageReleaseBranchPrefix?: string;
@@ -154,15 +153,6 @@ export async function createPackageVersion(options: CreatePackageVersionOptions)
     vcsProvider,
   );
 
-  await authenticateOrg({
-    username: options.packagingDevhubUsername,
-    clientId: options.packagingDevhubClientId,
-    instanceUrl: options.packagingDevhubInstanceUrl,
-    jwtKeyFile: options.jwtKeyFile,
-    setDefaultDevHub: true,
-    debug: options.debug,
-  });
-
   const sfdxProjectJson = await readSfdxProject();
   const defaultPackageDir = getDefaultPackageDirectory(sfdxProjectJson);
   const { definitionFile, package: packageAlias, branch: branchAttribute } = defaultPackageDir ?? {};
@@ -186,6 +176,8 @@ export async function createPackageVersion(options: CreatePackageVersionOptions)
     options.ciPipelineUrl,
     '--tag',
     options.ciCommitSha,
+    '--target-dev-hub',
+    options.packagingDevhub,
     ...branchArgs,
     '--installation-key-bypass',
     '--wait',
@@ -195,7 +187,7 @@ export async function createPackageVersion(options: CreatePackageVersionOptions)
   const createRequestId = (JSON.parse(createStdout) as { result: { Id: string } }).result.Id;
   logger.info(`Package version creation requested. Request ID: ${createRequestId}`);
 
-  const subscriberPackageVersionId = await pollPackageVersionCreation(createRequestId);
+  const subscriberPackageVersionId = await pollPackageVersionCreation(createRequestId, options.packagingDevhub);
   await fs.writeFile('subscriberPackageVersionId.env', `SUBSCRIBER_PACKAGE_VERSION_ID=${subscriberPackageVersionId}`);
 
   const { stdout: versionReportStdout } = await runSf([
@@ -204,6 +196,8 @@ export async function createPackageVersion(options: CreatePackageVersionOptions)
     'report',
     '--package',
     subscriberPackageVersionId,
+    '--target-dev-hub',
+    options.packagingDevhub,
     '--json',
   ]);
   const versionReport = (

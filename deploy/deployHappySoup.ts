@@ -21,7 +21,6 @@ import { execa } from 'execa';
 import { runSf } from '../exec/sfCli.js';
 import { addGitRemote } from '../git.js';
 import { logger } from '../logger.js';
-import { authenticateOrg } from '../sfAuth.js';
 import {
   installPackageDependencies as installPackageDependenciesCommon,
   resolveUpgradedPackages,
@@ -151,24 +150,10 @@ function buildDeploymentTagMessage(
 
 /** Tags the current commit with deployment details (org, timestamp, pipeline/MR links) and pushes the tag. */
 async function tagDeployment(config: TagDeploymentConfig): Promise<void> {
-  const {
-    alias,
-    authUrl,
-    clientId,
-    instanceUrl,
-    jwtKeyFile,
-    username,
-    projectAccessToken,
-    ciPipelineId,
-    ciProjectPath,
-    debug,
-    vcsHost,
-    vcsProvider: vcsProviderKind,
-  } = config;
+  const { alias, projectAccessToken, ciPipelineId, ciProjectPath, vcsHost, vcsProvider: vcsProviderKind } = config;
 
   const vcsProvider = createVcsProvider(vcsProviderKind, { host: vcsHost, token: projectAccessToken });
   const remoteAlias = await addGitRemote(ciPipelineId, projectAccessToken, ciProjectPath, vcsProvider);
-  await authenticateOrg({ alias, authUrl, clientId, instanceUrl, jwtKeyFile, username, debug });
 
   const { stdout: orgDisplay } = await runSf(['org', 'display', '--target-org', alias ?? '', '--json']);
   const instanceUrlResult = (JSON.parse(orgDisplay) as { result: { instanceUrl: string } }).result.instanceUrl;
@@ -202,9 +187,7 @@ export type DeployHappySoupOptions = OrgAuthConfig & {
   vcsProvider: VcsProviderKind;
   installType?: 'All' | 'Delta' | 'Upgrade';
   wait?: string;
-  packagingDevhubUsername?: string;
-  packagingDevhubClientId?: string;
-  packagingDevhubInstanceUrl?: string;
+  packagingDevhub?: string;
   projectAccessToken?: string;
   ciPipelineId?: string;
   ciProjectPath?: string;
@@ -216,28 +199,21 @@ export type DeployHappySoupOptions = OrgAuthConfig & {
 };
 
 /**
- * Authenticates to the target org, installs its packaged dependencies, and — for every dependency
- * that upgraded an already-installed package — resolves the previous/target version's origin
- * commit SHA and pipeline URL via `sf package version report`. Detection only: the remote commit
- * compare and story extraction happen later, at notify time (`notify happy-soup`), once the origin
- * repo per package can be resolved.
+ * Installs the target org's packaged dependencies, and — for every dependency that upgraded an
+ * already-installed package — resolves the previous/target version's origin commit SHA and
+ * pipeline URL via `sf package version report`. Detection only: the remote commit compare and
+ * story extraction happen later, at notify time (`notify happy-soup`), once the origin repo per
+ * package can be resolved. The target org must already be authenticated.
  */
 async function installPackagedAndDetectUpgrades(
   config: Omit<DeployHappySoupOptions, 'stage'>,
 ): Promise<UpgradedPackage[]> {
-  const { alias, authUrl, clientId, instanceUrl, jwtKeyFile, username, wait, installType } = config;
-  await authenticateOrg({ alias, authUrl, clientId, instanceUrl, jwtKeyFile, username });
+  const { alias, wait, installType } = config;
 
   const outputFile = path.join(await fs.mkdtemp(path.join(os.tmpdir(), 'happy-soup-install-')), 'report.json');
   await installPackageDependenciesCommon({ alias, wait, installType, outputFile });
 
-  return resolveUpgradedPackages(outputFile, {
-    packagingDevhubUsername: config.packagingDevhubUsername,
-    packagingDevhubClientId: config.packagingDevhubClientId,
-    packagingDevhubInstanceUrl: config.packagingDevhubInstanceUrl,
-    jwtKeyFile: config.jwtKeyFile,
-    debug: config.debug,
-  });
+  return resolveUpgradedPackages(outputFile, { packagingDevhub: config.packagingDevhub });
 }
 
 async function runHappySoupStage(

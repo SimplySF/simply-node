@@ -21,7 +21,6 @@ import { createAlmProvider, type AlmProviderKind } from '../alm/index.js';
 import { runSf, runSfJson } from '../exec/sfCli.js';
 import { logger } from '../logger.js';
 import { appendToEnvFile } from '../env.js';
-import { authenticateOrg } from '../sfAuth.js';
 import { getCommitStories } from './getCommitStories.js';
 import { renderNotifyTemplate } from './renderTemplate.js';
 import { sendNotification } from './sendNotification.js';
@@ -31,18 +30,12 @@ export type NotifyProjectResult = { sent: boolean };
 
 type PrevInstalledPackageVersionParams = {
   alias?: string;
-  username?: string;
-  jwtKeyFile?: string;
-  clientId?: string;
-  instanceUrl?: string;
   debug: boolean;
 };
 
 type TargetPackageVersionParams = {
-  packagingDevhubUsername?: string;
-  jwtKeyFile?: string;
-  packagingDevhubClientId?: string;
-  packagingDevhubInstanceUrl?: string;
+  /** The packaging DevHub's alias. Must already be authenticated. */
+  packagingDevhub?: string;
   subscriberPackageVersionId?: string;
   debug: boolean;
 };
@@ -57,41 +50,26 @@ export type NotifyProjectOptions = {
   ciPipelineId?: string;
   ciPipelineUrl?: string;
   ciProjectTitle?: string;
-  clientId?: string;
-  packagingDevhubClientId?: string;
-  packagingDevhubInstanceUrl?: string;
-  packagingDevhubUsername?: string;
-  instanceUrl?: string;
+  packagingDevhub?: string;
   almBaseUrl?: string;
   almProjectKey?: string;
   almProvider?: AlmProviderKind;
-  jwtKeyFile?: string;
   prevInstalledPackageVersion?: string;
   subscriberPackageVersionId?: string;
   targetPackageVersion?: string;
   teamsWebhookUrl?: string[];
-  username?: string;
   debug: boolean;
 };
 
-/** Authenticates to the target org (JWT, via execa — no shell interpolation) and queries the installed package version. */
+/** Queries the target org's installed package version. The org must already be authenticated. */
 export async function resolvePrevInstalledPackageVersion(params: PrevInstalledPackageVersionParams): Promise<string> {
-  const { alias, username, jwtKeyFile, clientId, instanceUrl, debug } = params;
-  if (!(username && jwtKeyFile && clientId && instanceUrl && alias)) {
-    logger.warn('Missing credentials for Salesforce org authentication. Skipping installed package version check.');
+  const { alias, debug } = params;
+  if (!alias) {
+    logger.warn('No --alias given. Skipping installed package version check.');
     return 'N/A';
   }
 
-  logger.info('Authenticating to Salesforce org...');
   try {
-    const authResult = await authenticateOrg({ username, jwtKeyFile, clientId, instanceUrl, alias });
-    if (!authResult.success) {
-      logger.warn(`Sandbox Auth failed: ${authResult.message ?? 'unknown error'}`);
-      return 'N/A';
-    }
-
-    logger.success('Sandbox Auth successful.');
-
     const packageName = getDefaultPackageDirectory(await readSfdxProject())?.package;
 
     logger.info(`Get installed package version from alias ${alias} for package ${packageName ?? 'unknown'}...`);
@@ -101,7 +79,7 @@ export async function resolvePrevInstalledPackageVersion(params: PrevInstalledPa
     const pkg = installedList.result.find((p) => p.SubscriberPackageName === packageName);
     return pkg?.SubscriberPackageVersionNumber ? `v${pkg.SubscriberPackageVersionNumber}` : 'N/A';
   } catch (error) {
-    logger.warn(`Sandbox Auth command failed: ${(error as Error).message}`);
+    logger.warn(`Could not query installed package version: ${(error as Error).message}`);
     if (debug) {
       logger.error(String(error));
     }
@@ -109,60 +87,37 @@ export async function resolvePrevInstalledPackageVersion(params: PrevInstalledPa
   }
 }
 
-/** Authenticates to the packaging DevHub and resolves the released package's version. Returns `undefined` on any failure. */
+/** Resolves the released package's version from the packaging DevHub. Returns `undefined` on any failure. */
 export async function resolveTargetPackageVersionFromDevHub(
   params: TargetPackageVersionParams,
 ): Promise<string | undefined> {
-  const {
-    packagingDevhubUsername,
-    jwtKeyFile,
-    packagingDevhubClientId,
-    packagingDevhubInstanceUrl,
-    subscriberPackageVersionId,
-    debug,
-  } = params;
+  const { packagingDevhub, subscriberPackageVersionId, debug } = params;
 
-  if (!(packagingDevhubUsername && jwtKeyFile && packagingDevhubClientId && packagingDevhubInstanceUrl)) {
-    if (debug) {
-      logger.debug('Packaging DevHub auth params:', {
-        packagingDevhubUsername,
-        jwtKeyFile,
-        packagingDevhubClientId,
-        packagingDevhubInstanceUrl,
-      });
-    }
-    logger.warn(
-      'Missing credentials for packaging DevHub authentication. Skipping target package version check from DevHub.',
-    );
+  if (!packagingDevhub) {
+    logger.warn('No --packaging-devhub given. Skipping target package version check from DevHub.');
     return undefined;
   }
 
-  logger.info('Authenticating to packaging DevHub...');
+  if (!subscriberPackageVersionId || !isSubscriberPackageVersionId(subscriberPackageVersionId)) {
+    return undefined;
+  }
+
   try {
-    const authResult = await authenticateOrg({
-      username: packagingDevhubUsername,
-      jwtKeyFile,
-      clientId: packagingDevhubClientId,
-      instanceUrl: packagingDevhubInstanceUrl,
-      setDefaultDevHub: true,
-    });
-    if (!authResult.success) {
-      logger.warn(`Packaging DevHub auth failed: ${authResult.message ?? 'unknown error'}`);
-      return undefined;
-    }
-
-    logger.success('Packaging DevHub auth successful.');
-
-    if (!subscriberPackageVersionId || !isSubscriberPackageVersionId(subscriberPackageVersionId)) {
-      return undefined;
-    }
-
     logger.info(`Get latest package version for package version ID ${subscriberPackageVersionId}...`);
-    const { stdout } = await runSf(['package', 'version', 'report', '--package', subscriberPackageVersionId, '--json']);
+    const { stdout } = await runSf([
+      'package',
+      'version',
+      'report',
+      '--package',
+      subscriberPackageVersionId,
+      '--target-dev-hub',
+      packagingDevhub,
+      '--json',
+    ]);
     const versionReport = JSON.parse(stdout) as { result: { Version?: string } };
     return versionReport.result.Version ? `v${versionReport.result.Version}` : undefined;
   } catch (error) {
-    logger.warn(`Packaging DevHub auth command failed: ${(error as Error).message}`);
+    logger.warn(`Could not get target package version from DevHub: ${(error as Error).message}`);
     if (debug) {
       logger.error(String(error));
     }
@@ -209,18 +164,11 @@ export async function beforeScript(options: NotifyProjectOptions): Promise<void>
 
   const prevInstalledPackageVersion = await resolvePrevInstalledPackageVersion({
     alias: options.alias,
-    username: options.username,
-    jwtKeyFile: options.jwtKeyFile,
-    clientId: options.clientId,
-    instanceUrl: options.instanceUrl,
     debug: options.debug,
   });
 
   const targetPackageVersion = await resolveTargetPackageVersion({
-    packagingDevhubUsername: options.packagingDevhubUsername,
-    jwtKeyFile: options.jwtKeyFile,
-    packagingDevhubClientId: options.packagingDevhubClientId,
-    packagingDevhubInstanceUrl: options.packagingDevhubInstanceUrl,
+    packagingDevhub: options.packagingDevhub,
     subscriberPackageVersionId: options.subscriberPackageVersionId,
     debug: options.debug,
   });

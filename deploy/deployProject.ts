@@ -17,7 +17,6 @@
 import { execa } from 'execa';
 import { isSubscriberPackageVersionId } from '@simplysf/simply-core';
 import { logger } from '../logger.js';
-import { authenticateOrg } from '../sfAuth.js';
 import type { VcsProviderKind } from '../vcs/index.js';
 import { runDeployStage } from './runDeployStage.js';
 import {
@@ -104,8 +103,7 @@ export type InstallProjectPackageConfig = OrgAuthConfig & {
  * if given, else looks for a `04t...` package ID annotated on the git tag pointing at HEAD.
  */
 async function installProjectPackage(config: InstallProjectPackageConfig): Promise<void> {
-  const { alias, authUrl, clientId, instanceUrl, jwtKeyFile, subscriberPackageVersionId, username, debug } = config;
-  await authenticateOrg({ alias, authUrl, clientId, instanceUrl, jwtKeyFile, username, debug });
+  const { alias, subscriberPackageVersionId } = config;
   logger.info('Installing main package...');
 
   if (subscriberPackageVersionId && isSubscriberPackageVersionId(subscriberPackageVersionId)) {

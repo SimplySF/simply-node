@@ -21,20 +21,17 @@ import { listVcsProviderKinds, type VcsProviderKind } from '../vcs/index.js';
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('@simplysf/simply-cicd', 'simply.cicd.deploy');
 
-/** Flags shared by every deploy command that authenticates to a target Salesforce org. */
+/**
+ * Flags shared by every deploy command that targets a Salesforce org. `simply-cicd` never
+ * authenticates orgs itself — the alias must already be authenticated (by the calling pipeline,
+ * however it chooses to do that) before the command runs.
+ */
 export const orgAuthFlags = {
-  alias: Flags.string({ summary: messages.getMessage('flags.alias.summary'), env: 'SIMPLY_CICD_ALIAS' }),
-  'auth-url': Flags.string({ summary: messages.getMessage('flags.auth-url.summary'), env: 'SIMPLY_CICD_AUTH_URL' }),
-  'client-id': Flags.string({ summary: messages.getMessage('flags.client-id.summary'), env: 'SIMPLY_CICD_CLIENT_ID' }),
-  'instance-url': Flags.string({
-    summary: messages.getMessage('flags.instance-url.summary'),
-    env: 'SIMPLY_CICD_INSTANCE_URL',
+  alias: Flags.string({
+    summary: messages.getMessage('flags.alias.summary'),
+    required: true,
+    env: 'SIMPLY_CICD_ALIAS',
   }),
-  'jwt-key-file': Flags.string({
-    summary: messages.getMessage('flags.jwt-key-file.summary'),
-    env: 'SIMPLY_CICD_JWT_KEY_FILE',
-  }),
-  username: Flags.string({ summary: messages.getMessage('flags.username.summary'), env: 'SIMPLY_CICD_USERNAME' }),
 };
 
 export const debugFlag = {

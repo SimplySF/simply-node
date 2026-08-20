@@ -17,7 +17,6 @@
 import { promises as fs } from 'node:fs';
 import { runSf, runSfJson } from './exec/sfCli.js';
 import { logger } from './logger.js';
-import { authenticateOrg } from './sfAuth.js';
 import type { UpgradedPackage } from './schemas/deployProgress.js';
 
 export type InstallPackageDependenciesConfig = {
@@ -82,11 +81,8 @@ export async function installPackageDependencies(config: InstallPackageDependenc
 }
 
 export type ResolveUpgradedPackagesConfig = {
-  packagingDevhubUsername?: string;
-  packagingDevhubClientId?: string;
-  packagingDevhubInstanceUrl?: string;
-  jwtKeyFile?: string;
-  debug?: boolean;
+  /** The packaging DevHub's alias. Must already be authenticated. */
+  packagingDevhub?: string;
 };
 
 /** Reads an install report and returns the entries that upgraded an already-installed package. */
@@ -103,7 +99,10 @@ async function readUpgradedEntries(reportFile: string): Promise<InstallReportEnt
 }
 
 /** Runs `sf package version report` for one subscriber package version. Returns `undefined` on failure. */
-async function reportPackageVersion(subscriberPackageVersionId: string): Promise<PackageVersionReport | undefined> {
+async function reportPackageVersion(
+  subscriberPackageVersionId: string,
+  packagingDevhub: string,
+): Promise<PackageVersionReport | undefined> {
   try {
     const { result } = await runSfJson<{ result: PackageVersionReport }>([
       'package',
@@ -111,6 +110,8 @@ async function reportPackageVersion(subscriberPackageVersionId: string): Promise
       'report',
       '--package',
       subscriberPackageVersionId,
+      '--target-dev-hub',
+      packagingDevhub,
       '--json',
     ]);
     return result;
@@ -135,27 +136,9 @@ export async function resolveUpgradedPackages(
     return [];
   }
 
-  const { packagingDevhubUsername, packagingDevhubClientId, packagingDevhubInstanceUrl, jwtKeyFile, debug } = config;
-  if (!(packagingDevhubUsername && packagingDevhubClientId && packagingDevhubInstanceUrl && jwtKeyFile)) {
-    logger.warn('Missing packaging DevHub credentials. Skipping origin lookup for upgraded packages.');
-    return [];
-  }
-
-  try {
-    const authResult = await authenticateOrg({
-      username: packagingDevhubUsername,
-      clientId: packagingDevhubClientId,
-      instanceUrl: packagingDevhubInstanceUrl,
-      jwtKeyFile,
-      setDefaultDevHub: true,
-      debug,
-    });
-    if (!authResult.success) {
-      logger.warn(`Packaging DevHub auth failed: ${authResult.message ?? 'unknown error'}. Skipping origin lookup.`);
-      return [];
-    }
-  } catch (error) {
-    logger.warn(`Packaging DevHub auth failed: ${(error as Error).message}. Skipping origin lookup.`);
+  const { packagingDevhub } = config;
+  if (!packagingDevhub) {
+    logger.warn('No --packaging-devhub given. Skipping origin lookup for upgraded packages.');
     return [];
   }
 
@@ -164,8 +147,8 @@ export async function resolveUpgradedPackages(
   for (const entry of upgradedEntries) {
     // eslint-disable-next-line no-await-in-loop -- each package's prev/target reports are fetched concurrently, but packages themselves are processed one at a time
     const [prevReport, targetReport] = await Promise.all([
-      reportPackageVersion(entry.ExistingSubscriberPackageVersionId),
-      reportPackageVersion(entry.SubscriberPackageVersionId),
+      reportPackageVersion(entry.ExistingSubscriberPackageVersionId, packagingDevhub),
+      reportPackageVersion(entry.SubscriberPackageVersionId, packagingDevhub),
     ]);
 
     if (!prevReport || !targetReport) {

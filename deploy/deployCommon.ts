@@ -22,7 +22,6 @@ import type { z } from 'zod';
 import { cloneRepo } from '../git.js';
 import { logger } from '../logger.js';
 import { runApexTests as runApexTestsCommon } from '../sfApex.js';
-import { authenticateOrg } from '../sfAuth.js';
 import { installPackageDependencies as installPackageDependenciesCommon } from '../sfPackages.js';
 import { installDeploymentPlugins } from '../sfPlugins.js';
 import { deployConfigSchema, type DeployConfig } from '../schemas/deployConfig.js';
@@ -31,13 +30,14 @@ import { deployRulesSchema, type DeployRules } from '../schemas/deployRules.js';
 import { createVcsProvider } from '../vcs/index.js';
 import type { VcsProvider, VcsProviderKind } from '../vcs/index.js';
 
+/**
+ * A Salesforce org this command operates on, referenced by an alias the calling pipeline has
+ * already authenticated — `simply-cicd` never authenticates orgs itself. Optional here because not
+ * every stage needs one (e.g. `deployment-close-out`); commands that do require it declare
+ * `alias` as `required: true` on the flag itself.
+ */
 export type OrgAuthConfig = {
   alias?: string;
-  authUrl?: string;
-  clientId?: string;
-  instanceUrl?: string;
-  jwtKeyFile?: string;
-  username?: string;
 };
 
 /** A deployment entry from `deploy.json`, plus the synthetic `{ name: 'local' }` project deployment. */
@@ -252,10 +252,9 @@ export type InstallPackageDependenciesConfig = OrgAuthConfig & {
   installType?: 'All' | 'Delta' | 'Upgrade';
 };
 
-/** Authenticates to the target org, then installs its packaged dependencies. */
+/** Installs the target org's packaged dependencies. The org must already be authenticated. */
 export async function installPackageDependencies(config: InstallPackageDependenciesConfig): Promise<void> {
-  const { alias, authUrl, clientId, instanceUrl, jwtKeyFile, username, wait = '120', installType = 'Upgrade' } = config;
-  await authenticateOrg({ alias, authUrl, clientId, instanceUrl, jwtKeyFile, username });
+  const { alias, wait = '120', installType = 'Upgrade' } = config;
   await installPackageDependenciesCommon({ alias, wait, installType });
 }
 
@@ -300,23 +299,11 @@ export type RunApexTestsConfig = OrgAuthConfig & {
   debugMode?: boolean;
 };
 
-/** Authenticates to the target org, then runs its Apex tests. */
+/** Runs Apex tests on the target org. The org must already be authenticated. */
 export async function runApexTests(config: RunApexTestsConfig): Promise<void> {
-  const {
-    alias,
-    authUrl,
-    clientId,
-    instanceUrl,
-    jwtKeyFile,
-    username,
-    testLevel = 'RunLocalTests',
-    testSuite,
-    wait = '360',
-  } = config;
+  const { alias, testLevel = 'RunLocalTests', testSuite, wait = '360' } = config;
 
-  logger.info(`Authenticating to org ${alias ?? username ?? 'unknown'} for tests...`);
-  await authenticateOrg({ alias, authUrl, clientId, instanceUrl, jwtKeyFile, username });
-
+  logger.info(`Running Apex tests on org ${alias ?? 'unknown'}...`);
   await runApexTestsCommon({ alias, testLevel, testSuite, wait, debugMode: config.debugMode });
 }
 
@@ -461,27 +448,13 @@ async function runDeploymentJob(
 }
 
 /**
- * Runs a complete set of deployment jobs for a stage: authenticates, loads (and validates) the
- * progress and config files, determines where to resume from, then clones/prepares/executes each
- * job in order — persisting progress after every job so a mid-run crash can resume cleanly.
+ * Runs a complete set of deployment jobs for a stage: loads (and validates) the progress and
+ * config files, determines where to resume from, then clones/prepares/executes each job in order
+ * — persisting progress after every job so a mid-run crash can resume cleanly. The target org
+ * (`config.alias`) must already be authenticated.
  */
 export async function runDeploymentSteps(config: RunDeploymentStepsConfig): Promise<RunDeploymentStepsResult> {
-  const {
-    alias,
-    authUrl,
-    clientId,
-    deployConfigFile,
-    deployRulesFile,
-    isProjectDeployment,
-    instanceUrl,
-    jwtKeyFile,
-    deployProgressFile,
-    stage,
-    startFrom,
-    username,
-  } = config;
-
-  await authenticateOrg({ alias, authUrl, clientId, instanceUrl, jwtKeyFile, username });
+  const { deployConfigFile, deployRulesFile, isProjectDeployment, deployProgressFile, stage, startFrom } = config;
 
   const progress = await loadProgress(deployProgressFile);
   const deployConfigResult = await loadDeployConfig(deployConfigFile, deployRulesFile);

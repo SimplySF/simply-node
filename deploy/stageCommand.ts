@@ -83,12 +83,7 @@ export const happySoupStageFlags = {
 /** The parsed shape of {@link projectStageFlags}, as `this.parse()` returns it. */
 export type ProjectStageFlagValues = {
   'ci-job-token': string;
-  alias?: string;
-  'auth-url'?: string;
-  'client-id'?: string;
-  'instance-url'?: string;
-  'jwt-key-file'?: string;
-  username?: string;
+  alias: string;
   debug: boolean;
   'deploy-config-file': string;
   'deploy-progress-file': string;
@@ -127,11 +122,6 @@ export function toProjectStageOptions(stage: string, flags: ProjectStageFlagValu
     stage,
     ciJobToken: flags['ci-job-token'],
     alias: flags.alias,
-    authUrl: flags['auth-url'],
-    clientId: flags['client-id'],
-    instanceUrl: flags['instance-url'],
-    jwtKeyFile: flags['jwt-key-file'],
-    username: flags.username,
     debug: flags.debug,
     deployConfigFile: flags['deploy-config-file'],
     deployProgressFile: flags['deploy-progress-file'],
@@ -160,11 +150,6 @@ export function toHappySoupStageOptions(stage: string, flags: HappySoupStageFlag
     stage,
     ciJobToken: flags['ci-job-token'],
     alias: flags.alias,
-    authUrl: flags['auth-url'],
-    clientId: flags['client-id'],
-    instanceUrl: flags['instance-url'],
-    jwtKeyFile: flags['jwt-key-file'],
-    username: flags.username,
     debug: flags.debug,
     deployConfigFile: flags['deploy-config-file'],
     deployProgressFile: flags['deploy-progress-file'],
