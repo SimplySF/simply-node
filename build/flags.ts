@@ -42,20 +42,11 @@ export const devHubFlag = {
   }),
 };
 
-export const jwtKeyFileFlag = {
-  'jwt-key-file': Flags.string({
-    summary: messages.getMessage('flags.jwt-key-file.summary'),
-    required: true,
-    env: 'SIMPLY_CICD_JWT_KEY_FILE',
-  }),
-};
-
 /**
- * Variant of {@link jwtKeyFileFlag} for scratch-org commands that only need it conditionally — a
- * scratch org whose Dev Hub wasn't JWT-authenticated re-authenticates via its own refresh token
- * instead, so no key file is required in that case.
+ * Not required: a scratch org whose Dev Hub wasn't JWT-authenticated re-authenticates via its own
+ * refresh token instead, so a key file is only needed when the Dev Hub really was JWT-authenticated.
  */
-export const optionalJwtKeyFileFlag = {
+export const jwtKeyFileFlag = {
   'jwt-key-file': Flags.string({
     summary: messages.getMessage('flags.jwt-key-file.summary'),
     env: 'SIMPLY_CICD_JWT_KEY_FILE',
