@@ -39,10 +39,10 @@ type PrevInstalledPackageVersionParams = {
 };
 
 type TargetPackageVersionParams = {
-  devhubToolingUsername?: string;
+  packagingDevhubUsername?: string;
   jwtKeyFile?: string;
-  devhubToolingClientId?: string;
-  devhubToolingInstanceUrl?: string;
+  packagingDevhubClientId?: string;
+  packagingDevhubInstanceUrl?: string;
   subscriberPackageVersionId?: string;
   debug: boolean;
 };
@@ -58,9 +58,9 @@ export type NotifyProjectOptions = {
   ciPipelineUrl?: string;
   ciProjectTitle?: string;
   clientId?: string;
-  devhubToolingClientId?: string;
-  devhubToolingInstanceUrl?: string;
-  devhubToolingUsername?: string;
+  packagingDevhubClientId?: string;
+  packagingDevhubInstanceUrl?: string;
+  packagingDevhubUsername?: string;
   instanceUrl?: string;
   almBaseUrl?: string;
   almProjectKey?: string;
@@ -109,49 +109,49 @@ export async function resolvePrevInstalledPackageVersion(params: PrevInstalledPa
   }
 }
 
-/** Authenticates to the tooling DevHub and resolves the released package's version. Returns `undefined` on any failure. */
+/** Authenticates to the packaging DevHub and resolves the released package's version. Returns `undefined` on any failure. */
 export async function resolveTargetPackageVersionFromDevHub(
   params: TargetPackageVersionParams,
 ): Promise<string | undefined> {
   const {
-    devhubToolingUsername,
+    packagingDevhubUsername,
     jwtKeyFile,
-    devhubToolingClientId,
-    devhubToolingInstanceUrl,
+    packagingDevhubClientId,
+    packagingDevhubInstanceUrl,
     subscriberPackageVersionId,
     debug,
   } = params;
 
-  if (!(devhubToolingUsername && jwtKeyFile && devhubToolingClientId && devhubToolingInstanceUrl)) {
+  if (!(packagingDevhubUsername && jwtKeyFile && packagingDevhubClientId && packagingDevhubInstanceUrl)) {
     if (debug) {
-      logger.debug('Tooling DevHub Auth Params:', {
-        devhubToolingUsername,
+      logger.debug('Packaging DevHub auth params:', {
+        packagingDevhubUsername,
         jwtKeyFile,
-        devhubToolingClientId,
-        devhubToolingInstanceUrl,
+        packagingDevhubClientId,
+        packagingDevhubInstanceUrl,
       });
     }
     logger.warn(
-      'Missing credentials for Tooling DevHub authentication. Skipping target package version check from DevHub.',
+      'Missing credentials for packaging DevHub authentication. Skipping target package version check from DevHub.',
     );
     return undefined;
   }
 
-  logger.info('Authenticating to Tooling DevHub...');
+  logger.info('Authenticating to packaging DevHub...');
   try {
     const authResult = await authenticateOrg({
-      username: devhubToolingUsername,
+      username: packagingDevhubUsername,
       jwtKeyFile,
-      clientId: devhubToolingClientId,
-      instanceUrl: devhubToolingInstanceUrl,
+      clientId: packagingDevhubClientId,
+      instanceUrl: packagingDevhubInstanceUrl,
       setDefaultDevHub: true,
     });
     if (!authResult.success) {
-      logger.warn(`Tooling Auth failed: ${authResult.message ?? 'unknown error'}`);
+      logger.warn(`Packaging DevHub auth failed: ${authResult.message ?? 'unknown error'}`);
       return undefined;
     }
 
-    logger.success('Tooling Auth successful.');
+    logger.success('Packaging DevHub auth successful.');
 
     if (!subscriberPackageVersionId || !isSubscriberPackageVersionId(subscriberPackageVersionId)) {
       return undefined;
@@ -162,7 +162,7 @@ export async function resolveTargetPackageVersionFromDevHub(
     const versionReport = JSON.parse(stdout) as { result: { Version?: string } };
     return versionReport.result.Version ? `v${versionReport.result.Version}` : undefined;
   } catch (error) {
-    logger.warn(`Tooling Auth command failed: ${(error as Error).message}`);
+    logger.warn(`Packaging DevHub auth command failed: ${(error as Error).message}`);
     if (debug) {
       logger.error(String(error));
     }
@@ -217,10 +217,10 @@ export async function beforeScript(options: NotifyProjectOptions): Promise<void>
   });
 
   const targetPackageVersion = await resolveTargetPackageVersion({
-    devhubToolingUsername: options.devhubToolingUsername,
+    packagingDevhubUsername: options.packagingDevhubUsername,
     jwtKeyFile: options.jwtKeyFile,
-    devhubToolingClientId: options.devhubToolingClientId,
-    devhubToolingInstanceUrl: options.devhubToolingInstanceUrl,
+    packagingDevhubClientId: options.packagingDevhubClientId,
+    packagingDevhubInstanceUrl: options.packagingDevhubInstanceUrl,
     subscriberPackageVersionId: options.subscriberPackageVersionId,
     debug: options.debug,
   });

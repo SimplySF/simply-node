@@ -114,9 +114,9 @@ export type CreatePackageVersionOptions = {
   ciPipelineUrl: string;
   ciProjectPath: string;
   projectAccessToken: string;
-  devhubToolingUsername: string;
-  devhubToolingClientId: string;
-  devhubToolingInstanceUrl: string;
+  packagingDevhubUsername: string;
+  packagingDevhubClientId: string;
+  packagingDevhubInstanceUrl: string;
   jwtKeyFile: string;
   debug?: boolean;
   alwaysCreatePackage?: boolean;
@@ -155,9 +155,9 @@ export async function createPackageVersion(options: CreatePackageVersionOptions)
   );
 
   await authenticateOrg({
-    username: options.devhubToolingUsername,
-    clientId: options.devhubToolingClientId,
-    instanceUrl: options.devhubToolingInstanceUrl,
+    username: options.packagingDevhubUsername,
+    clientId: options.packagingDevhubClientId,
+    instanceUrl: options.packagingDevhubInstanceUrl,
     jwtKeyFile: options.jwtKeyFile,
     setDefaultDevHub: true,
     debug: options.debug,

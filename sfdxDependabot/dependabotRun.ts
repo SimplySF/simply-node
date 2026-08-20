@@ -36,7 +36,7 @@ export async function resolvePackageDetails(
   subscriberPackageVersionId: string,
 ): Promise<ResolvePackageDetailsResult> {
   if (!devhubUsername) {
-    throw new Error('Missing DevHub username/alias (DEVHUB_TOOLING_USERNAME).');
+    throw new Error('Missing DevHub username/alias (PACKAGING_DEVHUB_USERNAME).');
   }
   if (!subscriberPackageVersionId) {
     throw new Error('Missing subscriber package version ID (SUBSCRIBER_PACKAGE_VERSION_ID).');

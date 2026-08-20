@@ -82,9 +82,9 @@ export async function installPackageDependencies(config: InstallPackageDependenc
 }
 
 export type ResolveUpgradedPackagesConfig = {
-  devhubToolingUsername?: string;
-  devhubToolingClientId?: string;
-  devhubToolingInstanceUrl?: string;
+  packagingDevhubUsername?: string;
+  packagingDevhubClientId?: string;
+  packagingDevhubInstanceUrl?: string;
   jwtKeyFile?: string;
   debug?: boolean;
 };
@@ -135,27 +135,27 @@ export async function resolveUpgradedPackages(
     return [];
   }
 
-  const { devhubToolingUsername, devhubToolingClientId, devhubToolingInstanceUrl, jwtKeyFile, debug } = config;
-  if (!(devhubToolingUsername && devhubToolingClientId && devhubToolingInstanceUrl && jwtKeyFile)) {
-    logger.warn('Missing DevHub tooling credentials. Skipping origin lookup for upgraded packages.');
+  const { packagingDevhubUsername, packagingDevhubClientId, packagingDevhubInstanceUrl, jwtKeyFile, debug } = config;
+  if (!(packagingDevhubUsername && packagingDevhubClientId && packagingDevhubInstanceUrl && jwtKeyFile)) {
+    logger.warn('Missing packaging DevHub credentials. Skipping origin lookup for upgraded packages.');
     return [];
   }
 
   try {
     const authResult = await authenticateOrg({
-      username: devhubToolingUsername,
-      clientId: devhubToolingClientId,
-      instanceUrl: devhubToolingInstanceUrl,
+      username: packagingDevhubUsername,
+      clientId: packagingDevhubClientId,
+      instanceUrl: packagingDevhubInstanceUrl,
       jwtKeyFile,
       setDefaultDevHub: true,
       debug,
     });
     if (!authResult.success) {
-      logger.warn(`DevHub tooling auth failed: ${authResult.message ?? 'unknown error'}. Skipping origin lookup.`);
+      logger.warn(`Packaging DevHub auth failed: ${authResult.message ?? 'unknown error'}. Skipping origin lookup.`);
       return [];
     }
   } catch (error) {
-    logger.warn(`DevHub tooling auth failed: ${(error as Error).message}. Skipping origin lookup.`);
+    logger.warn(`Packaging DevHub auth failed: ${(error as Error).message}. Skipping origin lookup.`);
     return [];
   }
 

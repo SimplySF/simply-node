@@ -202,9 +202,9 @@ export type DeployHappySoupOptions = OrgAuthConfig & {
   vcsProvider: VcsProviderKind;
   installType?: 'All' | 'Delta' | 'Upgrade';
   wait?: string;
-  devhubToolingUsername?: string;
-  devhubToolingClientId?: string;
-  devhubToolingInstanceUrl?: string;
+  packagingDevhubUsername?: string;
+  packagingDevhubClientId?: string;
+  packagingDevhubInstanceUrl?: string;
   projectAccessToken?: string;
   ciPipelineId?: string;
   ciProjectPath?: string;
@@ -232,9 +232,9 @@ async function installPackagedAndDetectUpgrades(
   await installPackageDependenciesCommon({ alias, wait, installType, outputFile });
 
   return resolveUpgradedPackages(outputFile, {
-    devhubToolingUsername: config.devhubToolingUsername,
-    devhubToolingClientId: config.devhubToolingClientId,
-    devhubToolingInstanceUrl: config.devhubToolingInstanceUrl,
+    packagingDevhubUsername: config.packagingDevhubUsername,
+    packagingDevhubClientId: config.packagingDevhubClientId,
+    packagingDevhubInstanceUrl: config.packagingDevhubInstanceUrl,
     jwtKeyFile: config.jwtKeyFile,
     debug: config.debug,
   });
