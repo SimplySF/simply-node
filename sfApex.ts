@@ -70,6 +70,85 @@ export async function hasApexTests(options?: HasApexTestsOptions): Promise<boole
   return false;
 }
 
+/** Kicks off the `sf apex test run`, swallowing any failure so the run's artifacts (namely the
+ * test run ID file) can still be inspected afterward to distinguish an execution failure from a
+ * genuine test failure. */
+async function executeTestRun(args: string[]): Promise<Error | undefined> {
+  try {
+    await runSf(args, { stdio: 'pipe' });
+    return undefined;
+  } catch (e) {
+    return e as Error;
+  }
+}
+
+/** Reads the test run ID that `sf apex test run` writes out. If that fails, prefers surfacing
+ * the run's own execution error (if any) since a missing ID file is usually just a symptom of it. */
+async function resolveTestRunId(testRunIdFile: string, execError: Error | undefined): Promise<string> {
+  try {
+    return (await fs.readFile(testRunIdFile, 'utf-8')).trim();
+  } catch (readIdError) {
+    if (execError) {
+      logger.error('Apex test run failed.', (execError as { shortMessage?: string }).shortMessage);
+      throw execError;
+    }
+
+    logger.error(`Failed to read test run ID from ${testRunIdFile}.`, (readIdError as Error).message);
+    throw readIdError;
+  }
+}
+
+function reportFailingTests(failingTests: NonNullable<ApexTestResult['tests']>): void {
+  logger.raw('\n' + '='.repeat(80));
+  logger.raw(`❌ APEX TEST FAILURE REPORT (${failingTests.length} failures found)`);
+  logger.raw('='.repeat(80));
+
+  failingTests.forEach((t, index) => {
+    logger.raw(`\n[${index + 1}/${failingTests.length}] ❌ ${t.FullName ?? 'Unknown test'}`);
+    logger.raw(`    Message:     ${t.Message ? t.Message.trim().replace(/\n/g, '\n                 ') : 'N/A'}`);
+    if (t.StackTrace) {
+      logger.raw(`    Stack Trace: ${t.StackTrace.trim().replace(/\n/g, '\n                 ')}`);
+    }
+    logger.raw('-'.repeat(80));
+  });
+  logger.raw();
+}
+
+/** Reads and reports on the JUnit/JSON result file for a completed test run, returning the run's
+ * outcome. A read/parse failure here prefers surfacing the run's own execution error (if any). */
+async function processTestResults(resultFilePath: string, execError: Error | undefined): Promise<string | undefined> {
+  try {
+    const resultsContent = await fs.readFile(resultFilePath, 'utf-8');
+    const results = JSON.parse(resultsContent) as ApexTestResult;
+    const testRunOutcome = results.summary?.outcome;
+
+    if (testRunOutcome !== 'Failed') {
+      logger.success('Apex tests completed successfully.');
+      return testRunOutcome;
+    }
+
+    logger.error('Apex test run failed.');
+    const failingTests = results.tests ? results.tests.filter((t) => t.Outcome === 'Fail') : [];
+
+    if (failingTests.length > 0) {
+      reportFailingTests(failingTests);
+    } else {
+      logger.warn(
+        'Test run was marked as failed, but no individual test failures were found. This could indicate a compile error or issue.',
+      );
+    }
+
+    return testRunOutcome;
+  } catch (fileError) {
+    logger.error(`Failed to read or parse test result file at ${resultFilePath}.`, (fileError as Error).message);
+    if (execError) {
+      throw execError;
+    }
+
+    throw fileError;
+  }
+}
+
 /**
  * Runs Apex tests in the specified target Salesforce organization. First checks that any Apex
  * tests exist before initiating the run. Test results are written to `./test-results/apex` in
@@ -110,77 +189,13 @@ export async function runApexTests(options: RunApexTestsOptions): Promise<void> 
     args.push('--test-level', testLevel);
   }
 
-  let testRunId: string | undefined;
+  const execError = await executeTestRun(args);
+  const testRunId = await resolveTestRunId(path.join(testResultsDir, 'test-run-id.txt'), execError);
+
   let testRunOutcome: string | undefined;
-  let execError: Error | undefined;
-
-  try {
-    await runSf(args, { stdio: 'pipe' });
-  } catch (e) {
-    execError = e as Error;
-  }
-
-  const testRunIdFile = path.join(testResultsDir, 'test-run-id.txt');
-  try {
-    testRunId = (await fs.readFile(testRunIdFile, 'utf-8')).trim();
-  } catch (readIdError) {
-    if (execError) {
-      logger.error('Apex test run failed.', (execError as { shortMessage?: string }).shortMessage);
-      throw execError;
-    } else {
-      logger.error(`Failed to read test run ID from ${testRunIdFile}.`, (readIdError as Error).message);
-      throw readIdError;
-    }
-  }
-
   if (testRunId) {
     const resultFilePath = path.join(testResultsDir, `test-result-${testRunId}.json`);
-    try {
-      const resultsContent = await fs.readFile(resultFilePath, 'utf-8');
-      const results = JSON.parse(resultsContent) as ApexTestResult;
-      testRunOutcome = results.summary?.outcome;
-
-      if (testRunOutcome === 'Failed') {
-        logger.error('Apex test run failed.');
-      } else {
-        logger.success('Apex tests completed successfully.');
-        return;
-      }
-
-      const failingTests = results.tests ? results.tests.filter((t) => t.Outcome === 'Fail') : [];
-
-      if (failingTests.length > 0) {
-        logger.raw('\n' + '='.repeat(80));
-        logger.raw(`❌ APEX TEST FAILURE REPORT (${failingTests.length} failures found)`);
-        logger.raw('='.repeat(80));
-
-        failingTests.forEach((t, index) => {
-          logger.raw(`\n[${index + 1}/${failingTests.length}] ❌ ${t.FullName ?? 'Unknown test'}`);
-          logger.raw(`    Message:     ${t.Message ? t.Message.trim().replace(/\n/g, '\n                 ') : 'N/A'}`);
-          if (t.StackTrace) {
-            logger.raw(`    Stack Trace: ${t.StackTrace.trim().replace(/\n/g, '\n                 ')}`);
-          }
-          logger.raw('-'.repeat(80));
-        });
-        logger.raw();
-      } else if (testRunOutcome === 'Failed') {
-        logger.warn(
-          'Test run was marked as failed, but no individual test failures were found. This could indicate a compile error or issue.',
-        );
-      } else {
-        logger.info(
-          `Test run summary: ${results.summary?.passing ?? 0} passed, ${results.summary?.failing ?? 0} failed, ${
-            results.summary?.skipped ?? 0
-          } skipped.`,
-        );
-      }
-    } catch (fileError) {
-      logger.error(`Failed to read or parse test result file at ${resultFilePath}.`, (fileError as Error).message);
-      if (execError) {
-        throw execError;
-      }
-      throw fileError;
-    }
+    testRunOutcome = await processTestResults(resultFilePath, execError);
   }
 
   if (testRunOutcome === 'Failed') {

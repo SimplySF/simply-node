@@ -211,7 +211,9 @@ export async function createScratchOrg(
         logger.warn(`Dev Hub ${hub.alias} reached its daily limit. Trying next Dev Hub...`);
         continue;
       }
-      throw new Error(`Scratch org creation failed with a non-recoverable error using Dev Hub ${hub.alias}.`);
+      throw new Error(`Scratch org creation failed with a non-recoverable error using Dev Hub ${hub.alias}.`, {
+        cause: error,
+      });
     }
   }
 

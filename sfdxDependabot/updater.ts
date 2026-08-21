@@ -59,7 +59,7 @@ export function updateSfdxProject(
   try {
     sfdxProject = JSON.parse(jsonString) as SfdxProject;
   } catch (error) {
-    throw new Error(`Malformed JSON in sfdx-project.json: ${(error as Error).message}`);
+    throw new Error(`Malformed JSON in sfdx-project.json: ${(error as Error).message}`, { cause: error });
   }
 
   let changed = false;

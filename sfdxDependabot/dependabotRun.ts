@@ -263,7 +263,7 @@ export async function discoverEligibleProjects(
   try {
     allProjects = await vcsProvider.listProjects(rootGroupId);
   } catch (error) {
-    throw new Error(`Failed to access root group "${rootGroupId}": ${(error as Error).message}`);
+    throw new Error(`Failed to access root group "${rootGroupId}": ${(error as Error).message}`, { cause: error });
   }
 
   logger.info(`Discovered ${allProjects.length} projects in group.`);

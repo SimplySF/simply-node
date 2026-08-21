@@ -97,8 +97,8 @@ export async function determinePackageChanges(options: DeterminePackageChangesOp
   logger.info('Determining package changes...');
   const outFile = options.out ?? 'changes.env';
 
-  let packageChanged = true;
-  let lastTag = '';
+  let packageChanged: boolean;
+  let lastTag: string;
   try {
     ({ packageChanged, lastTag } = await detectPackageChanges());
   } catch (err) {
