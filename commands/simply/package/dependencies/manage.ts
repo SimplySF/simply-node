@@ -142,7 +142,7 @@ export default class PackageDependenciesManage extends SfCommand<PackageDependen
           dependenciesToIgnore.includes(package2Id) ||
           dependenciesToIgnore.includes(versionService.getPackageAlias(package2Id) ?? '');
 
-        let choices: VersionChoice[] = [];
+        let choices: VersionChoice[];
 
         if (isIgnored) {
           choices =

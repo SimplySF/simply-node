@@ -346,7 +346,6 @@ export async function buildVersionService(
     },
 
     enrichDependency(dependency: ParsedDependency): ParsedDependency {
-      // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
       if (dependency.package2Id || !dependency.subscriberPackageVersionId) return dependency;
       const v = versionsBySubscriberId.get(dependency.subscriberPackageVersionId);
       if (!v) return dependency;
