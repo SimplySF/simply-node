@@ -31,6 +31,7 @@ import {
   VersionNumber,
 } from '@salesforce/packaging';
 import { Optional } from '@salesforce/ts-types';
+import { retryWithBackoff } from '@simplysf/simply-core';
 import { PackageDirDependency } from '../../../../schemas/sfdx-project/packageDirs.js';
 import {
   isDependenciesPackagingDirectory,
@@ -67,6 +68,9 @@ const upgradeType = { Delete: 'delete-only', DeprecateOnly: 'deprecate-only', Mi
 
 /** Matches one or more comma-separated `alias:key` pairs, as accepted by `--installation-key`. */
 const installationKeyRegex = new RegExp(/^(\w+:\w+)(,\s*\w+:\w+)*/);
+
+/** Matches a single `alias:count` pair, as accepted by `--package-retry-attempts`. */
+const packageRetryAttemptsRegex = /^\w+:\d+$/;
 
 /**
  * @param packagesToInstall - The install outcome for every resolved dependency.
@@ -127,11 +131,26 @@ export default class PackageDependenciesInstall extends SfCommand<PackageToInsta
       summary: messages.getMessage('flags.output-file.summary'),
       description: messages.getMessage('flags.output-file.description'),
     }),
+    'package-retry-attempts': Flags.string({
+      summary: messages.getMessage('flags.package-retry-attempts.summary'),
+      description: messages.getMessage('flags.package-retry-attempts.description'),
+      multiple: true,
+    }),
     'publish-wait': Flags.duration({
       unit: 'minutes',
       summary: messages.getMessage('flags.publish-wait.summary'),
       char: 'b',
       default: Duration.minutes(0),
+    }),
+    'retry-attempts': Flags.integer({
+      summary: messages.getMessage('flags.retry-attempts.summary'),
+      default: 0,
+      min: 0,
+    }),
+    'retry-backoff': Flags.integer({
+      summary: messages.getMessage('flags.retry-backoff.summary'),
+      default: 2,
+      min: 1,
     }),
     'security-type': Flags.custom<'AllUsers' | 'AdminsOnly'>({
       options: ['AllUsers', 'AdminsOnly'],
@@ -320,6 +339,33 @@ export default class PackageDependenciesInstall extends SfCommand<PackageToInsta
       this.spinner.stop();
     }
 
+    // Process any per-package retry overrides. A package not listed here falls back to
+    // --retry-attempts.
+    const packageRetryAttemptsMap = new Map<string, number>();
+
+    if (flags['package-retry-attempts']) {
+      this.spinner.start('Processing package retry attempts', '', { stdout: true });
+      for (let packageRetryAttempts of flags['package-retry-attempts']) {
+        packageRetryAttempts = packageRetryAttempts.trim();
+
+        const isFormatValid = packageRetryAttemptsRegex.test(packageRetryAttempts);
+
+        if (!isFormatValid) {
+          throw messages.createError('error.packageRetryAttemptsFormat');
+        }
+
+        const [aliasOrId, retryAttemptsValue] = packageRetryAttempts.split(':');
+        const subscriberPackageVersionId = this.project!.getPackageIdFromAlias(aliasOrId) ?? aliasOrId;
+
+        if (!isSubscriberPackageVersionId(subscriberPackageVersionId)) {
+          throw messages.createError('error.invalidSubscriberPackageVersionId', [subscriberPackageVersionId]);
+        }
+
+        packageRetryAttemptsMap.set(subscriberPackageVersionId, parseInt(retryAttemptsValue, 10));
+      }
+      this.spinner.stop();
+    }
+
     // Always look up what's currently installed, so the report can show the existing package
     // alongside the install decision regardless of --install-type.
     this.spinner.start('Analyzing which packages are installed', '', { stdout: true });
@@ -489,36 +535,63 @@ export default class PackageDependenciesInstall extends SfCommand<PackageToInsta
         );
       }
 
+      const packageRetryAttempts =
+        packageRetryAttemptsMap.get(packageToInstall.SubscriberPackageVersionId) ?? flags['retry-attempts'];
+
       let pkgInstallRequest: Optional<PackageInstallRequest>;
-      try {
-        this.spinner.start(`Installing package ${packageToInstall.PackageName}`, '', { stdout: true });
-        pkgInstallRequest = await subscriberPackageVersion.install(request, installOptions);
-        this.spinner.stop();
-      } catch (error: unknown) {
-        if (error instanceof SfError && error.data) {
-          pkgInstallRequest = error.data as PackageInstallRequest;
-          this.spinner.stop(messages.getMessage('error.packageInstallPollingTimeout'));
-        } else {
-          throw error;
-        }
-      } finally {
-        if (pkgInstallRequest) {
-          if (pkgInstallRequest.Status === 'SUCCESS') {
-            packageToInstall.Status = 'Installed';
-            packageInstallRequests.push(pkgInstallRequest);
-          } else if (['IN_PROGRESS', 'UNKNOWN'].includes(pkgInstallRequest.Status)) {
-            packageToInstall.Status = 'Installing';
-            throw messages.createError('error.packageInstallInProgress', [
-              this.config.bin,
-              pkgInstallRequest.Id,
-              targetOrgConnection.getUsername(),
-            ]);
-          } else {
-            packageToInstall.Status = 'Failed';
-            throw messages.createError('error.packageInstall', [reducePackageInstallRequestErrors(pkgInstallRequest)]);
+
+      await retryWithBackoff(
+        async () => {
+          try {
+            this.spinner.start(`Installing package ${packageToInstall.PackageName}`, '', { stdout: true });
+            pkgInstallRequest = await subscriberPackageVersion.install(request, installOptions);
+            this.spinner.stop();
+          } catch (error: unknown) {
+            if (error instanceof SfError && error.data) {
+              pkgInstallRequest = error.data as PackageInstallRequest;
+              this.spinner.stop(messages.getMessage('error.packageInstallPollingTimeout'));
+            } else {
+              throw error;
+            }
+          } finally {
+            if (pkgInstallRequest) {
+              if (pkgInstallRequest.Status === 'SUCCESS') {
+                packageToInstall.Status = 'Installed';
+                packageInstallRequests.push(pkgInstallRequest);
+              } else if (['IN_PROGRESS', 'UNKNOWN'].includes(pkgInstallRequest.Status)) {
+                // The install may still complete server-side, so retrying here could race or
+                // duplicate it - surface it to the caller instead.
+                packageToInstall.Status = 'Installing';
+                throw messages.createError('error.packageInstallInProgress', [
+                  this.config.bin,
+                  pkgInstallRequest.Id,
+                  targetOrgConnection.getUsername(),
+                ]);
+              } else {
+                packageToInstall.Status = 'Failed';
+                throw messages.createError('error.packageInstall', [
+                  reducePackageInstallRequestErrors(pkgInstallRequest),
+                ]);
+              }
+            }
           }
-        }
-      }
+        },
+        {
+          retryAttempts: packageRetryAttempts,
+          backoffFactor: flags['retry-backoff'],
+          shouldRetry: () => packageToInstall.Status !== 'Installing',
+          onRetry: (_error, attempt, delay) => {
+            this.warn(
+              messages.getMessage('warning.packageInstallRetrying', [
+                packageToInstall.PackageName,
+                attempt,
+                packageRetryAttempts,
+                Math.round(delay.seconds),
+              ]),
+            );
+          },
+        },
+      );
     }
 
     await writeReport();
