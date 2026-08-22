@@ -7,9 +7,10 @@ Thanks for your interest in contributing to Simply! This document covers the rep
 3. Fork this repository.
 4. [Set up your environment](#setup) and make sure you can build and test the affected package(s) locally.
 5. Create a topic branch in your fork.
-6. Make your change, following the [commit message format](#commit-messages) below.
-7. Write tests for your change. No pull request will be accepted without tests covering the change.
-8. Open a pull request against `main`. We'll review your code, suggest any needed changes, and merge it in.
+6. For a new command, a user-visible flag/output/error change, or a new shared module, write a design document in [`docs/design/`](docs/design/README.md) and get it agreed on before you start implementing.
+7. Make your change, following the [commit message format](#commit-messages) below.
+8. Write tests for your change. No pull request will be accepted without tests covering the change.
+9. Open a pull request against `main`. We'll review your code, suggest any needed changes, and merge it in.
 
 ## Repository Structure
 
@@ -141,6 +142,7 @@ If your change only affects one package, scope the commit to it, e.g. `feat(simp
 ## Pull Requests
 
 - Keep pull requests focused on a single change where possible.
+- If the change has a design document in [`docs/design/`](docs/design/README.md), update it to match what actually shipped, including its `Status` line and its row in the index. A design doc that quietly disagrees with the code is worse than none.
 - Make sure `pnpm run build` and `pnpm test` pass before opening the PR — the same checks run in CI and as a pre-push hook.
 - Aim for high test coverage on new code.
 - Update the relevant package's README/command docs if you changed a command's flags or behavior. `packages/simply-data` regenerates its README command docs automatically on version bump (`oclif readme` runs from its `version` script); every other plugin package requires running `pnpm run readme` manually in that package and committing the result.

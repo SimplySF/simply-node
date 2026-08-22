@@ -2,6 +2,24 @@
 
 Guidance for Claude Code when working in this repository.
 
+## Before writing code for a new feature
+
+Every new feature gets a design document in `docs/design/` **before** it gets an implementation.
+Read `docs/design/README.md` for the process, the template, and the list of changes that require a
+doc (new commands, user-visible flag/output/error changes, new shared modules). In short:
+
+1. Write `docs/design/NNNN-short-slug.md` from the template, using the next free number.
+2. Get the design agreed on before implementing — decisions are cheapest to change there.
+3. Implement, then correct the doc wherever the implementation taught you something better; a doc
+   that silently disagrees with the shipped behavior is worse than no doc.
+4. Add the row to the index table in `docs/design/README.md` and update the doc's `Status` line when
+   the work lands.
+
+The point is that the reasoning behind the system's shape — why a command lives in one package and
+not another, what was rejected — stays recoverable later, instead of dying in PR threads. The doc
+records the reasoning; `messages/*.md` records the user-facing behavior. Neither substitutes for the
+other.
+
 ## Before considering a command/flag change finished
 
 See `CONTRIBUTING.md`'s "Pull Requests" checklist in full — it's not optional. The two steps most
