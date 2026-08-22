@@ -116,7 +116,7 @@ importers:
         specifier: workspace:^0.3.6
         version: link:../simply-document
       '@simplysf/simply-package':
-        specifier: workspace:^2.9.0
+        specifier: workspace:^2.10.0
         version: link:../simply-package
       '@simplysf/simply-permissions':
         specifier: workspace:^1.2.30
