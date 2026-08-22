@@ -145,6 +145,14 @@
   },
   {
     "alias": [],
+    "command": "simply:package:version:get",
+    "flagAliases": [],
+    "flagChars": ["d", "p"],
+    "flags": ["directory", "flags-dir", "json", "package"],
+    "plugin": "@simplysf/simply-package"
+  },
+  {
+    "alias": [],
     "command": "simply:permissions:analyze",
     "flagAliases": [],
     "flagChars": ["f", "o"],

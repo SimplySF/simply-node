@@ -42,5 +42,13 @@
     "flagChars": ["p", "s", "v", "x"],
     "flags": ["api-version", "exclude-matcher", "flags-dir", "json", "matcher", "package", "target-dev-hub"],
     "plugin": "@simplysf/simply-package"
+  },
+  {
+    "alias": [],
+    "command": "simply:package:version:get",
+    "flagAliases": [],
+    "flagChars": ["d", "p"],
+    "flags": ["directory", "flags-dir", "json", "package"],
+    "plugin": "@simplysf/simply-package"
   }
 ]
