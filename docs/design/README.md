@@ -35,6 +35,7 @@ refactors that keep the public surface identical (though a short doc is welcome 
 | --------------------------------------- | ---------------------------- | --------------------- |
 | [0001](0001-package-version-get.md)     | `simply package version get` | Implemented           |
 | [0002](0002-utam-playwright-adapter.md) | UTAM on Playwright           | Draft — research only |
+| [0003](0003-community-custom-url.md)    | `simply community url set`   | Draft                 |
 
 ## Template
 
