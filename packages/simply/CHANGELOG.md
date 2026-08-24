@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.20.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply%402.19.0...%40simplysf%2Fsimply%402.20.0) (2026-08-24)
+
+### Features
+
+- **simply-community:** add simply community url set ([8daa898](https://github.com/SimplySF/simply-node/commit/8daa898b10389270714a8bdf3758e0a6063c639c))
+
 # [2.19.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply%402.18.2...%40simplysf%2Fsimply%402.19.0) (2026-08-24)
 
 ### Features
