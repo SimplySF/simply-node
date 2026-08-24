@@ -129,6 +129,7 @@ function syncCicdReference() {
 
 const OTHER_PLUGIN_DIRS = [
   'simply',
+  'simply-aep',
   'simply-apex',
   'simply-community',
   'simply-data',

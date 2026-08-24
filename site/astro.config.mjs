@@ -34,6 +34,7 @@ export default defineConfig({
           label: 'Plugins',
           items: [
             { label: 'Overview', slug: 'plugins' },
+            { label: 'AEP', slug: 'plugins/simply-aep' },
             { label: 'Apex', slug: 'plugins/simply-apex' },
             { label: 'Community', slug: 'plugins/simply-community' },
             { label: 'Data', slug: 'plugins/simply-data' },

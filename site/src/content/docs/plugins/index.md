@@ -16,6 +16,7 @@ sf plugins install @simplysf/simply
 Or install only the plugin(s) you need — each one works standalone:
 
 ```sh
+sf plugins install @simplysf/simply-aep
 sf plugins install @simplysf/simply-apex
 sf plugins install @simplysf/simply-community
 sf plugins install @simplysf/simply-data
@@ -31,6 +32,7 @@ sf plugins install @simplysf/simply-sobject
 
 | Plugin                                               | What it's for                                                          |
 | ---------------------------------------------------- | ---------------------------------------------------------------------- |
+| [`simply-aep`](/plugins/simply-aep/)                 | Apex Enterprise Patterns tooling (fflib, force-di, AT4DX)              |
 | [`simply-apex`](/plugins/simply-apex/)               | Executing anonymous Apex, purging debug logs, and managing trace flags |
 | [`simply-community`](/plugins/simply-community/)     | Publishing Salesforce Communities (Experience Cloud sites)             |
 | [`simply-data`](/plugins/simply-data/)               | Uploading and downloading files in a Salesforce org                    |

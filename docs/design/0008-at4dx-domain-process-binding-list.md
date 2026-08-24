@@ -1,6 +1,6 @@
 # 0008 — `simply aep at4dx domain-process-binding list`
 
-**Status:** Draft
+**Status:** Implemented (PR #125)
 **Package:** `packages/simply-aep`
 **Date:** 2026-08-24
 
@@ -197,44 +197,33 @@ separately and they never contend for the same slot. Grouping must include `type
 
 ## Implementation plan
 
-Most of this was already written in a first implementation pass, mirroring
-[0007](0007-at4dx-binding-list.md)'s file layout exactly; the corrections below (found while writing
-this doc, by reading `DomainProcessCoordinator.cls` directly rather than assuming symmetry with
-`at4dxResolve.ts`) still need to be applied before it's committed.
+All steps below landed in PR #125, mirroring [0007](0007-at4dx-binding-list.md)'s file layout.
 
-1. **`src/common/customMetadataXml.ts`** — done: `fieldValue`, `toNumber`, `toBoolean`, `extractValues`
+1. **`src/common/customMetadataXml.ts`** — `fieldValue`, `toNumber`, `toBoolean`, `extractValues`
    extracted out of `at4dxLocalScan.ts`, which now imports them.
-2. **`src/common/at4dxDomainProcessBindingTypes.ts`** — done: `RawDomainProcessBindingRecord`,
+2. **`src/common/at4dxDomainProcessBindingTypes.ts`** — `RawDomainProcessBindingRecord`,
    `DomainProcessBindingRow`, `DomainProcessType`, `ProcessContext`, `TriggerOperation`,
    `ALL_TRIGGER_OPERATIONS`.
-3. **`src/common/at4dxDomainProcessOrgScan.ts`** — done: one SOQL query with the
+3. **`src/common/at4dxDomainProcessOrgScan.ts`** — one SOQL query with the
    `RelatedDomainBindingSObject__r.QualifiedApiName` traversal, `INVALID_TYPE` handling.
-4. **`src/common/at4dxDomainProcessLocalScan.ts`** — done: `ComponentSet.fromSource` scan for
+4. **`src/common/at4dxDomainProcessLocalScan.ts`** — `ComponentSet.fromSource` scan for
    `DomainProcessBinding.*` components.
-5. **`src/common/at4dxDomainProcessResolve.ts`** — **needs a fix**: `groupKey()` currently groups by
-   `(sobject, processContext, triggerOperation ?? domainMethodToken)` only. Add `type` to the key (see
-   Resolution rules / Alternatives considered) so a same-order Criteria/Action pair no longer flags a
-   false-positive collision.
-6. **`src/commands/simply/aep/at4dx/domain-process-binding/list.ts`** — done: flags, exclusivity
-   check, scan → filter → resolve → `this.table()`.
+5. **`src/common/at4dxDomainProcessResolve.ts`** — `groupKey()` groups by `(sobject, processContext,
+triggerOperation ?? domainMethodToken, type)`, so a same-order Criteria/Action pair doesn't flag a
+   false-positive collision (see Resolution rules / Alternatives considered).
+6. **`src/commands/simply/aep/at4dx/domain-process-binding/list.ts`** — flags, exclusivity check,
+   scan → filter → resolve → `this.table()`.
 7. **`messages/simply.aep.at4dx.domain-process-binding.list.md`** — done.
-8. **`src/index.ts`** barrel — done: exports added alongside the existing Application Factory exports.
-9. **Tests** — mostly done (`test/common/at4dxDomainProcessResolve.test.ts`,
-   `test/common/at4dxDomainProcessLocalScan.test.ts`,
-   `test/commands/simply/aep/at4dx/domain-process-binding/list.test.ts`); add the missing case from
-   Testing below once the `groupKey` fix lands.
-10. **Housekeeping**, per `CLAUDE.md`: `pnpm run readme` and `pnpm run build` already run for
-    `packages/simply-aep` (README and its `command-snapshot.json` are current). Still needed: a root
-    `pnpm run build` so `packages/simply`'s `command-snapshot.json` picks up the new command (it's
-    already an `oclif.plugins`/dependency entry from [0007](0007-at4dx-binding-list.md), so no
-    `package.json` change is needed there).
-11. **Manual smoke test** — run `sf simply aep at4dx domain-process-binding list --source-dir <real
-AT4DX project> --json` against real local source (not yet done), both to sanity-check the parsed
-    shape and because `simply-vscode/extensions/simply-at4dx`'s consumption of it hasn't been
-    smoke-tested against real data either.
-12. **Keep `simply-vscode/extensions/simply-at4dx`'s `at4dxCli.ts` type mirror in sync** with any shape
-    change here (field names, the `orderCollision` fix) — that extension already shells out to this
-    command and has its own copy of `DomainProcessBindingRow`.
+8. **`src/index.ts`** barrel — exports added alongside the existing Application Factory exports.
+9. **Tests** — `test/common/at4dxDomainProcessResolve.test.ts` (including both cases from the Testing
+   table below), `test/common/at4dxDomainProcessLocalScan.test.ts`,
+   `test/commands/simply/aep/at4dx/domain-process-binding/list.test.ts`.
+10. **Housekeeping**, per `CLAUDE.md`: `pnpm run readme` and `pnpm run build` run for
+    `packages/simply-aep`; root `pnpm run build` picked up the new command in `packages/simply`'s
+    `command-snapshot.json` (already an `oclif.plugins`/dependency entry from
+    [0007](0007-at4dx-binding-list.md)).
+11. **Manual smoke test** and **keeping `simply-vscode/extensions/simply-at4dx`'s `at4dxCli.ts` type
+    mirror in sync** remain open — tracked under Open questions.
 
 ## Testing
 
@@ -262,9 +251,13 @@ still an open item for both commands, not unique to this one).
 
 ## Open questions
 
-- **The `groupKey` fix** (Implementation plan #5) needs to land, with its new test case, before this
-  is committed — this doc's Behavior section already describes the corrected rule; the code doesn't
-  yet.
+- **Manual smoke test** against real AT4DX local source (`--source-dir <real AT4DX project> --json`)
+  hasn't been run — both to sanity-check the parsed shape and because
+  `simply-vscode/extensions/simply-at4dx`'s consumption of it hasn't been smoke-tested against real
+  data either.
+- **Keeping `simply-vscode/extensions/simply-at4dx`'s `at4dxCli.ts` type mirror in sync** with any
+  future shape change here — that extension shells out to this command and has its own copy of
+  `DomainProcessBindingRow`.
 - **VS Code extension integration details** beyond `DomainProcessBindingRow[]` (e.g., whether the
   extension wants incremental/watch-mode scanning, or the criteria/action pairing implied by shared
   `order` surfaced more explicitly than "same order, different `type`") are intentionally undecided

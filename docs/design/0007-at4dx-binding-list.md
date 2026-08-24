@@ -1,6 +1,6 @@
 # 0007 — `simply aep at4dx binding list`
 
-**Status:** Draft
+**Status:** Implemented (PR #124)
 **Package:** `packages/simply-aep` (new package)
 **Date:** 2026-08-24
 

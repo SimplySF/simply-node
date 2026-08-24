@@ -1,29 +1,15 @@
-# @simplysf/simply-aep
+---
+title: '@simplysf/simply-aep'
+description: 'Commands for Apex Enterprise Patterns tooling (fflib, force-di, AT4DX)'
+---
 
-[![NPM](https://img.shields.io/npm/v/@simplysf/simply-aep?label=@simplysf/simply-aep)](https://npmjs.com/@simplysf/simply-aep) [![Downloads/week](https://img.shields.io/npm/dw/@simplysf/simply-aep.svg)](https://npmjs.com/@simplysf/simply-aep) [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://raw.githubusercontent.com/SimplySF/simply-node/main/LICENSE.txt)
+Commands for Apex Enterprise Patterns tooling (fflib, force-di, AT4DX)
 
-Commands for [Apex Enterprise Patterns](https://github.com/apex-enterprise-patterns) tooling (fflib, force-di, AT4DX).
-
-## Install
-
-```bash
+```sh
 sf plugins install @simplysf/simply-aep
 ```
 
-## Issues
-
-Please report any issues at https://github.com/SimplySF/simply-node/issues
-
-## Contributing
-
-This package is part of the [`@simplysf/simply`](https://github.com/SimplySF/simply-node) monorepo. See the repo's [CONTRIBUTING.md](https://github.com/SimplySF/simply-node/blob/main/CONTRIBUTING.md) for the repo structure, how to set up and build the project, our commit conventions, and how to submit a pull request. Please also read our [Code of Conduct](https://github.com/SimplySF/simply-node/blob/main/CODE_OF_CONDUCT.md).
-
 ## Commands
-
-<!-- commands -->
-
-- [`sf simply aep at4dx binding list`](#sf-simply-aep-at4dx-binding-list)
-- [`sf simply aep at4dx domain-process-binding list`](#sf-simply-aep-at4dx-domain-process-binding-list)
 
 ## `sf simply aep at4dx binding list`
 
@@ -126,4 +112,3 @@ EXAMPLES
 ```
 
 _See code: [lib/commands/simply/aep/at4dx/domain-process-binding/list.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.3.0/packages/simply-aep/lib/commands/simply/aep/at4dx/domain-process-binding/list.js)_
-<!-- commandsstop -->

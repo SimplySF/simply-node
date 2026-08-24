@@ -39,8 +39,8 @@ refactors that keep the public surface identical (though a short doc is welcome 
 | [0004](0004-undici-multipart-upload.md)           | Multipart upload without `form-data`           | Implemented           |
 | [0005](0005-path-on-client-file-name.md)          | Send only the file name as `PathOnClient`      | Implemented           |
 | [0006](0006-api-request-budget.md)                | API request budget check                       | Implemented           |
-| [0007](0007-at4dx-binding-list.md)                | `simply aep at4dx binding list`                | Draft                 |
-| [0008](0008-at4dx-domain-process-binding-list.md) | `simply aep at4dx domain-process-binding list` | Draft                 |
+| [0007](0007-at4dx-binding-list.md)                | `simply aep at4dx binding list`                | Implemented           |
+| [0008](0008-at4dx-domain-process-binding-list.md) | `simply aep at4dx domain-process-binding list` | Implemented           |
 
 ## Template
 
