@@ -1,7 +1,7 @@
 {
   "name": "@simplysf/simply-data",
   "description": "Utilities for working with data",
-  "version": "2.3.27",
+  "version": "2.4.0",
   "author": "@ClayChipps",
   "homepage": "https://github.com/SimplySF/simply-node",
   "bugs": "https://github.com/SimplySF/simply-node/issues",
@@ -65,7 +65,7 @@
     "@salesforce/core": "^8.30.0",
     "@salesforce/kit": "^3.2.6",
     "@salesforce/sf-plugins-core": "^12.2.16",
-    "@simplysf/simply-core": "workspace:^1.3.0",
+    "@simplysf/simply-core": "workspace:^1.4.0",
     "@simplysf/simply-plugin-kit": "workspace:^1.0.4",
     "csv-parse": "^7.0.2",
     "p-queue": "^9.2.0"

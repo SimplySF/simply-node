@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.4.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-data%402.3.27...%40simplysf%2Fsimply-data%402.4.0) (2026-08-24)
+
+### Features
+
+- **simply-data:** add --max-api-usage budget check to file commands ([a9e6126](https://github.com/SimplySF/simply-node/commit/a9e612655c5de02d6b9ad489895629fb88864bf4))
+
 ## [2.3.27](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-data%402.3.26...%40simplysf%2Fsimply-data%402.3.27) (2026-08-24)
 
 ### Bug Fixes
