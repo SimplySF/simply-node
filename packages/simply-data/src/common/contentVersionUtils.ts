@@ -16,16 +16,43 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import stream from 'node:stream';
-import FormData from 'form-data';
-import got from 'got';
-import { Connection } from '@salesforce/core';
+import stream, { Readable } from 'node:stream';
+import { Connection, SfError } from '@salesforce/core';
+import { contentVersionMultipart } from './multipart.js';
 import {
   ContentVersion,
   ContentVersionDownload,
   ContentVersionCreateRequest,
   ContentVersionCreateResult,
 } from './contentVersionTypes.js';
+
+/** How much of an error response body to include in a thrown error before truncating. */
+const MAX_ERROR_BODY_LENGTH = 2000;
+
+/**
+ * Turn a non-2xx response into an `SfError`.
+ *
+ * `fetch` — unlike the `got` client this replaced — resolves successfully for 4xx and 5xx, so every
+ * call site has to check `response.ok` itself. Missing one is how an HTML error page ends up
+ * written to disk with a `.pdf` extension.
+ *
+ * @param response - The failed response. Its body is consumed.
+ * @param context - What was being attempted, used as the error message prefix.
+ * @returns An `SfError` carrying the status and as much of the body as is useful.
+ */
+async function responseError(response: Response, context: string): Promise<SfError> {
+  let body = '';
+  try {
+    body = (await response.text()).slice(0, MAX_ERROR_BODY_LENGTH);
+  } catch {
+    // A body we can't read is not worth failing differently over; the status still tells the story.
+  }
+
+  return new SfError(
+    `${context} failed with HTTP ${response.status} ${response.statusText}${body ? `: ${body}` : ''}`,
+    'ContentVersionRequestError',
+  );
+}
 
 /**
  * Download a `ContentVersion`'s file data to a local directory.
@@ -35,6 +62,7 @@ import {
  * `ContentDocumentId`, and `FileExtension` are used to build the output file path.
  * @param downloadDirectory - The local directory to write the file into.
  * @returns The local path the file was written to.
+ * @throws {SfError} If the org returns a non-2xx response, before any file is created.
  */
 export async function downloadContentVersion(
   targetOrgConnection: Connection,
@@ -45,14 +73,28 @@ export async function downloadContentVersion(
     contentVersionDownload.ContentDocumentId
   }_${contentVersionDownload.Title.replaceAll(' ', '_')}.${contentVersionDownload.FileExtension}`;
 
-  await stream.promises.pipeline(
-    got.stream(`${targetOrgConnection.baseUrl()}/sobjects/ContentVersion/${contentVersionDownload.Id}/VersionData`, {
+  const response = await fetch(
+    `${targetOrgConnection.baseUrl()}/sobjects/ContentVersion/${contentVersionDownload.Id}/VersionData`,
+    {
       headers: {
         Authorization: `Bearer ${targetOrgConnection.accessToken as string}`,
       },
-    }),
-    fs.createWriteStream(filePath),
+    },
   );
+
+  // Checked before the write stream is opened, so a failed download leaves nothing behind.
+  if (!response.ok) {
+    throw await responseError(response, `Download of ContentVersion ${contentVersionDownload.Id}`);
+  }
+
+  if (!response.body) {
+    throw new SfError(
+      `Download of ContentVersion ${contentVersionDownload.Id} returned an empty response body.`,
+      'ContentVersionRequestError',
+    );
+  }
+
+  await stream.promises.pipeline(Readable.fromWeb(response.body), fs.createWriteStream(filePath));
 
   return filePath;
 }
@@ -66,6 +108,7 @@ export async function downloadContentVersion(
  * @param firstPublishLocationId - The ID of the record/library to attach the resulting
  * `ContentDocument` to, if any.
  * @returns The created `ContentVersion`, re-queried to include `ContentDocumentId`.
+ * @throws {SfError} If the org returns a non-2xx response.
  */
 export async function uploadContentVersion(
   targetOrgConnection: Connection,
@@ -82,19 +125,28 @@ export async function uploadContentVersion(
     Title: title ?? path.basename(pathOnClient),
   };
 
-  const form = new FormData();
-  form.append('entity_content', JSON.stringify(contentVersionCreateRequest), { contentType: 'application/json' });
-  form.append('VersionData', fs.createReadStream(pathOnClient), { filename: path.basename(pathOnClient) });
+  const { contentType, createBody } = contentVersionMultipart({
+    entity: contentVersionCreateRequest,
+    filePath: pathOnClient,
+    filename: path.basename(pathOnClient),
+  });
 
-  const data: ContentVersionCreateResult = await got.post(`${targetOrgConnection.baseUrl()}/sobjects/ContentVersion`, {
-    body: form,
+  const response = await fetch(`${targetOrgConnection.baseUrl()}/sobjects/ContentVersion`, {
+    method: 'POST',
+    // `duplex: 'half'` is required by undici whenever the body is a stream.
+    body: Readable.toWeb(createBody()) as ReadableStream<Uint8Array>,
+    duplex: 'half',
     headers: {
       Authorization: `Bearer ${targetOrgConnection.accessToken as string}`,
-      'Content-Type': `multipart/form-data; boundary="${form.getBoundary()}"`,
+      'Content-Type': contentType,
     },
-    resolveBodyOnly: true,
-    responseType: 'json',
   });
+
+  if (!response.ok) {
+    throw await responseError(response, `Upload of "${pathOnClient}"`);
+  }
+
+  const data = (await response.json()) as ContentVersionCreateResult;
 
   const queryResult = await targetOrgConnection.singleRecordQuery(
     `SELECT ContentDocumentId, FileExtension, Id, Title FROM ContentVersion WHERE Id='${data.id}'`,

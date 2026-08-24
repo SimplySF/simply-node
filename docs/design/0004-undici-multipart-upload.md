@@ -1,6 +1,6 @@
 # 0004 — Multipart file upload without `form-data`
 
-**Status:** Draft
+**Status:** Implemented
 **Package:** `packages/simply-data`
 **Date:** 2026-08-23
 
@@ -35,7 +35,7 @@ documentation.
 
 Passing the legacy `form-data` object straight to `fetch` produces:
 
-```
+```text
 request content-type: multipart/form-data; boundary="--------------------------9050e201eece5461b5951c86"
 body:                 [object FormData]
 ```
@@ -51,7 +51,7 @@ in the first place.
 
 Salesforce's documented request format for a ContentVersion blob insert is:
 
-```
+```text
 --boundary_string
 Content-Disposition: form-data; name="entity_content";
 Content-Type: application/json
@@ -87,7 +87,7 @@ against a live org, and it is the one thing worth checking before ruling option 
 
 ### Manually setting `Content-Type` alongside WHATWG `FormData` corrupts the request
 
-```
+```text
 request content-type: multipart/form-data; boundary=my-own-boundary
 body:                 ------formdata-undici-082545958631 ...
 ```
@@ -103,7 +103,7 @@ Writing the multipart envelope directly and streaming it through
 `Readable.toWeb(...)` with `duplex: 'half'` reproduces Salesforce's documented format exactly,
 trailing semicolon and all:
 
-```
+```text
 --simplyboundary00000000
 Content-Disposition: form-data; name="entity_content";
 Content-Type: application/json
@@ -169,14 +169,24 @@ afterthought.
 
 ## Behavior
 
-No user-visible change. Same three commands, same flags, same output, same JSON result shapes:
+No change to the command surface. Same three commands, same flags, same output, same JSON result
+shapes:
 
 - `simply data file upload`
 - `simply data files upload`
 - `simply data files download`
 
-This is a pure internal refactor of `contentVersionUtils.ts`. If a message file or a README needs to
-change, something has gone wrong.
+This is an internal refactor of `contentVersionUtils.ts`. No message file, README, or
+`command-snapshot.json` changed — the snapshot was regenerated and came back identical, which is the
+check that no command surface moved.
+
+**One thing does change for users, and the original draft of this doc understated it:** error message
+text. `simply data files download` and `simply data files upload` write failures into `error.csv`,
+and those strings came from `got`. A 500 during download used to read
+`HTTPError: Request failed with status code 500 (Internal Server Error)` and now reads
+`ContentVersionRequestError: Download of ContentVersion <id> failed with HTTP 500 Internal Server
+Error: <body>`. That is an improvement — it names the record and includes the response body — but
+anyone grepping `error.csv` for the old string will need to adjust.
 
 ### Upload
 
@@ -305,14 +315,27 @@ The valuable tests here assert on **bytes**, not on behavior, because the entire
 | Large-file memory ceiling                   | Streaming a file much larger than the heap does not blow up — asserts the property the design is chosen for.                                                                                  |
 
 The three existing NUTs (`file/upload.nut.ts`, `files/upload.nut.ts`, `files/download.nut.ts`) are
-the acceptance gate and should need no changes. If they need changes, the refactor changed behavior
-and that is a bug.
+the acceptance gate and were not modified. They have not been run — they need a live org — so they
+remain the outstanding verification for this change.
+
+The **unit** tests did need changing, which the draft did not anticipate:
+
+- `file/upload.test.ts` and `files/upload.test.ts` stubbed `got.post` directly, so they had to move
+  to stubbing `globalThis.fetch`. The stub has to return a **fresh `Response` per call** — a
+  `Response` body can only be consumed once, and `files upload` uploads more than one file. Reusing
+  a single instance produces `TypeError: Body is unusable`, which is a trap worth naming here
+  because it looks like a product bug and isn't.
+- `files/download.test.ts` asserted on `got`'s error message text and now asserts on the new
+  message, plus a new assertion that a failed download leaves no partial file on disk.
 
 ## Open questions
 
-- **Does Salesforce accept a `filename` on the `entity_content` part?** Step 1 answers it. It is the
-  hinge for option B, and my evidence that it matters is indirect — the shape of the
-  `INVALID_MULTIPART_REQUEST` error, plus the absence of a filename in every official example.
+- **Does Salesforce accept a `filename` on the `entity_content` part?** **Still unanswered** — step 1
+  was skipped because no authenticated org was available. It did not block the implementation:
+  option H emits no filename on that part, matching the documented format, so the answer only
+  matters if someone later wants to simplify to the platform `FormData`. The evidence that it
+  matters remains indirect — the shape of the `INVALID_MULTIPART_REQUEST` error, plus the absence of
+  a filename in every official example.
 - **Does the `VersionData` part's `Content-Type` matter?** `form-data` sniffs it from the file
   extension today (`application/pdf` for a `.pdf`), while Salesforce's example uses
   `application/octet-stream` and Salesforce derives the real type from `PathOnClient`. The plan
