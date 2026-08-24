@@ -1,14 +1,14 @@
 {
-  "name": "@simplysf/simply-community",
-  "description": "Utilities for working with Salesforce Communities (Experience Cloud sites)",
-  "version": "0.6.0",
+  "name": "@simplysf/simply-aep",
+  "description": "Commands for Apex Enterprise Patterns tooling (fflib, force-di, AT4DX)",
+  "version": "0.1.0",
   "author": "@ClayChipps",
   "homepage": "https://github.com/SimplySF/simply-node",
   "bugs": "https://github.com/SimplySF/simply-node/issues",
   "repository": {
     "type": "git",
     "url": "https://github.com/SimplySF/simply-node",
-    "directory": "packages/simply-community"
+    "directory": "packages/simply-aep"
   },
   "engines": {
     "node": ">=22.0.0"
@@ -42,18 +42,13 @@
     ],
     "flexibleTaxonomy": true,
     "plugins": [],
-    "repositoryPrefix": "<%- repo %>/blob/@simplysf/simply-community@<%- version %>/packages/simply-community/<%- commandPath %>",
+    "repositoryPrefix": "<%- repo %>/blob/@simplysf/simply-aep@<%- version %>/packages/simply-aep/<%- commandPath %>",
     "topics": {
       "simply": {
         "description": "Commands for simplifying Salesforce",
         "subtopics": {
-          "community": {
-            "description": "Commands for working with Salesforce Communities (Experience Cloud sites)",
-            "subtopics": {
-              "url": {
-                "description": "Commands for working with Experience Cloud site custom URLs"
-              }
-            }
+          "aep": {
+            "description": "Commands for Apex Enterprise Patterns tooling (fflib, force-di, AT4DX)"
           }
         }
       }
@@ -63,13 +58,9 @@
   "dependencies": {
     "@oclif/core": "^4.11.2",
     "@salesforce/core": "^8.30.0",
-    "@salesforce/kit": "^3.2.6",
     "@salesforce/sf-plugins-core": "^12.2.16",
     "@salesforce/source-deploy-retrieve": "^12.37.2",
-    "@simplysf/simply-core": "workspace:^1.4.0",
-    "@simplysf/simply-plugin-kit": "workspace:^1.0.4",
-    "glob": "^13.0.6",
-    "xmlbuilder2": "^4.0.3"
+    "@simplysf/simply-core": "workspace:^1.4.0"
   },
   "devDependencies": {
     "@oclif/plugin-command-snapshot": "^5.3.19",
@@ -89,10 +80,10 @@
     "lint": "wireit",
     "readme": "oclif readme --no-aliases",
     "test": "wireit",
-    "test:coverage": "vitest run --coverage --project simply-community",
-    "test:nuts": "vitest run --config ../../vitest.nuts.config.ts --project simply-community",
+    "test:coverage": "vitest run --coverage --project simply-aep",
+    "test:nuts": "vitest run --config ../../vitest.nuts.config.ts --project simply-aep",
     "test:only": "wireit",
-    "test:watch": "vitest watch --project simply-community"
+    "test:watch": "vitest watch --project simply-aep"
   },
   "wireit": {
     "build": {
@@ -191,7 +182,7 @@
       "output": []
     },
     "test:only": {
-      "command": "vitest run --project simply-community",
+      "command": "vitest run --project simply-aep",
       "env": {
         "FORCE_COLOR": "2"
       },

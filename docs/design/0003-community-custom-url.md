@@ -158,16 +158,58 @@ run against an org that intentionally lags.
 
 ### Resolution rules
 
-| Step              | Rule                                                                                                                                | On failure                                               |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| Find site file    | Glob `<directory>/**/sites/<--site>.site-meta.xml`. Exactly one match required.                                                     | Error naming the glob, or listing the ambiguous matches. |
-| Find network file | Only when `--path-prefix` or `--publish` is given. Any `<directory>/**/networks/*.network-meta.xml` whose `<site>` equals `--site`. | Error if zero or more than one match.                    |
+| Step              | Rule                                                                                                                                | On failure                                           |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| Find site file    | Glob `<directory>/**/sites/<--site>.site-meta.xml`. Exactly one match required.                                                     | See "Retrieval when the site file is missing" below. |
+| Find network file | Only when `--path-prefix` or `--publish` is given. Any `<directory>/**/networks/*.network-meta.xml` whose `<site>` equals `--site`. | Error if zero or more than one match.                |
 
 The network file is looked up **only** when `--path-prefix` or `--publish` is supplied —
 `--path-prefix` because the prefix is written there, `--publish` because the file's basename is how
 the Network's name is resolved. Setting a domain alone touches neither, so a missing or ambiguous
 network file isn't an error in that case — which also means the command works for Salesforce Sites
 that have no `Network` at all.
+
+### Retrieval when the site file is missing locally
+
+Not every checkout has the site metadata: a pipeline may run against a repo that doesn't track
+`sites/` at all, or a fresh clone that hasn't retrieved it yet. Requiring the file to already exist
+locally would make the command useless for exactly the case it's meant to simplify.
+
+When the site file glob matches **zero** files and `--target-org` is available, the command
+retrieves the `CustomSite` component from the target org into the resolved destination directory
+(`--directory` if given, otherwise the project's default package directory from
+`sfdx-project.json`) instead of failing, and warns that it did so — "automatic, but not silent" was
+the deliberate choice here, so a typo'd `--site` still surfaces immediately as an unexpected retrieve
+message rather than either a fast local error or a fully silent network round-trip. If the glob
+still matches **more than one** file, that's unrelated to retrieval — an ambiguous local match is a
+project-layout problem, not a missing-file problem, and errors exactly as before with no retrieve
+attempted. If neither a local file nor an org connection is available, or the component doesn't
+exist in the org either, it's a fatal error identical in spirit to today's, naming both facts (not
+found locally, not found in the org).
+
+**Retrieval is scoped to the `CustomSite` file only** — the `Network` file (needed for
+`--path-prefix` or `--publish`) is **not** retrieved automatically, and a missing one still errors
+exactly as today, even with `--target-org`. Reaching it would mean either a currently-unconfirmed
+direct query from a CustomSite API name to its `Network`, or retrieving _every_ `Network` in the org
+to find the one whose `<site>` matches — the latter works, but as a side effect it would dump every
+Experience Cloud site's metadata into the project on a single missing-file lookup, which is a worse
+surprise than the error it replaces. Left as a follow-up if a direct lookup is ever confirmed; see
+"Open questions".
+
+**Ordering relative to the domain preflight.** The preflight's "runs before anything is written"
+guarantee (see below) is preserved by running the preflight's pass/fail decision _before_ file
+resolution — the preflight doesn't need the site file at all, only `--domain` and the connection.
+The "already bound to a different site" warning, which _does_ need the network file, is advisory and
+never fails the command, so it still runs after file resolution without breaking that guarantee.
+
+One nuance the guarantee doesn't extend to: retrieval itself writes to disk as soon as it succeeds,
+not deferred until later steps succeed too. If the site file is retrieved but the network file then
+turns out to be missing (`--path-prefix` given, no local network file, no retrieval for it), the
+command still errors — but the freshly retrieved, unpatched site file is left on disk. This is
+intentionally different from the risk the original guarantee defends against: a _half-patched_ file
+that looks like finished, intentional work when it isn't. A retrieved-but-unpatched file is
+unambiguously just "the org's current state, now available locally" — there's nothing to be
+confused about, and arguably it's useful for debugging why the next step failed.
 
 ### What it writes
 
@@ -197,8 +239,17 @@ should `simply-community` depend on `simply-cicd`).
 
 **Restore runs in a `finally`, whether or not the deploy succeeded.** The contract is that `--deploy`
 never leaves the working tree modified — a failed deploy that left a dirty tree would be the worst
-of both worlds, since the caller would have neither the org change nor a clean checkout. The
-originals are held in memory (two small files) and rewritten byte-for-byte.
+of both worlds, since the caller would have neither the org change nor a clean checkout. For a file
+that already existed locally, the original content is held in memory and rewritten byte-for-byte.
+
+For a site file the command retrieved this run (see "Retrieval when the site file is missing
+locally"), there is no "original content" to restore — the file didn't exist before this invocation.
+Restore instead **deletes** it, so `--deploy` keeps its exact contract: the working tree ends up
+precisely as it started, and "started" here means the file was absent. This was a deliberate choice
+over the alternative of leaving the retrieved file in place as a bonus — leaving it would mean
+`--deploy`'s "untouched tree" guarantee no longer held in every case, and a guarantee that holds
+"usually" is worse than one that holds always. Anyone who wants the file locally runs the command
+without `--deploy` (or with `--deploy` and reruns without it afterward, per the note below).
 
 The obvious objection is that a failed deploy is then harder to debug, because the metadata that
 failed is gone. The answer is that **running the same command without `--deploy` reproduces the
@@ -238,6 +289,8 @@ export type CommunityUrlSetResult = {
   primary: boolean;
   pathPrefix?: string;
   siteFile: string;
+  /** True when the site file didn't exist locally and was retrieved from --target-org instead. */
+  siteRetrieved: boolean;
   networkFile?: string;
   previousDomains: string[];
   /** Absent when no --target-org was available to query. */
@@ -272,23 +325,49 @@ is also an error exit — it exists so the JSON says which state the tree was le
 
 ### Errors
 
-| Condition                                         | Behavior                                                                                                                                              |
-| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Domain not registered in the org                  | Error **before any file is written**, naming the domain and the org. Downgraded to a warning by `--ignore-missing-domain`.                            |
-| `--ignore-missing-domain` with no `--target-org`  | Warn that the flag had no effect — there was no check to ignore.                                                                                      |
-| No site file matches `--site`                     | Error, naming the glob that was tried.                                                                                                                |
-| More than one site file matches                   | Error, listing the matched paths.                                                                                                                     |
-| `--path-prefix` given, no network references site | Error naming the CustomSite API name that was searched for.                                                                                           |
-| `--path-prefix` given, multiple networks match    | Error, listing the matched paths.                                                                                                                     |
-| Site file isn't parseable XML                     | Error, naming the file.                                                                                                                               |
-| `--publish` without `--deploy`                    | Error at parse time — publishing without deploying would publish stale org state.                                                                     |
-| `--deploy` without `--target-org`                 | Error at parse time, from the standard org-flag handling.                                                                                             |
-| `--publish` given, network file missing/ambiguous | Same errors as the `--path-prefix` cases — `--publish` needs the network file to resolve the Network name.                                            |
-| Deploy fails                                      | Restore still runs, then error with the component failures and a note that re-running without `--deploy` reproduces the patch for inspection.         |
-| Restore fails                                     | Error naming the files left modified, alongside the deploy result. The only path that leaves a dirty tree.                                            |
-| Publish fails after a successful deploy           | Error, but the deploy is reported as succeeded — the org change is real and re-running `--publish` alone is not a supported retry, so say so plainly. |
+| Condition                                                                             | Behavior                                                                                                                                              |
+| ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Domain not registered in the org                                                      | Error **before any file is written**, naming the domain and the org. Downgraded to a warning by `--ignore-missing-domain`.                            |
+| `--ignore-missing-domain` with no `--target-org`                                      | Warn that the flag had no effect — there was no check to ignore.                                                                                      |
+| No site file matches `--site`, no `--target-org`                                      | Error, naming the glob that was tried.                                                                                                                |
+| No site file matches, `--target-org` given, component doesn't exist in the org either | Error, naming the glob that was tried and the org that was checked.                                                                                   |
+| No site file matches, `--target-org` given, component exists in the org               | Retrieves it, warns that it did so, and proceeds — not an error.                                                                                      |
+| More than one site file matches                                                       | Error, listing the matched paths. `--target-org` doesn't change this — ambiguity isn't a missing-file problem.                                        |
+| `--path-prefix` given, no network references site                                     | Error naming the CustomSite API name that was searched for.                                                                                           |
+| `--path-prefix` given, multiple networks match                                        | Error, listing the matched paths.                                                                                                                     |
+| Site file isn't parseable XML                                                         | Error, naming the file.                                                                                                                               |
+| `--publish` without `--deploy`                                                        | Error at parse time — publishing without deploying would publish stale org state.                                                                     |
+| `--deploy` without `--target-org`                                                     | Error at parse time, from the standard org-flag handling.                                                                                             |
+| `--publish` given, network file missing/ambiguous                                     | Same errors as the `--path-prefix` cases — `--publish` needs the network file to resolve the Network name.                                            |
+| Deploy fails                                                                          | Restore still runs, then error with the component failures and a note that re-running without `--deploy` reproduces the patch for inspection.         |
+| Restore fails                                                                         | Error naming the files left modified, alongside the deploy result. The only path that leaves a dirty tree.                                            |
+| Publish fails after a successful deploy                                               | Error, but the deploy is reported as succeeded — the org change is real and re-running `--publish` alone is not a supported retry, so say so plainly. |
 
 ## Alternatives considered
+
+**Gate retrieval behind an explicit flag (e.g. `--retrieve`) instead of an automatic fallback.**
+Considered and rejected in favor of automatic-with-a-warning. An explicit flag is the more
+conservative default, but it means the common case — a pipeline running against a checkout that was
+never going to have `sites/` committed at all — has to know in advance to pass it, which defeats the
+"just run this before the deploy" pitch the command was built on. The warning does the job the flag
+was for: a `--site` typo still surfaces immediately as an unexpected "retrieved from org" message
+instead of silently proceeding, without requiring every caller to opt in by name.
+
+**Delete a retrieved-and-deployed file on restore vs. leave it as a bonus.** Leaving it was tempting
+— you asked the command to set the URL, and as a side effect it can also hand you the file. Rejected
+because it would make `--deploy`'s "the working tree is left exactly as it found it" guarantee true
+_usually_ instead of _always_, and the whole value of that guarantee (see "Patch, deploy, then
+restore in one command" below) is that a caller never has to reason about which case they're in.
+Anyone who wants the file gets it for free by not passing `--deploy`, or by rerunning without it.
+
+**Retrieve the `Network` file automatically too, by listing every `Network` in the org and matching
+on `<site>`.** Would close the gap for `--path-prefix`/`--publish` against a missing network file,
+and was seriously considered since it reuses the existing "match by `<site>`" logic verbatim.
+Rejected because of the side effect: an org with many Experience Cloud sites would have _all_ of
+their `Network` metadata dumped into the project just to resolve one. That's a worse surprise than
+the error it would replace, and it fails the same "least surprising thing that could work" bar the
+warn-not-silent choice above was held to. Revisit if there's a direct, single-record way to resolve
+`Network` from a `CustomSite` API name — see "Open questions".
 
 **Connect REST API instead of metadata.** Salesforce exposes Custom Domain resources in the Connect
 REST API. Rejected for v1 on two grounds. First, I could not confirm write support — both reference
@@ -410,21 +489,48 @@ Files added or changed, in the order they'd be written:
 Step 6 is the only change to existing behavior in this plan, and it is a pure refactor: if
 `publish.ts`'s tests need edits beyond imports, the extraction went too far.
 
+### Retrieval when missing (added after the initial implementation)
+
+1. **`src/common/resolveSiteFiles.ts`** — add `resolveRetrieveDestination(directory, projectDir)`,
+   returning the single directory a retrieve should target: `--directory` if given, otherwise the
+   project's default package directory. Errors if neither is available.
+2. **`src/common/retrieveCustomSite.ts`** — `retrieveCustomSite(connection, site, outputDirectory)`.
+   Builds a `ComponentSet` from `{ fullName: site, type: 'CustomSite' }` (no source resolution
+   needed, since there's nothing on disk yet), retrieves with `merge: true`, and returns the
+   retrieved file's path from the `FileResponse`, or `undefined` if the component doesn't exist in
+   the org. Only "not found" is a soft `undefined` — connection/transport errors still throw.
+3. **`src/commands/simply/community/url/set.ts`** — reordered so the domain preflight's pass/fail
+   decision runs before file resolution (it doesn't depend on the site file), while the "bound
+   elsewhere" warning — which does need the network file — still runs after. Site file resolution
+   falls back to `retrieveCustomSite` on a `CommunityUrlSiteFileNotFoundError` when a connection is
+   available, warns when it does, and tracks whether the file existed before this run so restore
+   knows whether to rewrite it or delete it.
+4. **`messages/simply.community.url.set.md`** — new `warning.siteRetrieved` and
+   `error.siteNotFoundLocallyOrInOrg` keys.
+5. **Tests** — extend `test/common/resolveSiteFiles.test.ts` for the new destination helper, add
+   `test/common/retrieveCustomSite.test.ts`, and extend
+   `test/commands/simply/community/url/set.test.ts` for the retrieve-and-patch and
+   retrieve-then-deploy-then-delete-on-restore paths.
+
 ## Testing
 
 Unit tests against fixture XML written to a temp directory, plus one NUT now that `--deploy` touches
 an org.
 
-| Case                                                     | What it pins down                                                                                                                               |
-| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| Site file with 0, 1, and 3 existing `customWebAddresses` | Always exactly one entry afterwards; `previousDomains` reports what was dropped.                                                                |
-| `--path-prefix` omitted                                  | Network file is not opened, let alone written.                                                                                                  |
-| `--path-prefix` given                                    | Both files end up with the same prefix.                                                                                                         |
-| 0, 1, and 2 networks whose `<site>` matches              | Error / success / error, with the paths named.                                                                                                  |
-| Run the command twice                                    | Second run is a byte-identical no-op — the guard against reformat churn on every pipeline run.                                                  |
-| Domain containing XML-significant characters             | Escaped via `xmlbuilder2`'s text handling, not hand-rolled escaping (matching the note in `simply-permissions`' `permissionSetXmlTemplate.ts`). |
-| Site not found, ambiguous site match                     | Error messages name the glob and the matches.                                                                                                   |
-| Site file that isn't valid XML                           | Error names the file rather than surfacing a parser stack trace.                                                                                |
+| Case                                                                            | What it pins down                                                                                                                                        |
+| ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Site file with 0, 1, and 3 existing `customWebAddresses`                        | Always exactly one entry afterwards; `previousDomains` reports what was dropped.                                                                         |
+| `--path-prefix` omitted                                                         | Network file is not opened, let alone written.                                                                                                           |
+| `--path-prefix` given                                                           | Both files end up with the same prefix.                                                                                                                  |
+| 0, 1, and 2 networks whose `<site>` matches                                     | Error / success / error, with the paths named.                                                                                                           |
+| Run the command twice                                                           | Second run is a byte-identical no-op — the guard against reformat churn on every pipeline run.                                                           |
+| Domain containing XML-significant characters                                    | Escaped via `xmlbuilder2`'s text handling, not hand-rolled escaping (matching the note in `simply-permissions`' `permissionSetXmlTemplate.ts`).          |
+| Site not found, ambiguous site match                                            | Error messages name the glob and the matches.                                                                                                            |
+| Site file that isn't valid XML                                                  | Error names the file rather than surfacing a parser stack trace.                                                                                         |
+| Site not found locally, `--target-org` given, component exists in the org       | Retrieved into the destination directory, warned, then patched normally — same result shape as if it had been found locally, plus `siteRetrieved: true`. |
+| Site not found locally, `--target-org` given, component also missing in the org | Error naming both the glob and the org; no file written.                                                                                                 |
+| Site not found locally, no `--target-org`                                       | Same error as today — no retrieve attempted.                                                                                                             |
+| More than one site file matches, `--target-org` given                           | Ambiguous-match error, same as without `--target-org` — no retrieve attempted.                                                                           |
 
 Preflight cases, with the query stubbed:
 
@@ -441,15 +547,18 @@ Preflight cases, with the query stubbed:
 
 Deploy-mode cases, with the deploy stubbed:
 
-| Case                                    | What it pins down                                                                                                                      |
-| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `--deploy` succeeds                     | Files are byte-identical to their pre-run contents afterwards; the component set contained exactly the changed files and nothing else. |
-| `--deploy` fails                        | Restore still ran — this is the `finally`, and it's the case most likely to regress in a later refactor.                               |
-| Restore throws                          | Non-zero exit, error names the modified files, `deploy.restored` is `false`.                                                           |
-| `--deploy` without `--path-prefix`      | Exactly one component deployed, not two.                                                                                               |
-| `--publish` without `--deploy`          | Rejected at parse time.                                                                                                                |
-| `--publish` with a missing network file | Same error as the `--path-prefix` case, since the Network name can't be resolved.                                                      |
-| Publish fails after a successful deploy | Deploy still reported as succeeded; exit is non-zero.                                                                                  |
+| Case                                              | What it pins down                                                                                                                      |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `--deploy` succeeds                               | Files are byte-identical to their pre-run contents afterwards; the component set contained exactly the changed files and nothing else. |
+| `--deploy` fails                                  | Restore still ran — this is the `finally`, and it's the case most likely to regress in a later refactor.                               |
+| Restore throws                                    | Non-zero exit, error names the modified files, `deploy.restored` is `false`.                                                           |
+| `--deploy` without `--path-prefix`                | Exactly one component deployed, not two.                                                                                               |
+| `--publish` without `--deploy`                    | Rejected at parse time.                                                                                                                |
+| `--publish` with a missing network file           | Same error as the `--path-prefix` case, since the Network name can't be resolved.                                                      |
+| Publish fails after a successful deploy           | Deploy still reported as succeeded; exit is non-zero.                                                                                  |
+| Site retrieved this run, then `--deploy` succeeds | Restore **deletes** the site file rather than rewriting it — the file didn't exist before this run.                                    |
+| Site retrieved this run, then `--deploy` fails    | Restore still deletes it; the failure is reported same as any other deploy failure.                                                    |
+| Site retrieved this run, no `--deploy`            | File stays on disk, patched — patch-only mode never restores anything, retrieved or not.                                               |
 
 The NUT must also run the preflight query unstubbed against a real org — that is the only way to
 confirm the `Domain`/`DomainSites` field names, which were taken from generated sObject stubs rather
@@ -525,3 +634,8 @@ unverified against a real org, same as before.
   specifically takes effect without one. If it doesn't need a publish, `--publish` is still useful
   for callers who changed the prefix too, but the footgun framing above is overstated and the flag's
   help text should be toned down accordingly.
+- **Is there a direct, single-record way to resolve a `Network` from a `CustomSite` API name?** This
+  is what would unblock automatic retrieval of the network file (currently out of scope — see
+  "Retrieval when the site file is missing locally" and the matching "Alternatives considered"
+  entry). If one exists, it likely also answers the `Network.Name`-equals-file-basename question
+  above more directly than matching on `<site>` does.

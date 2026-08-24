@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.6.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-community%400.5.0...%40simplysf%2Fsimply-community%400.6.0) (2026-08-24)
+
+### Features
+
+- **simply-community:** retrieve the site file from the org when missing locally ([944ca7c](https://github.com/SimplySF/simply-node/commit/944ca7cee4e2cc29fe020d398a9e49f805ed73b5))
+
 # [0.5.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-community%400.4.1...%40simplysf%2Fsimply-community%400.5.0) (2026-08-24)
 
 ### Features

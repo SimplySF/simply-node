@@ -250,6 +250,127 @@ describe('simply community url set', () => {
     expect(siteContent).to.equal(SITE_XML);
   });
 
+  it('errors as before when the site file is not found locally and no --target-org is given', async () => {
+    await fs.rm(siteFile);
+
+    try {
+      await CommunityUrlSet.run([
+        '--site',
+        'Partner_Portal',
+        '--domain',
+        'partners.acme.com',
+        '--directory',
+        directory,
+      ]);
+      expect.fail('should have thrown');
+    } catch (err) {
+      const error = err as SfError;
+      expect(error.name).to.equal('CommunityUrlSiteFileNotFoundError');
+    }
+  });
+
+  it('retrieves the site file from the org when not found locally, and warns', async () => {
+    await fs.rm(siteFile);
+    $$.SANDBOX.stub(Connection.prototype, 'query').resolves(DOMAIN_FOUND_UNBOUND);
+    const warnStub = $$.SANDBOX.stub(CommunityUrlSet.prototype, 'warn');
+    $$.SANDBOX.stub(ComponentSet.prototype, 'retrieve').resolves({
+      pollStatus: sinon.stub().callsFake(async () => {
+        await fs.mkdir(path.dirname(siteFile), { recursive: true });
+        await fs.writeFile(siteFile, SITE_XML, 'utf-8');
+        return {
+          getFileResponses: () => [
+            { fullName: 'Partner_Portal', type: 'CustomSite', filePath: siteFile, state: ComponentStatus.Created },
+          ],
+        };
+      }),
+    } as never);
+
+    const result = await CommunityUrlSet.run([
+      '--site',
+      'Partner_Portal',
+      '--domain',
+      'partners.acme.com',
+      '--directory',
+      directory,
+      '--target-org',
+      testOrg.username,
+    ]);
+
+    expect(result.siteRetrieved).to.equal(true);
+    expect(warnStub.called).to.equal(true);
+
+    const siteContent = await fs.readFile(siteFile, 'utf-8');
+    expect(siteContent).to.include('<domainName>partners.acme.com</domainName>');
+  });
+
+  it('errors when the site file is not found locally or in the org', async () => {
+    await fs.rm(siteFile);
+    $$.SANDBOX.stub(Connection.prototype, 'query').resolves(DOMAIN_FOUND_UNBOUND);
+    $$.SANDBOX.stub(ComponentSet.prototype, 'retrieve').resolves({
+      pollStatus: sinon.stub().resolves({ getFileResponses: () => [] }),
+    } as never);
+
+    try {
+      await CommunityUrlSet.run([
+        '--site',
+        'Partner_Portal',
+        '--domain',
+        'partners.acme.com',
+        '--directory',
+        directory,
+        '--target-org',
+        testOrg.username,
+      ]);
+      expect.fail('should have thrown');
+    } catch (err) {
+      const error = err as SfError;
+      expect(error.message).to.include('Partner_Portal');
+    }
+
+    await expect(fs.access(siteFile)).rejects.toThrow();
+  });
+
+  it('deletes the retrieved site file on restore after --deploy, rather than rewriting it', async () => {
+    await fs.rm(siteFile);
+    $$.SANDBOX.stub(Connection.prototype, 'query').resolves(DOMAIN_FOUND_UNBOUND);
+    $$.SANDBOX.stub(ComponentSet.prototype, 'retrieve').resolves({
+      pollStatus: sinon.stub().callsFake(async () => {
+        await fs.mkdir(path.dirname(siteFile), { recursive: true });
+        await fs.writeFile(siteFile, SITE_XML, 'utf-8');
+        return {
+          getFileResponses: () => [
+            { fullName: 'Partner_Portal', type: 'CustomSite', filePath: siteFile, state: ComponentStatus.Created },
+          ],
+        };
+      }),
+    } as never);
+    const fakeDeployResult = {
+      response: { id: '0Af000000000003', status: 'Succeeded', success: true },
+      getFileResponses: () => [
+        { fullName: 'Partner_Portal', type: 'CustomSite', filePath: siteFile, state: ComponentStatus.Created },
+      ],
+    };
+    $$.SANDBOX.stub(ComponentSet.prototype, 'deploy').resolves({
+      pollStatus: sinon.stub().resolves(fakeDeployResult),
+    } as never);
+
+    const result = await CommunityUrlSet.run([
+      '--site',
+      'Partner_Portal',
+      '--domain',
+      'partners.acme.com',
+      '--directory',
+      directory,
+      '--deploy',
+      '--target-org',
+      testOrg.username,
+    ]);
+
+    expect(result.siteRetrieved).to.equal(true);
+    expect(result.deploy?.restored).to.equal(true);
+    await expect(fs.access(siteFile)).rejects.toThrow();
+  });
+
   it('still restores the original file contents when --deploy fails, and throws', async () => {
     $$.SANDBOX.stub(Connection.prototype, 'query').resolves(DOMAIN_FOUND_UNBOUND);
     const fakeDeployResult = {

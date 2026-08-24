@@ -18,7 +18,12 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { resolveNetworkFile, resolveSearchRoots, resolveSiteFile } from '../../src/common/resolveSiteFiles.js';
+import {
+  resolveNetworkFile,
+  resolveRetrieveDestination,
+  resolveSearchRoots,
+  resolveSiteFile,
+} from '../../src/common/resolveSiteFiles.js';
 
 const SITE_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <CustomSite xmlns="http://soap.sforce.com/2006/04/metadata">
@@ -68,6 +73,36 @@ describe('resolveSiteFiles', () => {
       const roots = await resolveSearchRoots(undefined, projectDir);
 
       expect(roots).to.deep.equal([path.resolve(projectDir, 'force-app'), path.resolve(projectDir, 'unpackaged')]);
+    });
+  });
+
+  describe('resolveRetrieveDestination', () => {
+    it('uses the given directory when provided', async () => {
+      const destination = await resolveRetrieveDestination(projectDir, projectDir);
+
+      expect(destination).to.equal(path.resolve(projectDir));
+    });
+
+    it('defaults to the project default package directory', async () => {
+      await writeFile(
+        projectDir,
+        'sfdx-project.json',
+        JSON.stringify({
+          packageDirectories: [{ path: 'unpackaged' }, { path: 'force-app', default: true }],
+        }),
+      );
+
+      const destination = await resolveRetrieveDestination(undefined, projectDir);
+
+      expect(destination).to.equal(path.resolve(projectDir, 'force-app'));
+    });
+
+    it('throws when no directory is given and the project has no default package directory', async () => {
+      await writeFile(projectDir, 'sfdx-project.json', JSON.stringify({ packageDirectories: [{ path: 'force-app' }] }));
+
+      await expect(resolveRetrieveDestination(undefined, projectDir)).rejects.toMatchObject({
+        name: 'CommunityUrlNoRetrieveDestinationError',
+      });
     });
   });
 
