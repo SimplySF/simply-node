@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.3.26](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-data%402.3.25...%40simplysf%2Fsimply-data%402.3.26) (2026-08-24)
+
+### Bug Fixes
+
+- **simply-data:** build multipart uploads without form-data or got ([d5b2d08](https://github.com/SimplySF/simply-node/commit/d5b2d08871792bc60b8da612abb0eae5b6c8c4af))
+
 ## [2.3.25](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-data%402.3.24...%40simplysf%2Fsimply-data%402.3.25) (2026-08-21)
 
 **Note:** Version bump only for package @simplysf/simply-data

@@ -56,7 +56,7 @@ EXAMPLES
   $ sf simply data file upload --file-path fileToUpload.txt --first-publish-location-id 0019000000DmehK --target-org myTargetOrg
 ```
 
-_See code: [lib/commands/simply/data/file/upload.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-data@2.3.25/packages/simply-data/lib/commands/simply/data/file/upload.js)_
+_See code: [lib/commands/simply/data/file/upload.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-data@2.3.26/packages/simply-data/lib/commands/simply/data/file/upload.js)_
 
 ## `sf simply data files download`
 
@@ -101,7 +101,7 @@ FLAG DESCRIPTIONS
     Provide a WHERE clause to allow the plugin to specify which ContentVersion records should be downloaded.
 ```
 
-_See code: [lib/commands/simply/data/files/download.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-data@2.3.25/packages/simply-data/lib/commands/simply/data/files/download.js)_
+_See code: [lib/commands/simply/data/files/download.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-data@2.3.26/packages/simply-data/lib/commands/simply/data/files/download.js)_
 
 ## `sf simply data files upload`
 
@@ -146,7 +146,7 @@ FLAG DESCRIPTIONS
     quasi concurrent uploads. Please note that setting this value too high can cause performance issues.
 ```
 
-_See code: [lib/commands/simply/data/files/upload.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-data@2.3.25/packages/simply-data/lib/commands/simply/data/files/upload.js)_
+_See code: [lib/commands/simply/data/files/upload.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-data@2.3.26/packages/simply-data/lib/commands/simply/data/files/upload.js)_
 <!-- commandsstop -->
 
 ## License
