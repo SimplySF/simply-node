@@ -48,7 +48,12 @@
         "description": "Commands for simplifying Salesforce",
         "subtopics": {
           "community": {
-            "description": "Commands for working with Salesforce Communities (Experience Cloud sites)"
+            "description": "Commands for working with Salesforce Communities (Experience Cloud sites)",
+            "subtopics": {
+              "url": {
+                "description": "Commands for working with Experience Cloud site custom URLs"
+              }
+            }
           }
         }
       }
@@ -60,8 +65,11 @@
     "@salesforce/core": "^8.30.0",
     "@salesforce/kit": "^3.2.6",
     "@salesforce/sf-plugins-core": "^12.2.16",
+    "@salesforce/source-deploy-retrieve": "^12.37.2",
     "@simplysf/simply-core": "workspace:^1.4.0",
-    "@simplysf/simply-plugin-kit": "workspace:^1.0.4"
+    "@simplysf/simply-plugin-kit": "workspace:^1.0.4",
+    "glob": "^13.0.6",
+    "xmlbuilder2": "^4.0.3"
   },
   "devDependencies": {
     "@oclif/plugin-command-snapshot": "^5.3.19",
