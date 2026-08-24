@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.21.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply%402.20.1...%40simplysf%2Fsimply%402.21.0) (2026-08-24)
+
+### Features
+
+- **simply-aep:** add simply aep at4dx binding list ([a41e65f](https://github.com/SimplySF/simply-node/commit/a41e65f6b2e98a6edcd325eed658ef95c29f9a30))
+
 ## [2.20.1](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply%402.20.0...%40simplysf%2Fsimply%402.20.1) (2026-08-24)
 
 **Note:** Version bump only for package @simplysf/simply
