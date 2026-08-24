@@ -6,9 +6,11 @@ Upload a file to a Salesforce org.
 
 Uploads a file to a Salesforce org.
 
+Only the file's name is sent to the org — Salesforce stores it as the ContentVersion's PathOnClient and derives FileExtension and FileType from it — so the local directory the file came from is never uploaded.
+
 # flags.file-path.summary
 
-Path to the file to upload.
+Path to the file to upload. May be relative or absolute; only the file's name is sent to the org.
 
 # flags.first-publish-location-id.summary
 

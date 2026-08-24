@@ -102,9 +102,14 @@ export async function downloadContentVersion(
 /**
  * Upload a local file as a new `ContentVersion`.
  *
+ * Only the file's name is sent to the org as `PathOnClient`, not the local path it was read from.
+ * Salesforce derives `FileExtension` and `FileType` from that value, so the name is all it needs —
+ * and sending the rest would publish the uploader's local directory layout into the org, where it
+ * is visible to anyone who can query `ContentVersion`.
+ *
  * @param targetOrgConnection - The org connection to upload to.
- * @param pathOnClient - The local filesystem path of the file to upload.
- * @param title - The `ContentVersion` title. Defaults to the file's basename.
+ * @param filePath - The local filesystem path of the file to upload. Stays local.
+ * @param title - The `ContentVersion` title. Defaults to the file's name.
  * @param firstPublishLocationId - The ID of the record/library to attach the resulting
  * `ContentDocument` to, if any.
  * @returns The created `ContentVersion`, re-queried to include `ContentDocumentId`.
@@ -112,23 +117,25 @@ export async function downloadContentVersion(
  */
 export async function uploadContentVersion(
   targetOrgConnection: Connection,
-  pathOnClient: string,
+  filePath: string,
   title?: string,
   firstPublishLocationId?: string,
 ): Promise<ContentVersion> {
   // Check that we have access to the file
-  await fs.promises.access(pathOnClient, fs.constants.F_OK);
+  await fs.promises.access(filePath, fs.constants.F_OK);
+
+  const fileName = path.basename(filePath);
 
   const contentVersionCreateRequest: ContentVersionCreateRequest = {
     FirstPublishLocationId: firstPublishLocationId,
-    PathOnClient: pathOnClient,
-    Title: title ?? path.basename(pathOnClient),
+    PathOnClient: fileName,
+    Title: title ?? fileName,
   };
 
   const { contentType, createBody } = contentVersionMultipart({
     entity: contentVersionCreateRequest,
-    filePath: pathOnClient,
-    filename: path.basename(pathOnClient),
+    filePath,
+    filename: fileName,
   });
 
   const response = await fetch(`${targetOrgConnection.baseUrl()}/sobjects/ContentVersion`, {
@@ -143,7 +150,7 @@ export async function uploadContentVersion(
   });
 
   if (!response.ok) {
-    throw await responseError(response, `Upload of "${pathOnClient}"`);
+    throw await responseError(response, `Upload of "${filePath}"`);
   }
 
   const data = (await response.json()) as ContentVersionCreateResult;

@@ -14,6 +14,8 @@ Path to the csv file that specifies the upload.
 
 The csv file must specify the columns PathOnClient and Title. Optionally, a FirstPublishLocationId can be specified to have it linked directly to a Salesforce record after upload.
 
+PathOnClient is the local path each file is read from, and may be relative or absolute. Only the file's name is sent to the org — Salesforce stores it as the ContentVersion's PathOnClient and derives FileExtension and FileType from it — so the local directory the file came from is never uploaded.
+
 # flags.max-parallel-jobs.summary
 
 Maximum number of parallel jobs.
