@@ -47,7 +47,36 @@ describe('simply data files upload', () => {
     }
   });
 
+  it('should refuse to start, and make no request, when the csv exceeds the API budget', async () => {
+    const fetchStub = $$.SANDBOX.stub(globalThis, 'fetch');
+
+    // The fixture csv has 3 rows, so the run costs 6 requests. A budget of 20% of 10 is 2.
+    $$.SANDBOX.stub(Connection.prototype, 'limits').resolves({
+      DailyApiRequests: { Max: 15_000, Remaining: 10 },
+    });
+
+    try {
+      await DataFilesUpload.run([
+        '--file-path',
+        './test/reference-project/test-files/simply.data.files.upload.csv',
+        '--target-org',
+        testOrg.username,
+      ]);
+      expect.fail('should have thrown ApiBudgetExceededError');
+    } catch (err) {
+      expect((err as SfError).name).to.equal('ApiBudgetExceededError');
+    }
+
+    expect(fetchStub.called).to.equal(false);
+    // No partial output either.
+    expect(fs.existsSync('upload/success.csv')).to.equal(false);
+  });
+
   it('should write results to csv', async () => {
+    $$.SANDBOX.stub(Connection.prototype, 'limits').resolves({
+      DailyApiRequests: { Max: 15_000, Remaining: 15_000 },
+    });
+
     // A fresh Response per call: a Response body can only be consumed once, and the
     // files command uploads more than one file.
     $$.SANDBOX.stub(globalThis, 'fetch').callsFake(() =>

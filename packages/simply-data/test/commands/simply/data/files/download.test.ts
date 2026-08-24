@@ -76,6 +76,10 @@ describe('simply data files download', () => {
   it('should write results to csv', async () => {
     const testOrgConnection = await testOrg.getConnection();
 
+    $$.SANDBOX.stub(Connection.prototype, 'limits').resolves({
+      DailyApiRequests: { Max: 15_000, Remaining: 15_000 },
+    });
+
     nock(testOrgConnection.baseUrl())
       .get(`/sobjects/ContentVersion/${successfulContentVersion.Id}/VersionData`)
       .reply(200, 'sample text')

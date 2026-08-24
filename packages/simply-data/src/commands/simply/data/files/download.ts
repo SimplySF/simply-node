@@ -21,6 +21,8 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { requireConnection, targetOrgFlags } from '@simplysf/simply-plugin-kit';
 import { createCsvFileWriter } from '@simplysf/simply-core';
 import { downloadContentVersion } from '../../../../common/contentVersionUtils.js';
+import { apiBudgetFlags, assertApiBudget } from '../../../../common/apiBudgetFlag.js';
+import { REQUESTS_PER_DOWNLOAD, requestsForQuery } from '../../../../common/apiCost.js';
 import { ContentVersionDownload } from '../../../../common/contentVersionTypes.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -42,6 +44,7 @@ export default class DataFilesDownload extends SfCommand<void> {
   public static readonly flags = {
     ...SfCommand.baseFlags,
     ...targetOrgFlags,
+    ...apiBudgetFlags,
     'max-parallel-jobs': Flags.integer({
       summary: messages.getMessage('flags.max-parallel-jobs.summary'),
       description: messages.getMessage('flags.max-parallel-jobs.description'),
@@ -72,6 +75,15 @@ export default class DataFilesDownload extends SfCommand<void> {
     );
 
     const contentVersionDownloads = result.records;
+
+    // The query above already ran through jsforce, so `connection.limitInfo` is populated and the
+    // budget check gets the free header path rather than spending a request on the limits API.
+    await assertApiBudget(
+      targetOrgConnection,
+      contentVersionDownloads.length * REQUESTS_PER_DOWNLOAD + requestsForQuery(contentVersionDownloads.length),
+      flags['max-api-usage'],
+      (message) => this.warn(message),
+    );
 
     this.spinner.start('Initializing file download', '\n', { stdout: true });
 

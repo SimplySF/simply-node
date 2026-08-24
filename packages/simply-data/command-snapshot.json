@@ -4,7 +4,16 @@
     "command": "simply:data:file:upload",
     "flagAliases": [],
     "flagChars": ["o"],
-    "flags": ["api-version", "file-path", "first-publish-location-id", "flags-dir", "json", "target-org", "title"],
+    "flags": [
+      "api-version",
+      "file-path",
+      "first-publish-location-id",
+      "flags-dir",
+      "json",
+      "max-api-usage",
+      "target-org",
+      "title"
+    ],
     "plugin": "@simplysf/simply-data"
   },
   {
@@ -12,7 +21,15 @@
     "command": "simply:data:files:download",
     "flagAliases": [],
     "flagChars": ["o"],
-    "flags": ["api-version", "flags-dir", "json", "max-parallel-jobs", "target-org", "where-content-version"],
+    "flags": [
+      "api-version",
+      "flags-dir",
+      "json",
+      "max-api-usage",
+      "max-parallel-jobs",
+      "target-org",
+      "where-content-version"
+    ],
     "plugin": "@simplysf/simply-data"
   },
   {
@@ -20,7 +37,7 @@
     "command": "simply:data:files:upload",
     "flagAliases": [],
     "flagChars": ["o"],
-    "flags": ["api-version", "file-path", "flags-dir", "json", "max-parallel-jobs", "target-org"],
+    "flags": ["api-version", "file-path", "flags-dir", "json", "max-api-usage", "max-parallel-jobs", "target-org"],
     "plugin": "@simplysf/simply-data"
   }
 ]
