@@ -10,6 +10,8 @@ Pass `--deploy` to also deploy just the files this command changed and restore t
 
 A domain must already be registered in the target org (Setup → Custom URLs) before a site can be pointed at it; this command cannot register one. When `--target-org` is given, it checks the domain is registered before writing anything, so a typo surfaces immediately instead of as an opaque deploy failure.
 
+If the site file isn't found locally and `--target-org` is given, it's retrieved from the org instead of erroring — a warning says so, since a `--site` typo now triggers a retrieve rather than a fast local error. This only applies to the site file; a missing `Network` metadata file (needed for `--path-prefix` or `--publish`) still errors even with `--target-org`.
+
 # flags.site.summary
 
 CustomSite API name — the basename of `sites/<name>.site-meta.xml`.
@@ -28,7 +30,7 @@ Whether the custom domain entry is the site's primary URL. Pass --no-primary to 
 
 # flags.directory.summary
 
-Root directory to search for the site (and, if needed, network) metadata files. Defaults to searching every package directory listed in sfdx-project.json.
+Root directory to search for the site (and, if needed, network) metadata files. Defaults to searching every package directory listed in sfdx-project.json. Also used as the destination if the site file needs to be retrieved from --target-org, defaulting in that case to the project's default package directory.
 
 # flags.deploy.summary
 
@@ -82,6 +84,14 @@ Domain "%s" is not registered in the target org. Proceeding because --ignore-mis
 
 Site "%s"'s domain is already bound to a different site (id: %s). This is legal — e.g. intentionally repointing a domain — but verify it's expected.
 
+# warning.siteRetrieved
+
+Site file for "%s" not found locally; retrieved from org %s to %s.
+
+# error.siteNotFoundLocallyOrInOrg
+
+Site file for "%s" was not found locally, and no matching CustomSite was found in org %s.
+
 # error.invalidSiteXml
 
 %s is not valid XML: %s
@@ -125,3 +135,5 @@ Deploy succeeded, but publishing site "%s" failed: %s. Re-running this command w
 - <%= config.bin %> <%= command.id %> --site Partner_Portal --domain partners.acme.com --deploy --target-org my-org
 
 - <%= config.bin %> <%= command.id %> --site Partner_Portal --domain partners.acme.com --path-prefix partners --deploy --publish --target-org my-org
+
+- <%= config.bin %> <%= command.id %> --site Partner_Portal --domain partners.acme.com --deploy --target-org my-org # retrieves the site file first if it isn't found locally

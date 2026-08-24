@@ -17,12 +17,18 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { Duration } from '@salesforce/kit';
-import { Messages, type Connection } from '@salesforce/core';
+import { Messages, SfError, type Connection } from '@salesforce/core';
 import { Flags, SfCommand } from '@salesforce/sf-plugins-core';
 import { escapeSoqlLiteral } from '@simplysf/simply-core';
 import { requireConnection } from '@simplysf/simply-plugin-kit';
 import { patchCustomSiteXml, patchNetworkXml } from '../../../../common/siteMetadataXml.js';
-import { resolveNetworkFile, resolveSearchRoots, resolveSiteFile } from '../../../../common/resolveSiteFiles.js';
+import {
+  resolveNetworkFile,
+  resolveRetrieveDestination,
+  resolveSearchRoots,
+  resolveSiteFile,
+} from '../../../../common/resolveSiteFiles.js';
+import { retrieveCustomSite } from '../../../../common/retrieveCustomSite.js';
 import { verifyDomain, type DomainCheckResult } from '../../../../common/verifyDomain.js';
 import { deployChangedFiles } from '../../../../common/deployChangedFiles.js';
 import { publishCommunity } from '../../../../common/publishCommunity.js';
@@ -39,6 +45,8 @@ export type CommunityUrlSetResult = {
   primary: boolean;
   pathPrefix?: string;
   siteFile: string;
+  /** True when the site file didn't exist locally and was retrieved from --target-org instead. */
+  siteRetrieved: boolean;
   networkFile?: string;
   previousDomains: string[];
   /** Absent when no --target-org was available to query. */
@@ -70,6 +78,10 @@ export type CommunityUrlSetResult = {
  * By default this only patches the working tree; the caller's own deploy step runs separately.
  * With `--deploy`, it also deploys just the files it changed and restores their original
  * contents afterwards, so the working tree is left exactly as it found it.
+ *
+ * If the site file isn't found locally and `--target-org` is given, it's retrieved from the org
+ * instead of erroring (with a warning saying so). With `--deploy`, a file retrieved this way is
+ * deleted rather than restored, since there's no prior content to go back to.
  */
 export default class CommunityUrlSet extends SfCommand<CommunityUrlSetResult> {
   public static readonly summary = messages.getMessage('summary');
@@ -116,15 +128,41 @@ export default class CommunityUrlSet extends SfCommand<CommunityUrlSetResult> {
     }
 
     const roots = await resolveSearchRoots(flags.directory);
-    const siteFile = await resolveSiteFile(flags.site, roots);
+    const org = flags['target-org'];
+    const connection = org?.getConnection(flags['api-version']);
+
+    // The preflight's pass/fail decision runs before any file is touched — including a retrieve,
+    // which is itself a write. It doesn't need the site file, so it can run first; the "bound
+    // elsewhere" warning below does need the network file, so it runs after resolution instead.
+    const { publicResult: domainCheck, raw: domainCheckRaw } = await this.runDomainPreflightCore(connection, flags);
+
+    let siteFile: string;
+    let siteRetrieved = false;
+    try {
+      siteFile = await resolveSiteFile(flags.site, roots);
+    } catch (err) {
+      if (connection && err instanceof SfError && err.name === 'CommunityUrlSiteFileNotFoundError') {
+        const destination = await resolveRetrieveDestination(flags.directory);
+        const retrievedPath = await retrieveCustomSite(connection, flags.site, destination);
+
+        if (!retrievedPath) {
+          throw messages.createError('error.siteNotFoundLocallyOrInOrg', [flags.site, connection.getUsername() ?? '']);
+        }
+
+        siteFile = retrievedPath;
+        siteRetrieved = true;
+        this.warn(messages.getMessage('warning.siteRetrieved', [flags.site, connection.getUsername() ?? '', siteFile]));
+      } else {
+        throw err;
+      }
+    }
 
     const wantsNetworkFile = flags['path-prefix'] !== undefined || flags.publish;
     const networkFile = wantsNetworkFile ? await resolveNetworkFile(flags.site, roots) : undefined;
 
-    const org = flags['target-org'];
-    const connection = org?.getConnection(flags['api-version']);
-
-    const domainCheck = await this.runDomainPreflight(connection, networkFile, flags);
+    if (connection && domainCheckRaw) {
+      await this.warnIfBoundElsewhere(connection, domainCheckRaw, networkFile, flags.site);
+    }
 
     // --- Patch (computed before any write, so a parse failure never leaves a half-applied patch) ---
     const originalSiteXml = await fs.readFile(siteFile, 'utf-8');
@@ -165,6 +203,7 @@ export default class CommunityUrlSet extends SfCommand<CommunityUrlSetResult> {
       primary: flags.primary,
       pathPrefix: flags['path-prefix'],
       siteFile,
+      siteRetrieved,
       networkFile,
       previousDomains,
       domainCheck,
@@ -212,7 +251,13 @@ export default class CommunityUrlSet extends SfCommand<CommunityUrlSetResult> {
       deployError = err instanceof Error ? err : new Error(String(err));
     } finally {
       try {
-        await fs.writeFile(siteFile, originalSiteXml, 'utf-8');
+        if (siteRetrieved) {
+          // The site file didn't exist before this run, so there's no "original" to restore — the
+          // working tree ends up as it started, which for this file means absent.
+          await fs.unlink(siteFile);
+        } else {
+          await fs.writeFile(siteFile, originalSiteXml, 'utf-8');
+        }
         if (patchesNetworkFile) {
           await fs.writeFile(networkFile, originalNetworkXml as string, 'utf-8');
         }
@@ -244,27 +289,31 @@ export default class CommunityUrlSet extends SfCommand<CommunityUrlSetResult> {
   }
 
   /**
-   * Run the domain preflight when a connection is available, and turn its outcome into either
-   * the result's `domainCheck`, a warning, or a fatal error — matching the "Preflight" table in
-   * the design doc.
+   * Run the domain preflight's pass/fail decision when a connection is available, turning its
+   * outcome into either the result's `domainCheck`, a warning, or a fatal error — matching the
+   * "Preflight" table in the design doc.
+   *
+   * Deliberately does **not** resolve the "bound elsewhere" warning (see `warnIfBoundElsewhere`) —
+   * that needs the network file, which isn't resolved yet at the point this must run. Callers that
+   * want it call `warnIfBoundElsewhere` themselves once the network file is known, passing back
+   * this method's `raw` result.
    */
-  private async runDomainPreflight(
+  private async runDomainPreflightCore(
     connection: Connection | undefined,
-    networkFile: string | undefined,
-    flags: { domain: string; site: string; 'ignore-missing-domain': boolean },
-  ): Promise<CommunityUrlSetResult['domainCheck']> {
+    flags: { domain: string; 'ignore-missing-domain': boolean },
+  ): Promise<{ publicResult: CommunityUrlSetResult['domainCheck']; raw?: DomainCheckResult }> {
     if (!connection) {
       if (flags['ignore-missing-domain']) {
         this.warn(messages.getMessage('warning.ignoreMissingDomainNoOrg'));
       }
-      return undefined;
+      return { publicResult: undefined };
     }
 
     const check = await verifyDomain(connection, flags.domain);
 
     if (check.status === 'unavailable') {
       this.warn(messages.getMessage('warning.domainCheckUnavailable', [flags.domain]));
-      return { status: check.status, boundToSiteIds: [], ignored: false };
+      return { publicResult: { status: check.status, boundToSiteIds: [], ignored: false } };
     }
 
     if (check.status === 'missing') {
@@ -272,16 +321,17 @@ export default class CommunityUrlSet extends SfCommand<CommunityUrlSetResult> {
         throw messages.createError('error.domainNotRegistered', [flags.domain, connection.getUsername() ?? '']);
       }
       this.warn(messages.getMessage('warning.domainMissingIgnored', [flags.domain]));
-      return { status: check.status, boundToSiteIds: [], ignored: true };
+      return { publicResult: { status: check.status, boundToSiteIds: [], ignored: true } };
     }
 
-    await this.warnIfBoundElsewhere(connection, check, networkFile, flags.site);
-
     return {
-      status: check.status,
-      domainId: check.domainId,
-      boundToSiteIds: check.boundToSiteIds,
-      ignored: false,
+      publicResult: {
+        status: check.status,
+        domainId: check.domainId,
+        boundToSiteIds: check.boundToSiteIds,
+        ignored: false,
+      },
+      raw: check,
     };
   }
 
