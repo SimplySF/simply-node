@@ -14,21 +14,17 @@
  * limitations under the License.
  */
 
-import { Duration } from '@salesforce/kit';
-import { Messages, PollingClient } from '@salesforce/core';
+import { Messages } from '@salesforce/core';
 import { Flags, SfCommand } from '@salesforce/sf-plugins-core';
 import { requireConnection, targetOrgFlags } from '@simplysf/simply-plugin-kit';
-import { escapeSoqlLiteral, retryWithBackoff } from '@simplysf/simply-core';
-import { checkPublishStatus } from '../../../common/checkPublishStatus.js';
+import { escapeSoqlLiteral } from '@simplysf/simply-core';
+import { publishCommunity } from '../../../common/publishCommunity.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('@simplysf/simply-community', 'simply.community.publish');
 
 /** The fields this needs from the `Network` record identified by `--name`. */
 type NetworkRecord = { Id: string; Name: string };
-
-/** The response shape of `POST /connect/communities/{id}/publish`. */
-type CommunityPublishResponse = { id: string; jobId: string; name: string; url: string };
 
 export type CommunityPublishResult = {
   success: boolean;
@@ -75,22 +71,13 @@ export default class CommunityPublish extends SfCommand<CommunityPublishResult> 
       );
 
       this.spinner.start(messages.getMessage('info.publishing', [network.Name]));
-      const publishResponse = await retryWithBackoff(
-        async () =>
-          connection.request<CommunityPublishResponse>({
-            method: 'POST',
-            url: `/connect/communities/${network.Id}/publish`,
-          }),
-        { retryAttempts: flags['retry-attempts'], backoffFactor: flags['retry-backoff'] },
-      );
-
-      const client = await PollingClient.create({
-        poll: checkPublishStatus(connection, publishResponse.jobId),
-        frequency: Duration.seconds(15),
-        timeout: Duration.minutes(Number(flags.wait)),
-        timeoutErrorName: 'CommunityPublishTimeoutError',
+      const publishResponse = await publishCommunity({
+        connection,
+        networkId: network.Id,
+        wait: Number(flags.wait),
+        retryAttempts: flags['retry-attempts'],
+        retryBackoff: flags['retry-backoff'],
       });
-      await client.subscribe();
       this.spinner.stop();
 
       this.info(messages.getMessage('info.published', [network.Name]));

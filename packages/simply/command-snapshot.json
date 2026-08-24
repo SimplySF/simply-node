@@ -61,6 +61,28 @@
   },
   {
     "alias": [],
+    "command": "simply:community:url:set",
+    "flagAliases": [],
+    "flagChars": ["d", "o", "p", "s", "w"],
+    "flags": [
+      "api-version",
+      "deploy",
+      "directory",
+      "domain",
+      "flags-dir",
+      "ignore-missing-domain",
+      "json",
+      "path-prefix",
+      "primary",
+      "publish",
+      "site",
+      "target-org",
+      "wait"
+    ],
+    "plugin": "@simplysf/simply-community"
+  },
+  {
+    "alias": [],
     "command": "simply:data:file:upload",
     "flagAliases": [],
     "flagChars": ["o"],

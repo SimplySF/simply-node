@@ -460,6 +460,38 @@ One NUT, against a scratch org with a site: run with `--deploy --publish`, then 
 catch the thing unit tests structurally cannot — that Salesforce accepts a one-component CustomSite
 deploy that replaces the root custom URL list.
 
+## Implementation notes
+
+The command, its four `src/common/*` helpers, and `messages/simply.community.url.set.md` are
+implemented as designed, with one gap the original doc left unstated:
+
+- **How "already bound to this site" is actually detected.** The Preflight table above says a
+  domain already bound to `--site` should stay quiet, while one bound elsewhere should warn — but
+  never says how the command learns `--site`'s own Salesforce Id to compare against
+  `DomainSite.SiteId`. `verifyDomain` stays exactly as specified (pure over a connection and a
+  domain string, returning raw `boundToSiteIds`). The command resolves a comparable id via
+  `SELECT Id FROM Network WHERE Name = '<network file basename>'` — but only when a network file
+  was already resolved for another reason (`--path-prefix` or `--publish`). For a domain-only
+  invocation against a Site with no Network (or with neither of those flags), there's no cheap way
+  to resolve `--site` to a Salesforce Id, so the comparison — and the warning — is skipped rather
+  than guessed at. This favors the "quiet re-run" requirement from the testing table over the
+  "warn when bound elsewhere" one in the cases where they'd conflict. Revisit if a NUT against a
+  real org turns up a cheaper way to resolve a CustomSite's own Id directly.
+- `--deploy`'s flag requirement on `--target-org` (and `--publish`'s on `--deploy`) is enforced by
+  hand at the top of `run()`, not via oclif's declarative `dependsOn`: `dependsOn` fires off
+  whether a flag's parsed value is `undefined`, and a boolean flag with `default: false` always has
+  a defined value, so `dependsOn` on `deploy`/`publish` would misfire on every invocation regardless
+  of whether the flag was actually passed.
+- `--target-org` uses `Flags.optionalOrg()` directly rather than `@simplysf/simply-plugin-kit`'s
+  `targetOrgFlags`, since that bundle's `Flags.requiredOrg()` would break patch-only mode's "runs
+  with no org configured at all" requirement.
+
+Everything else in "Preflight", "What it writes", "`--deploy`", "`--publish`", "Output", and
+"Errors" above matches the shipped behavior. The NUT described under "Testing" has not been run —
+it requires a scratch org with a site, which this implementation pass didn't have access to — so
+the `Domain`/`DomainSite` field names and the `Network.Name`-equals-file-basename assumption remain
+unverified against a real org, same as before.
+
 ## Open questions
 
 - **Should `--primary false` be rejected when the result is a single entry?** A site whose only root
