@@ -38,6 +38,7 @@ refactors that keep the public surface identical (though a short doc is welcome 
 | [0003](0003-community-custom-url.md)     | `simply community url set`                | Draft                 |
 | [0004](0004-undici-multipart-upload.md)  | Multipart upload without `form-data`      | Implemented           |
 | [0005](0005-path-on-client-file-name.md) | Send only the file name as `PathOnClient` | Implemented           |
+| [0006](0006-api-request-budget.md)       | API request budget check                  | Implemented           |
 
 ## Template
 

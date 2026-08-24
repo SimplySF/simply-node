@@ -22,6 +22,9 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { requireConnection, targetOrgFlags } from '@simplysf/simply-plugin-kit';
 import { createCsvFileWriter } from '@simplysf/simply-core';
 import { uploadContentVersion } from '../../../../common/contentVersionUtils.js';
+import { apiBudgetFlags, assertApiBudget } from '../../../../common/apiBudgetFlag.js';
+import { countCsvRows } from '../../../../common/countCsvRows.js';
+import { REQUESTS_PER_UPLOAD } from '../../../../common/apiCost.js';
 import { ContentVersionToUpload } from '../../../../common/contentVersionTypes.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -44,6 +47,7 @@ export default class DataFilesUpload extends SfCommand<void> {
   public static readonly flags = {
     ...SfCommand.baseFlags,
     ...targetOrgFlags,
+    ...apiBudgetFlags,
     'file-path': Flags.directory({
       summary: messages.getMessage('flags.file-path.summary'),
       description: messages.getMessage('flags.file-path.description'),
@@ -61,6 +65,15 @@ export default class DataFilesUpload extends SfCommand<void> {
 
     // Authorize to the target org
     const targetOrgConnection = requireConnection(flags);
+
+    // The upload streams this CSV row by row, so the row count is not otherwise known until the
+    // work is already underway. Counting first costs one extra local read and no API requests,
+    // and it is what lets the budget be checked before anything is sent.
+    const rowCount = await countCsvRows(flags['file-path']);
+
+    await assertApiBudget(targetOrgConnection, rowCount * REQUESTS_PER_UPLOAD, flags['max-api-usage'], (message) =>
+      this.warn(message),
+    );
 
     this.spinner.start('Initializing file upload', '\n', { stdout: true });
 

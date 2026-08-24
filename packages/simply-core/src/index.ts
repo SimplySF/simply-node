@@ -21,6 +21,13 @@ export {
 } from './auth/clientCredentialsAuth.js';
 export { retryWithBackoff, type RetryWithBackoffOptions } from './async/retryWithBackoff.js';
 export {
+  apiBudgetError,
+  checkApiBudget,
+  type ApiBudgetResult,
+  type ApiBudgetSource,
+  type CheckApiBudgetOptions,
+} from './org/apiBudget.js';
+export {
   SkipFirstLineTransform,
   streamBulkQuery,
   streamBulkQueryToFile,

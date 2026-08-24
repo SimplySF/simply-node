@@ -43,7 +43,31 @@ describe('simply data file upload', () => {
     }
   });
 
+  it('should refuse to start, and make no request, when the run exceeds its API budget', async () => {
+    const fetchStub = $$.SANDBOX.stub(globalThis, 'fetch');
+
+    // 100 remaining at the default 20% is a budget of 20; a single upload costs 2 requests, so
+    // squeeze the allocation until even that does not fit.
+    $$.SANDBOX.stub(Connection.prototype, 'limits').resolves({
+      DailyApiRequests: { Max: 15_000, Remaining: 4 },
+    });
+
+    try {
+      await DataFileUpload.run(['--file-path', 'package.json', '--target-org', testOrg.username]);
+      expect.fail('should have thrown ApiBudgetExceededError');
+    } catch (err) {
+      expect((err as SfError).name).to.equal('ApiBudgetExceededError');
+    }
+
+    // The whole value of a pre-flight check is that nothing has happened when it fails.
+    expect(fetchStub.called).to.equal(false);
+  });
+
   it('should return content version successfully', async () => {
+    $$.SANDBOX.stub(Connection.prototype, 'limits').resolves({
+      DailyApiRequests: { Max: 15_000, Remaining: 15_000 },
+    });
+
     // A fresh Response per call: a Response body can only be consumed once, and the
     // files command uploads more than one file.
     $$.SANDBOX.stub(globalThis, 'fetch').callsFake(() =>

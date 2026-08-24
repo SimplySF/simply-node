@@ -18,6 +18,8 @@ import { Messages } from '@salesforce/core';
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { requireConnection, targetOrgFlags } from '@simplysf/simply-plugin-kit';
 import { uploadContentVersion } from '../../../../common/contentVersionUtils.js';
+import { apiBudgetFlags, assertApiBudget } from '../../../../common/apiBudgetFlag.js';
+import { REQUESTS_PER_UPLOAD } from '../../../../common/apiCost.js';
 import { ContentVersion } from '../../../../common/contentVersionTypes.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -32,6 +34,7 @@ export default class DataFileUpload extends SfCommand<ContentVersion> {
   public static readonly flags = {
     ...SfCommand.baseFlags,
     ...targetOrgFlags,
+    ...apiBudgetFlags,
     'file-path': Flags.directory({
       summary: messages.getMessage('flags.file-path.summary'),
       required: true,
@@ -50,6 +53,10 @@ export default class DataFileUpload extends SfCommand<ContentVersion> {
 
     // Authorize to the target org
     const targetOrgConnection = requireConnection(flags);
+
+    await assertApiBudget(targetOrgConnection, REQUESTS_PER_UPLOAD, flags['max-api-usage'], (message) =>
+      this.warn(message),
+    );
 
     this.spinner.start('Uploading file', '', { stdout: true });
 
