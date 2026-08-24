@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.3.27](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-data%402.3.26...%40simplysf%2Fsimply-data%402.3.27) (2026-08-24)
+
+### Bug Fixes
+
+- **simply-data:** send only the file name as PathOnClient ([feddec6](https://github.com/SimplySF/simply-node/commit/feddec63b4390ee03a57b93a072dd35cf9bee5c8))
+
 ## [2.3.26](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-data%402.3.25...%40simplysf%2Fsimply-data%402.3.26) (2026-08-24)
 
 ### Bug Fixes

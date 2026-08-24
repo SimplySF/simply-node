@@ -37,7 +37,8 @@ FLAGS
   -o, --target-org=<value>                 (required) Username or alias of the target org. Not required if the
                                            `target-org` configuration variable is already set.
       --api-version=<value>                Override the api version used for api requests made by this command
-      --file-path=<value>                  (required) Path to the file to upload.
+      --file-path=<value>                  (required) Path to the file to upload. May be relative or absolute; only the
+                                           file's name is sent to the org.
       --first-publish-location-id=<value>  Specify a record Id that the file should be linked to.
       --title=<value>                      Specify the title for the file being uploaded.
 
@@ -50,13 +51,16 @@ DESCRIPTION
 
   Uploads a file to a Salesforce org.
 
+  Only the file's name is sent to the org — Salesforce stores it as the ContentVersion's PathOnClient and derives
+  FileExtension and FileType from it — so the local directory the file came from is never uploaded.
+
 EXAMPLES
   $ sf simply data file upload --file-path fileToUpload.txt --target-org myTargetOrg
 
   $ sf simply data file upload --file-path fileToUpload.txt --first-publish-location-id 0019000000DmehK --target-org myTargetOrg
 ```
 
-_See code: [lib/commands/simply/data/file/upload.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-data@2.3.26/packages/simply-data/lib/commands/simply/data/file/upload.js)_
+_See code: [lib/commands/simply/data/file/upload.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-data@2.3.27/packages/simply-data/lib/commands/simply/data/file/upload.js)_
 
 ## `sf simply data files download`
 
@@ -101,7 +105,7 @@ FLAG DESCRIPTIONS
     Provide a WHERE clause to allow the plugin to specify which ContentVersion records should be downloaded.
 ```
 
-_See code: [lib/commands/simply/data/files/download.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-data@2.3.26/packages/simply-data/lib/commands/simply/data/files/download.js)_
+_See code: [lib/commands/simply/data/files/download.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-data@2.3.27/packages/simply-data/lib/commands/simply/data/files/download.js)_
 
 ## `sf simply data files upload`
 
@@ -140,13 +144,17 @@ FLAG DESCRIPTIONS
     The csv file must specify the columns PathOnClient and Title. Optionally, a FirstPublishLocationId can be specified
     to have it linked directly to a Salesforce record after upload.
 
+    PathOnClient is the local path each file is read from, and may be relative or absolute. Only the file's name is sent
+    to the org — Salesforce stores it as the ContentVersion's PathOnClient and derives FileExtension and FileType from
+    it — so the local directory the file came from is never uploaded.
+
   --max-parallel-jobs=<value>  Maximum number of parallel jobs.
 
     By default the plugin will only process a single file upload at a time. You can increase this value to allow for
     quasi concurrent uploads. Please note that setting this value too high can cause performance issues.
 ```
 
-_See code: [lib/commands/simply/data/files/upload.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-data@2.3.26/packages/simply-data/lib/commands/simply/data/files/upload.js)_
+_See code: [lib/commands/simply/data/files/upload.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-data@2.3.27/packages/simply-data/lib/commands/simply/data/files/upload.js)_
 <!-- commandsstop -->
 
 ## License
