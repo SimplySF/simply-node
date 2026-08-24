@@ -18,7 +18,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { glob } from 'glob';
 import { SfError } from '@salesforce/core';
-import { readSfdxProject } from '@simplysf/simply-core';
+import { getDefaultPackageDirectory, readSfdxProject } from '@simplysf/simply-core';
 import { readNetworkSiteName } from './siteMetadataXml.js';
 
 /** Normalize a filesystem path to forward slashes, which is what `glob` patterns expect. */
@@ -46,6 +46,42 @@ export async function resolveSearchRoots(directory?: string, projectDir: string 
   const project = await readSfdxProject(projectDir);
 
   return project.packageDirectories.map((packageDirectory) => path.resolve(projectDir, packageDirectory.path ?? '.'));
+}
+
+/**
+ * Resolve the single directory a retrieve should write into, when the site file wasn't found
+ * among {@link resolveSearchRoots}'s (possibly multiple) roots.
+ *
+ * Unlike search, retrieval needs exactly one destination: `--directory` if given, otherwise the
+ * project's default package directory — the same directory a plain `sf project retrieve start`
+ * would use absent other guidance.
+ *
+ * @param directory - The `--directory` flag value, if given.
+ * @param projectDir - Directory to read `sfdx-project.json` from. Defaults to the current working
+ * directory, matching `readSfdxProject`.
+ * @returns The absolute destination directory.
+ * @throws {SfError} `CommunityUrlNoRetrieveDestinationError` if `--directory` wasn't given and the
+ * project has no default package directory to fall back to.
+ */
+export async function resolveRetrieveDestination(
+  directory?: string,
+  projectDir: string = process.cwd(),
+): Promise<string> {
+  if (directory) {
+    return path.resolve(directory);
+  }
+
+  const project = await readSfdxProject(projectDir);
+  const defaultPackageDirectory = getDefaultPackageDirectory(project);
+
+  if (!defaultPackageDirectory?.path) {
+    throw new SfError(
+      'No --directory was given, and the project has no default package directory to retrieve into.',
+      'CommunityUrlNoRetrieveDestinationError',
+    );
+  }
+
+  return path.resolve(projectDir, defaultPackageDirectory.path);
 }
 
 /**
