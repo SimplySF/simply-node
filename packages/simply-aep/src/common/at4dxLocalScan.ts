@@ -17,40 +17,7 @@
 import path from 'node:path';
 import { ComponentSet, type SourceComponent } from '@salesforce/source-deploy-retrieve';
 import { bindingTypeForLocalObjectName, type BindingType, type RawBindingRecord } from './at4dxBindingTypes.js';
-
-/** One `<values><field>.../field><value>.../value></values>` entry from a `CustomMetadata` record's parsed XML. */
-type RawMetadataValue = {
-  field: string;
-  value?: {
-    '#text'?: string;
-    '@_xsi:nil'?: string;
-  };
-};
-
-type CustomMetadataXml = {
-  CustomMetadata?: {
-    // A single `<values>` element parses as a bare object; more than one parses as an array.
-    values?: RawMetadataValue | RawMetadataValue[];
-  };
-};
-
-/** @returns The plain-text value for `field` in `values`, or `undefined` if the field is absent or explicitly nil. */
-function fieldValue(values: RawMetadataValue[], field: string): string | undefined {
-  const entry = values.find((value) => value.field === field);
-  if (!entry?.value || entry.value['@_xsi:nil'] === 'true') {
-    return undefined;
-  }
-  return entry.value['#text'];
-}
-
-/** @returns `value` parsed as a number, or `undefined` if `value` is absent or not numeric. */
-function toNumber(value: string | undefined): number | undefined {
-  if (value === undefined) {
-    return undefined;
-  }
-  const parsed = Number(value);
-  return Number.isNaN(parsed) ? undefined : parsed;
-}
+import { extractValues, fieldValue, toNumber, type CustomMetadataXml } from './customMetadataXml.js';
 
 /**
  * @returns The source-format package/project directory name a metadata file belongs to (the
@@ -76,8 +43,7 @@ function toRawRecord(
   developerName: string,
 ): RawBindingRecord | undefined {
   const xml = component.parseXmlSync<CustomMetadataXml>();
-  const rawValues = xml.CustomMetadata?.values;
-  const values = rawValues === undefined ? [] : Array.isArray(rawValues) ? rawValues : [rawValues];
+  const values = extractValues(xml);
 
   const bindingSObject = fieldValue(values, 'BindingSObject__c');
   const bindingSObjectAlternate = fieldValue(values, 'BindingSObjectAlternate__c');
