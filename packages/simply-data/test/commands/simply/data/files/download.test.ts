@@ -102,7 +102,10 @@ describe('simply data files download', () => {
       columns: true,
     });
 
-    expect(errorResults[0].Error).to.contain('HTTPError: Request failed with status code 500 (Internal Server Error)');
+    expect(errorResults[0].Error).to.contain('failed with HTTP 500');
+    expect(errorResults[0].Error).to.contain('Internal server error');
+    // A failed download must not leave a partial file behind.
+    expect(fs.existsSync(`download/${failedContentVersion.ContentDocumentId}_coolFile.txt`)).to.equal(false);
     expect(successResults).to.deep.equal([
       {
         Id: '068Hp00000gjxbEIAQ',

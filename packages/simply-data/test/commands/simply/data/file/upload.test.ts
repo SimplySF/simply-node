@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import got from 'got';
 import { Connection, SfError } from '@salesforce/core';
 import { MockTestOrgData, TestContext } from '@salesforce/core/testSetup';
 import sinon from 'sinon';
@@ -45,7 +44,16 @@ describe('simply data file upload', () => {
   });
 
   it('should return content version successfully', async () => {
-    $$.SANDBOX.stub(got, 'post').resolves({ id: '123', success: true });
+    // A fresh Response per call: a Response body can only be consumed once, and the
+    // files command uploads more than one file.
+    $$.SANDBOX.stub(globalThis, 'fetch').callsFake(() =>
+      Promise.resolve(
+        new Response(JSON.stringify({ id: '123', success: true }), {
+          status: 201,
+          headers: { 'content-type': 'application/json' },
+        }),
+      ),
+    );
 
     $$.SANDBOX.stub(Connection.prototype, 'singleRecordQuery').resolves({
       Id: '123',
