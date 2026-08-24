@@ -34,3 +34,17 @@ export {
 export { scanLocalBindings } from './common/at4dxLocalScan.js';
 export { scanOrgBindings, type OrgScanResult } from './common/at4dxOrgScan.js';
 export { resolveBindings } from './common/at4dxResolve.js';
+export {
+  ALL_TRIGGER_OPERATIONS,
+  DOMAIN_PROCESS_BINDING_OBJECT,
+  DOMAIN_PROCESS_BINDING_LOCAL_OBJECT_NAME,
+  type At4dxDomainProcessBindingListResult,
+  type DomainProcessBindingRow,
+  type DomainProcessType,
+  type ProcessContext,
+  type RawDomainProcessBindingRecord,
+  type TriggerOperation,
+} from './common/at4dxDomainProcessBindingTypes.js';
+export { scanLocalDomainProcessBindings } from './common/at4dxDomainProcessLocalScan.js';
+export { scanOrgDomainProcessBindings, type DomainProcessOrgScanResult } from './common/at4dxDomainProcessOrgScan.js';
+export { resolveDomainProcessBindings } from './common/at4dxDomainProcessResolve.js';

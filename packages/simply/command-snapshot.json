@@ -9,6 +9,14 @@
   },
   {
     "alias": [],
+    "command": "simply:aep:at4dx:domain-process-binding:list",
+    "flagAliases": [],
+    "flagChars": ["d", "o", "s"],
+    "flags": ["active-only", "api-version", "flags-dir", "json", "sobject", "source-dir", "target-org"],
+    "plugin": "@simplysf/simply-aep"
+  },
+  {
+    "alias": [],
     "command": "simply:apex:execute",
     "flagAliases": [],
     "flagChars": ["f", "o"],

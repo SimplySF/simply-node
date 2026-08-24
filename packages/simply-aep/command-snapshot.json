@@ -6,5 +6,13 @@
     "flagChars": ["d", "o", "t"],
     "flags": ["api-version", "effective-only", "flags-dir", "json", "source-dir", "target-org", "type"],
     "plugin": "@simplysf/simply-aep"
+  },
+  {
+    "alias": [],
+    "command": "simply:aep:at4dx:domain-process-binding:list",
+    "flagAliases": [],
+    "flagChars": ["d", "o", "s"],
+    "flags": ["active-only", "api-version", "flags-dir", "json", "sobject", "source-dir", "target-org"],
+    "plugin": "@simplysf/simply-aep"
   }
 ]
