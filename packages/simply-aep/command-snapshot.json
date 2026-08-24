@@ -1,0 +1,10 @@
+[
+  {
+    "alias": [],
+    "command": "simply:aep:at4dx:binding:list",
+    "flagAliases": [],
+    "flagChars": ["d", "o", "t"],
+    "flags": ["api-version", "effective-only", "flags-dir", "json", "source-dir", "target-org", "type"],
+    "plugin": "@simplysf/simply-aep"
+  }
+]

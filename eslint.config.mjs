@@ -50,6 +50,7 @@ const compat = new FlatCompat({
 // All published packages; every one carries the same Apache-2.0 header.
 const allPackages = [
   'packages/simply',
+  'packages/simply-aep',
   'packages/simply-apex',
   'packages/simply-cicd',
   'packages/simply-community',
