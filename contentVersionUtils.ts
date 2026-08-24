@@ -29,6 +29,36 @@ import {
 /** How much of an error response body to include in a thrown error before truncating. */
 const MAX_ERROR_BODY_LENGTH = 2000;
 
+/** Matches the `api-usage=used/limit` portion of a `Sforce-Limit-Info` response header. */
+const API_USAGE_PATTERN = /api-usage=(?<used>\d+)\/(?<limit>\d+)/;
+
+/**
+ * Feed a raw `fetch` response's `Sforce-Limit-Info` header back into the connection.
+ *
+ * Salesforce reports API consumption on every REST response, and jsforce normally parses it into
+ * `connection.limitInfo`. These two functions call `fetch` directly, so jsforce never sees their
+ * responses and the readings would otherwise be lost — leaving `limitInfo` stale at whatever the
+ * last jsforce-issued request reported, which for an upload run is "nothing at all".
+ *
+ * Keeping it current costs one header parse and makes the reading available to the API budget
+ * check and to any later running check.
+ *
+ * @param connection - The connection whose `limitInfo` should be updated.
+ * @param response - The response to read the header from.
+ */
+function recordApiUsage(connection: Connection, response: Response): void {
+  const match = API_USAGE_PATTERN.exec(response.headers.get('sforce-limit-info') ?? '');
+
+  if (match?.groups) {
+    connection.limitInfo = {
+      apiUsage: {
+        used: Number.parseInt(match.groups.used, 10),
+        limit: Number.parseInt(match.groups.limit, 10),
+      },
+    };
+  }
+}
+
 /**
  * Turn a non-2xx response into an `SfError`.
  *
@@ -81,6 +111,8 @@ export async function downloadContentVersion(
       },
     },
   );
+
+  recordApiUsage(targetOrgConnection, response);
 
   // Checked before the write stream is opened, so a failed download leaves nothing behind.
   if (!response.ok) {
@@ -148,6 +180,8 @@ export async function uploadContentVersion(
       'Content-Type': contentType,
     },
   });
+
+  recordApiUsage(targetOrgConnection, response);
 
   if (!response.ok) {
     throw await responseError(response, `Upload of "${filePath}"`);
