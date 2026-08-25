@@ -14,6 +14,16 @@
  * limitations under the License.
  */
 
+import type { Connection } from '@salesforce/core';
+
+/**
+ * The subset of `@salesforce/core`'s `Connection` the org-scan functions actually call. Accepting
+ * this instead of the full `Connection` class lets a consumer with its own `@salesforce/core`
+ * install (a different major version, even) pass in a connection without needing an exact version
+ * match — anything structurally compatible works.
+ */
+export type AepConnection = Pick<Connection, 'autoFetchQuery' | 'getUsername'>;
+
 /** The four AT4DX Application Factory binding types this command reads. */
 export type BindingType = 'Service' | 'Selector' | 'Domain' | 'UnitOfWork';
 

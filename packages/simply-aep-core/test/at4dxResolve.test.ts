@@ -15,8 +15,8 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { resolveBindings } from '../../src/common/at4dxResolve.js';
-import type { RawBindingRecord } from '../../src/common/at4dxBindingTypes.js';
+import { resolveBindings } from '../src/at4dxResolve.js';
+import type { RawBindingRecord } from '../src/at4dxBindingTypes.js';
 
 function record(
   overrides: Partial<RawBindingRecord> & Pick<RawBindingRecord, 'bindingType' | 'key'>,

@@ -14,8 +14,12 @@
  * limitations under the License.
  */
 
-import { type Connection } from '@salesforce/core';
-import { AT4DX_BINDING_OBJECTS, type BindingType, type RawBindingRecord } from './at4dxBindingTypes.js';
+import {
+  AT4DX_BINDING_OBJECTS,
+  type AepConnection,
+  type BindingType,
+  type RawBindingRecord,
+} from './at4dxBindingTypes.js';
 
 /** The shape of a single query result record, across all four binding objects. Unused columns for a given type are simply absent. */
 type OrgBindingRecord = {
@@ -89,7 +93,7 @@ export type OrgScanResult = {
  * @param types - Which binding types to query for.
  * @returns The discovered bindings and which requested types don't exist in this org.
  */
-export async function scanOrgBindings(connection: Connection, types: BindingType[]): Promise<OrgScanResult> {
+export async function scanOrgBindings(connection: AepConnection, types: BindingType[]): Promise<OrgScanResult> {
   const source = connection.getUsername() ?? 'org';
   const missingTypes: BindingType[] = [];
 

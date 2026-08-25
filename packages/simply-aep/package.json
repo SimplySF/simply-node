@@ -59,7 +59,7 @@
     "@oclif/core": "^4.11.2",
     "@salesforce/core": "^8.30.0",
     "@salesforce/sf-plugins-core": "^12.2.16",
-    "@salesforce/source-deploy-retrieve": "^12.37.2",
+    "@simplysf/simply-aep-core": "workspace:^0.1.0",
     "@simplysf/simply-core": "workspace:^1.4.0"
   },
   "devDependencies": {

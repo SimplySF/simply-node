@@ -19,14 +19,14 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import {
   ALL_BINDING_TYPES,
   BINDING_TYPE_BY_FLAG,
+  resolveBindings,
+  scanLocalBindings,
+  scanOrgBindings,
   type At4dxBindingListResult,
   type At4dxBindingRow,
   type BindingType,
   type BindingTypeFlag,
-} from '../../../../../common/at4dxBindingTypes.js';
-import { scanLocalBindings } from '../../../../../common/at4dxLocalScan.js';
-import { scanOrgBindings } from '../../../../../common/at4dxOrgScan.js';
-import { resolveBindings } from '../../../../../common/at4dxResolve.js';
+} from '@simplysf/simply-aep-core';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('@simplysf/simply-aep', 'simply.aep.at4dx.binding.list');
