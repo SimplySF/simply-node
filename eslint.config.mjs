@@ -51,6 +51,7 @@ const compat = new FlatCompat({
 const allPackages = [
   'packages/simply',
   'packages/simply-aep',
+  'packages/simply-aep-core',
   'packages/simply-apex',
   'packages/simply-cicd',
   'packages/simply-community',
@@ -67,7 +68,12 @@ const allPackages = [
 ];
 
 // The shared libraries: plain packages consumed by the plugins, with no oclif commands of their own.
-const libraryPackages = ['packages/simply-core', 'packages/simply-plugin-kit', 'packages/simply-report'];
+const libraryPackages = [
+  'packages/simply-core',
+  'packages/simply-plugin-kit',
+  'packages/simply-report',
+  'packages/simply-aep-core',
+];
 
 // sf-plugin's recommended rules only ever applied to the oclif command packages, not the libraries or simply.
 const sfPluginPackages = allPackages.filter((pkg) => !libraryPackages.includes(pkg) && pkg !== 'packages/simply');

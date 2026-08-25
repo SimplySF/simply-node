@@ -24,6 +24,9 @@ checklist. The design doc records the reasoning; `messages/` records the behavio
   notice.
 - Any new shared module in `simply-core`, `simply-plugin-kit`, or `simply-report`, or a change to
   how packages depend on each other.
+- Extracting or growing a library package meant for consumption outside this monorepo (like
+  `simply-aep-core`) — a different, higher bar than the monorepo-internal libraries above, since an
+  external consumer can't be found and fixed the way an internal one can.
 
 Not required for: bug fixes that restore documented behavior, dependency bumps, test-only changes,
 refactors that keep the public surface identical (though a short doc is welcome for large ones —

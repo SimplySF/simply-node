@@ -14,37 +14,4 @@
  * limitations under the License.
  */
 
-// Unlike other `simply-*` command packages, this barrel isn't an empty oclif-plugin stub — the
-// binding scan/resolve logic is meant to be consumed directly by a future VS Code extension, not
-// just by this package's own command. See docs/design/0007-at4dx-binding-list.md's "Decision"
-// section for why.
-
-export {
-  ALL_BINDING_TYPES,
-  AT4DX_BINDING_OBJECTS,
-  AT4DX_BINDING_LOCAL_OBJECT_NAMES,
-  BINDING_TYPE_BY_FLAG,
-  bindingTypeForLocalObjectName,
-  type At4dxBindingListResult,
-  type At4dxBindingRow,
-  type BindingType,
-  type BindingTypeFlag,
-  type RawBindingRecord,
-} from './common/at4dxBindingTypes.js';
-export { scanLocalBindings } from './common/at4dxLocalScan.js';
-export { scanOrgBindings, type OrgScanResult } from './common/at4dxOrgScan.js';
-export { resolveBindings } from './common/at4dxResolve.js';
-export {
-  ALL_TRIGGER_OPERATIONS,
-  DOMAIN_PROCESS_BINDING_OBJECT,
-  DOMAIN_PROCESS_BINDING_LOCAL_OBJECT_NAME,
-  type At4dxDomainProcessBindingListResult,
-  type DomainProcessBindingRow,
-  type DomainProcessType,
-  type ProcessContext,
-  type RawDomainProcessBindingRecord,
-  type TriggerOperation,
-} from './common/at4dxDomainProcessBindingTypes.js';
-export { scanLocalDomainProcessBindings } from './common/at4dxDomainProcessLocalScan.js';
-export { scanOrgDomainProcessBindings, type DomainProcessOrgScanResult } from './common/at4dxDomainProcessOrgScan.js';
-export { resolveDomainProcessBindings } from './common/at4dxDomainProcessResolve.js';
+export default {};

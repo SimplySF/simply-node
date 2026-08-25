@@ -14,25 +14,26 @@ Thanks for your interest in contributing to Simply! This document covers the rep
 
 ## Repository Structure
 
-This repository is a Lerna monorepo containing twelve Salesforce CLI plugins, plus three internal libraries. Every package has its own `CONTRIBUTING.md` covering what's specific to it — read this file first, then that one.
+This repository is a Lerna monorepo containing twelve Salesforce CLI plugins, plus four internal libraries. Every package has its own `CONTRIBUTING.md` covering what's specific to it — read this file first, then that one.
 
-| Package                                                       | Description                                                | Bundled into `simply`?    |
-| ------------------------------------------------------------- | ---------------------------------------------------------- | ------------------------- |
-| [`@simplysf/simply`](packages/simply)                         | Orchestrator plugin — bundles the plugins marked ✅ below  | —                         |
-| [`@simplysf/simply-aep`](packages/simply-aep)                 | Apex Enterprise Patterns commands (fflib, force-di, AT4DX) | ✅                        |
-| [`@simplysf/simply-apex`](packages/simply-apex)               | Apex commands                                              | ✅                        |
-| [`@simplysf/simply-cicd`](packages/simply-cicd)               | CI/CD pipeline commands                                    | No — installed on its own |
-| [`@simplysf/simply-community`](packages/simply-community)     | Salesforce Communities commands                            | ✅                        |
-| [`@simplysf/simply-data`](packages/simply-data)               | File upload/download commands                              | ✅                        |
-| [`@simplysf/simply-document`](packages/simply-document)       | Documentation generation commands                          | ✅                        |
-| [`@simplysf/simply-package`](packages/simply-package)         | Package dependency management commands                     | ✅                        |
-| [`@simplysf/simply-permissions`](packages/simply-permissions) | Permissions commands                                       | ✅                        |
-| [`@simplysf/simply-project`](packages/simply-project)         | Salesforce project commands                                | ✅                        |
-| [`@simplysf/simply-schema`](packages/simply-schema)           | Schema visualization commands                              | ✅                        |
-| [`@simplysf/simply-sobject`](packages/simply-sobject)         | SObject commands                                           | ✅                        |
-| [`@simplysf/simply-core`](packages/simply-core)               | Shared internal library — not a CLI plugin                 | —                         |
-| [`@simplysf/simply-plugin-kit`](packages/simply-plugin-kit)   | Shared oclif command building blocks — not a CLI plugin    | —                         |
-| [`@simplysf/simply-report`](packages/simply-report)           | Shared HTML report scaffolding — not a CLI plugin          | —                         |
+| Package                                                       | Description                                                                                                                                 | Bundled into `simply`?    |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| [`@simplysf/simply`](packages/simply)                         | Orchestrator plugin — bundles the plugins marked ✅ below                                                                                   | —                         |
+| [`@simplysf/simply-aep`](packages/simply-aep)                 | Apex Enterprise Patterns commands (fflib, force-di, AT4DX)                                                                                  | ✅                        |
+| [`@simplysf/simply-apex`](packages/simply-apex)               | Apex commands                                                                                                                               | ✅                        |
+| [`@simplysf/simply-cicd`](packages/simply-cicd)               | CI/CD pipeline commands                                                                                                                     | No — installed on its own |
+| [`@simplysf/simply-community`](packages/simply-community)     | Salesforce Communities commands                                                                                                             | ✅                        |
+| [`@simplysf/simply-data`](packages/simply-data)               | File upload/download commands                                                                                                               | ✅                        |
+| [`@simplysf/simply-document`](packages/simply-document)       | Documentation generation commands                                                                                                           | ✅                        |
+| [`@simplysf/simply-package`](packages/simply-package)         | Package dependency management commands                                                                                                      | ✅                        |
+| [`@simplysf/simply-permissions`](packages/simply-permissions) | Permissions commands                                                                                                                        | ✅                        |
+| [`@simplysf/simply-project`](packages/simply-project)         | Salesforce project commands                                                                                                                 | ✅                        |
+| [`@simplysf/simply-schema`](packages/simply-schema)           | Schema visualization commands                                                                                                               | ✅                        |
+| [`@simplysf/simply-sobject`](packages/simply-sobject)         | SObject commands                                                                                                                            | ✅                        |
+| [`@simplysf/simply-core`](packages/simply-core)               | Shared internal library — not a CLI plugin                                                                                                  | —                         |
+| [`@simplysf/simply-plugin-kit`](packages/simply-plugin-kit)   | Shared oclif command building blocks — not a CLI plugin                                                                                     | —                         |
+| [`@simplysf/simply-report`](packages/simply-report)           | Shared HTML report scaffolding — not a CLI plugin                                                                                           | —                         |
+| [`@simplysf/simply-aep-core`](packages/simply-aep-core)       | AT4DX binding scan/resolve library — not a CLI plugin, and unlike the three libraries above, meant for direct use outside this monorepo too | —                         |
 
 The "bundled" column matters when you change a flag: see [Pull Requests](#pull-requests) below.
 

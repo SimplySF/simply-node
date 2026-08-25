@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { type Connection } from '@salesforce/core';
+import type { AepConnection } from './at4dxBindingTypes.js';
 import {
   DOMAIN_PROCESS_BINDING_OBJECT,
   type DomainProcessType,
@@ -96,7 +96,7 @@ export type DomainProcessOrgScanResult = {
  * @param connection - The org connection to query against.
  * @returns The discovered bindings, and whether the Custom Metadata Type exists in this org at all.
  */
-export async function scanOrgDomainProcessBindings(connection: Connection): Promise<DomainProcessOrgScanResult> {
+export async function scanOrgDomainProcessBindings(connection: AepConnection): Promise<DomainProcessOrgScanResult> {
   const source = connection.getUsername() ?? 'org';
 
   try {

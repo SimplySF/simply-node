@@ -18,7 +18,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { scanLocalBindings } from '../../src/common/at4dxLocalScan.js';
+import { scanLocalBindings } from '../src/at4dxLocalScan.js';
 
 function writeCustomMetadata(projectDir: string, fileName: string, xml: string): void {
   const dir = path.join(projectDir, 'customMetadata');

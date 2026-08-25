@@ -17,13 +17,13 @@
 import { Messages } from '@salesforce/core';
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import {
+  resolveDomainProcessBindings,
+  scanLocalDomainProcessBindings,
+  scanOrgDomainProcessBindings,
   type At4dxDomainProcessBindingListResult,
   type DomainProcessBindingRow,
   type RawDomainProcessBindingRecord,
-} from '../../../../../common/at4dxDomainProcessBindingTypes.js';
-import { scanLocalDomainProcessBindings } from '../../../../../common/at4dxDomainProcessLocalScan.js';
-import { scanOrgDomainProcessBindings } from '../../../../../common/at4dxDomainProcessOrgScan.js';
-import { resolveDomainProcessBindings } from '../../../../../common/at4dxDomainProcessResolve.js';
+} from '@simplysf/simply-aep-core';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('@simplysf/simply-aep', 'simply.aep.at4dx.domain-process-binding.list');

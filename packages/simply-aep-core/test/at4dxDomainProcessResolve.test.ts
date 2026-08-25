@@ -15,8 +15,8 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { resolveDomainProcessBindings } from '../../src/common/at4dxDomainProcessResolve.js';
-import type { RawDomainProcessBindingRecord } from '../../src/common/at4dxDomainProcessBindingTypes.js';
+import { resolveDomainProcessBindings } from '../src/at4dxDomainProcessResolve.js';
+import type { RawDomainProcessBindingRecord } from '../src/at4dxDomainProcessBindingTypes.js';
 
 function record(
   overrides: Partial<RawDomainProcessBindingRecord> & Pick<RawDomainProcessBindingRecord, 'order'>,
