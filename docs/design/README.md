@@ -44,7 +44,7 @@ refactors that keep the public surface identical (though a short doc is welcome 
 | [0006](0006-api-request-budget.md)                | API request budget check                        | Implemented           |
 | [0007](0007-at4dx-binding-list.md)                | `simply aep at4dx binding list`                 | Implemented           |
 | [0008](0008-at4dx-domain-process-binding-list.md) | `simply aep at4dx domain-process-binding list`  | Implemented           |
-| [0009](0009-aep-library-consumption.md)           | Splitting `simply-aep-core` out of `simply-aep` | Draft                 |
+| [0009](0009-aep-library-consumption.md)           | Splitting `simply-aep-core` out of `simply-aep` | Implemented           |
 
 ## Template
 

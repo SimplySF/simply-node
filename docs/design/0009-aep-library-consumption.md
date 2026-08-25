@@ -1,6 +1,6 @@
 # 0009 — Splitting `simply-aep-core` out of `simply-aep`
 
-**Status:** Draft
+**Status:** Implemented (PR #126)
 **Package:** new `packages/simply-aep-core`; `packages/simply-aep` (CLI, slimmed)
 **Date:** 2026-08-25
 
