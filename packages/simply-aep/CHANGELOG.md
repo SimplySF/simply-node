@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.4.1](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-aep%400.4.0...%40simplysf%2Fsimply-aep%400.4.1) (2026-08-26)
+
+**Note:** Version bump only for package @simplysf/simply-aep
+
 # [0.4.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-aep%400.3.1...%40simplysf%2Fsimply-aep%400.4.0) (2026-08-25)
 
 - refactor(simply-aep)!: extract simply-aep-core library package ([a2721d8](https://github.com/SimplySF/simply-node/commit/a2721d8d332ede1a76f595650ed9895df85c01af))
