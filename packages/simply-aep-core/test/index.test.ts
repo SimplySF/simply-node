@@ -40,10 +40,12 @@ it('exports the expected set of runtime values', () => {
       'ALL_TRIGGER_OPERATIONS',
       'DOMAIN_PROCESS_BINDING_OBJECT',
       'DOMAIN_PROCESS_BINDING_LOCAL_OBJECT_NAME',
+      'DOMAIN_PROCESS_BINDING_RULES',
       'scanLocalDomainProcessBindings',
       'scanOrgDomainProcessBindings',
       'resolveDomainProcessBindings',
       'validateDomainProcessBindings',
+      'filterDomainProcessBindingIssues',
     ].sort(),
   );
 });

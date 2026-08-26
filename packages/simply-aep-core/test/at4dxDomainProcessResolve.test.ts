@@ -15,11 +15,17 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { resolveDomainProcessBindings, validateDomainProcessBindings } from '../src/at4dxDomainProcessResolve.js';
-import type {
-  AmbiguousDomainProcessBindingRecord,
-  MalformedDomainProcessBindingRecord,
-  RawDomainProcessBindingRecord,
+import {
+  filterDomainProcessBindingIssues,
+  resolveDomainProcessBindings,
+  validateDomainProcessBindings,
+} from '../src/at4dxDomainProcessResolve.js';
+import {
+  DOMAIN_PROCESS_BINDING_RULES,
+  type AmbiguousDomainProcessBindingRecord,
+  type DomainProcessBindingIssueRule,
+  type MalformedDomainProcessBindingRecord,
+  type RawDomainProcessBindingRecord,
 } from '../src/at4dxDomainProcessBindingTypes.js';
 
 function record(
@@ -40,6 +46,23 @@ function record(
     ...overrides,
   };
 }
+
+describe('DOMAIN_PROCESS_BINDING_RULES', () => {
+  it('has a table entry, keyed to itself, for every DomainProcessBindingIssueRule', () => {
+    const rules: DomainProcessBindingIssueRule[] = [
+      'order-collision',
+      'missing-context-field',
+      'ambiguous-sobject-reference',
+      'duplicate-developer-name',
+      'missing-sobject-reference',
+    ];
+
+    for (const rule of rules) {
+      expect(DOMAIN_PROCESS_BINDING_RULES[rule].rule).toBe(rule);
+    }
+    expect(Object.keys(DOMAIN_PROCESS_BINDING_RULES).sort()).toEqual([...rules].sort());
+  });
+});
 
 describe('resolveDomainProcessBindings', () => {
   it('sorts records within a group by order ascending', () => {
@@ -281,5 +304,120 @@ describe('validateDomainProcessBindings', () => {
     const issues = validateDomainProcessBindings([a], noDiagnostics);
 
     expect(issues.filter((issue) => issue.rule === 'duplicate-developer-name')).toEqual([]);
+  });
+
+  it("stamps every issue's severity and scope from DOMAIN_PROCESS_BINDING_RULES", () => {
+    const collision = [record({ order: 1, developerName: 'A' }), record({ order: 1, developerName: 'B' })];
+    const dead = record({ order: 2, developerName: 'Dead', triggerOperation: undefined });
+    const malformed: MalformedDomainProcessBindingRecord[] = [{ developerName: 'Malformed', source: 'core' }];
+    const ambiguous: AmbiguousDomainProcessBindingRecord[] = [
+      { developerName: 'Ambiguous', sobject: 'Account', alternateSobject: 'Contact', source: 'core' },
+    ];
+    const duplicate = [
+      record({ order: 3, developerName: 'Dup', source: 'core' }),
+      record({ order: 3, developerName: 'Dup', sobject: 'Contact', source: 'app' }),
+    ];
+
+    const issues = validateDomainProcessBindings([...collision, dead, ...duplicate], { malformed, ambiguous });
+
+    expect(issues.length).toBeGreaterThan(0);
+    for (const issue of issues) {
+      const info = DOMAIN_PROCESS_BINDING_RULES[issue.rule];
+      expect(issue.severity).toBe(info.severity);
+      expect(issue.scope).toBe(info.scope);
+    }
+  });
+
+  it('accepts a scan-result envelope directly, identical to the two-argument form on the same data', () => {
+    const a = record({ order: 1, developerName: 'A' });
+    const malformed: MalformedDomainProcessBindingRecord[] = [{ developerName: 'Malformed', source: 'core' }];
+    const ambiguous: AmbiguousDomainProcessBindingRecord[] = [
+      { developerName: 'Ambiguous', sobject: 'Account', alternateSobject: 'Contact', source: 'core' },
+    ];
+
+    const viaEnvelope = validateDomainProcessBindings({ records: [a], malformed, ambiguous });
+    const viaTwoArgs = validateDomainProcessBindings([a], { malformed, ambiguous });
+
+    expect(viaEnvelope).toEqual(viaTwoArgs);
+  });
+
+  const recordScopedRules: DomainProcessBindingIssueRule[] = Object.values(DOMAIN_PROCESS_BINDING_RULES)
+    .filter((info) => info.scope === 'record')
+    .map((info) => info.rule);
+
+  it.each(recordScopedRules)(
+    'round-trips for record-scoped rule %s: validate-then-filter-by-SObject equals filter-records-then-validate',
+    (rule) => {
+      const account = record({ order: 1, developerName: `${rule}-account`, sobject: 'Account' });
+      const contact = record({ order: 1, developerName: `${rule}-contact`, sobject: 'Contact' });
+      const all = [account, contact];
+
+      const filteredThenValidated = validateDomainProcessBindings(
+        all.filter((r) => r.sobject === 'Account'),
+        noDiagnostics,
+      ).filter((issue) => issue.rule === rule);
+
+      const { inScope } = filterDomainProcessBindingIssues(validateDomainProcessBindings(all, noDiagnostics), {
+        sobjects: ['Account'],
+      });
+
+      expect(inScope.filter((issue) => issue.rule === rule)).toEqual(filteredThenValidated);
+    },
+  );
+
+  it('reports a duplicate-developer-name shared across SObjects as scanWide, not dropped by an SObject filter', () => {
+    const accountBinding = record({ order: 1, developerName: 'Shared', sobject: 'Account', source: 'core' });
+    const contactBinding = record({ order: 1, developerName: 'Shared', sobject: 'Contact', source: 'app' });
+
+    const issues = validateDomainProcessBindings([accountBinding, contactBinding], noDiagnostics);
+    const { inScope, scanWide } = filterDomainProcessBindingIssues(issues, { sobjects: ['Account'] });
+
+    expect(inScope.filter((issue) => issue.rule === 'duplicate-developer-name')).toEqual([]);
+    expect(scanWide.filter((issue) => issue.rule === 'duplicate-developer-name')).toHaveLength(2);
+  });
+
+  it('reports a malformed record as scanWide regardless of the SObject filter', () => {
+    const malformed: MalformedDomainProcessBindingRecord[] = [{ developerName: 'Unresolvable', source: 'core' }];
+
+    const issues = validateDomainProcessBindings([], { malformed, ambiguous: [] });
+    const { inScope, scanWide } = filterDomainProcessBindingIssues(issues, { sobjects: ['Account'] });
+
+    expect(inScope).toEqual([]);
+    expect(scanWide).toHaveLength(1);
+  });
+});
+
+describe('filterDomainProcessBindingIssues', () => {
+  const noDiagnostics = {
+    malformed: [] as MalformedDomainProcessBindingRecord[],
+    ambiguous: [] as AmbiguousDomainProcessBindingRecord[],
+  };
+
+  it('puts every record-scoped issue in inScope when sobjects is omitted', () => {
+    const account = record({ order: 1, developerName: 'A', sobject: 'Account', triggerOperation: undefined });
+    const issues = validateDomainProcessBindings([account], noDiagnostics);
+
+    const { inScope, scanWide } = filterDomainProcessBindingIssues(issues, {});
+
+    expect(inScope).toEqual(issues);
+    expect(scanWide).toEqual([]);
+  });
+
+  it('puts every record-scoped issue in inScope when sobjects is an empty array', () => {
+    const account = record({ order: 1, developerName: 'A', sobject: 'Account', triggerOperation: undefined });
+    const issues = validateDomainProcessBindings([account], noDiagnostics);
+
+    const { inScope } = filterDomainProcessBindingIssues(issues, { sobjects: [] });
+
+    expect(inScope).toEqual(issues);
+  });
+
+  it('drops a record-scoped issue for an SObject not in the filter', () => {
+    const contact = record({ order: 1, developerName: 'A', sobject: 'Contact', triggerOperation: undefined });
+    const issues = validateDomainProcessBindings([contact], noDiagnostics);
+
+    const { inScope } = filterDomainProcessBindingIssues(issues, { sobjects: ['Account'] });
+
+    expect(inScope).toEqual([]);
   });
 });

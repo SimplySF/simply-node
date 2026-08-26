@@ -60,18 +60,19 @@ function toRawRecord(
   const xml = component.parseXmlSync<CustomMetadataXml>();
   const values = extractValues(xml);
   const source = deriveProjectName(component.xml);
+  const filePath = component.xml;
 
   const primarySObject = fieldValue(values, 'RelatedDomainBindingSObject__c');
   const alternateSObject = fieldValue(values, 'RelatedDomainBindingSObjectAlternate__c');
   const sobject = primarySObject ?? alternateSObject;
 
   if (!sobject) {
-    return { entry: { kind: 'malformed', value: { developerName, source } } };
+    return { entry: { kind: 'malformed', value: { developerName, source, filePath } } };
   }
 
   const ambiguous: AmbiguousDomainProcessBindingRecord | undefined =
     primarySObject && alternateSObject && primarySObject !== alternateSObject
-      ? { developerName, sobject: primarySObject, alternateSobject: alternateSObject, source }
+      ? { developerName, sobject: primarySObject, alternateSobject: alternateSObject, source, filePath }
       : undefined;
 
   return {
@@ -92,6 +93,7 @@ function toRawRecord(
         preventRecursive: toBoolean(fieldValue(values, 'PreventRecursive__c'), false),
         description: fieldValue(values, 'Description__c'),
         source,
+        filePath,
       },
     },
     ambiguous,

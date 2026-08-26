@@ -74,6 +74,8 @@ export type RawDomainProcessBindingRecord = {
   description?: string;
   /** Local package directory name, or the org username when read from `--target-org`. */
   source: string;
+  /** Absolute path to the `.md-meta.xml` this record was parsed from. Local scans only. */
+  filePath?: string;
 };
 
 /** A `RawDomainProcessBindingRecord` annotated with the resolution outcome `resolveDomainProcessBindings` computed for it. */
@@ -103,6 +105,8 @@ export type At4dxDomainProcessBindingListResult = {
 export type MalformedDomainProcessBindingRecord = {
   developerName: string;
   source: string;
+  /** Absolute path to the `.md-meta.xml` this record was parsed from. Local scans only. */
+  filePath?: string;
 };
 
 /**
@@ -119,6 +123,8 @@ export type AmbiguousDomainProcessBindingRecord = {
   /** `RelatedDomainBindingSObjectAlternate__c`'s raw value. */
   alternateSobject: string;
   source: string;
+  /** Absolute path to the `.md-meta.xml` this record was parsed from. Local scans only. */
+  filePath?: string;
 };
 
 /** The severity of a `DomainProcessBindingIssue` — whether it fails `validate`'s exit code or is advisory only. */
@@ -132,14 +138,82 @@ export type DomainProcessBindingIssueRule =
   | 'duplicate-developer-name'
   | 'ambiguous-sobject-reference';
 
+/**
+ * Whether a rule's answer can be computed from one record alone (`record`) or requires seeing every
+ * scanned record at once (`scan`). See docs/design/0011-domain-process-binding-issue-scoping.md — a
+ * `scan`-scoped issue must never be dropped by an SObject filter applied after validation, since the
+ * issue may not even carry the SObject the filter is keyed on.
+ */
+export type DomainProcessBindingIssueScope = 'record' | 'scan';
+
+export type DomainProcessBindingRuleInfo = {
+  rule: DomainProcessBindingIssueRule;
+  severity: DomainProcessBindingIssueSeverity;
+  scope: DomainProcessBindingIssueScope;
+  /** Short label for a badge or table cell, e.g. `Order collision`. */
+  title: string;
+  /** One sentence on what the rule detects, independent of any one record — tooltip/help copy. */
+  summary: string;
+};
+
+/** The single source of truth for each rule's `severity`, `scope`, and display copy. `validateDomainProcessBindings` reads from this table rather than repeating the literals at each `issues.push` site. */
+export const DOMAIN_PROCESS_BINDING_RULES: Readonly<
+  Record<DomainProcessBindingIssueRule, DomainProcessBindingRuleInfo>
+> = {
+  'order-collision': {
+    rule: 'order-collision',
+    severity: 'error',
+    scope: 'record',
+    title: 'Order collision',
+    summary:
+      'Two active records of the same type share an OrderOfExecution__c within the same SObject/context/trigger-or-token — one of them will silently never run.',
+  },
+  'missing-context-field': {
+    rule: 'missing-context-field',
+    severity: 'error',
+    scope: 'record',
+    title: 'Missing context field',
+    summary:
+      "The declared process context's matching field (TriggerOperation__c or DomainMethodToken__c) is blank, so this binding never matches any execution.",
+  },
+  'ambiguous-sobject-reference': {
+    rule: 'ambiguous-sobject-reference',
+    severity: 'warning',
+    scope: 'record',
+    title: 'Ambiguous SObject reference',
+    summary:
+      'RelatedDomainBindingSObject__c and RelatedDomainBindingSObjectAlternate__c are both set to different values — only one should be specified.',
+  },
+  'duplicate-developer-name': {
+    rule: 'duplicate-developer-name',
+    severity: 'error',
+    scope: 'scan',
+    title: 'Duplicate DeveloperName',
+    summary:
+      'The same DeveloperName is defined more than once across the scan — Custom Metadata records are keyed by DeveloperName, so deploying these together is a conflict.',
+  },
+  'missing-sobject-reference': {
+    rule: 'missing-sobject-reference',
+    severity: 'error',
+    scope: 'scan',
+    title: 'Missing SObject reference',
+    summary:
+      'Neither RelatedDomainBindingSObject__c nor RelatedDomainBindingSObjectAlternate__c is set — this binding has no SObject to bind against.',
+  },
+};
+
 /** One problem `validateDomainProcessBindings` found with a scanned `DomainProcessBinding__mdt` record. */
 export type DomainProcessBindingIssue = {
   severity: DomainProcessBindingIssueSeverity;
   rule: DomainProcessBindingIssueRule;
+  /** Copied from `DOMAIN_PROCESS_BINDING_RULES[rule].scope` — see docs/design/0011-domain-process-binding-issue-scoping.md for why it's duplicated onto every issue rather than looked up. */
+  scope: DomainProcessBindingIssueScope;
   message: string;
   developerName?: string;
   sobject?: string;
   source: string;
+  /** Absolute path to the `.md-meta.xml` this record was parsed from. Local scans only. */
+  filePath?: string;
 };
 
 export type At4dxDomainProcessBindingValidateResult = {
