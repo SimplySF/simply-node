@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.5.1](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-aep%400.5.0...%40simplysf%2Fsimply-aep%400.5.1) (2026-08-26)
+
+### Bug Fixes
+
+- **simply-aep:** validate-then-filter --sobject so scan-wide issues aren't dropped ([a1ba32a](https://github.com/SimplySF/simply-node/commit/a1ba32a601f23972b7bcaeea7e97e5139df5cade))
+
 # [0.5.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-aep%400.4.1...%40simplysf%2Fsimply-aep%400.5.0) (2026-08-26)
 
 - feat(simply-aep)!: add domain-process-binding validate command ([a50e066](https://github.com/SimplySF/simply-node/commit/a50e066b1ff3c564e9afb8ba9a355addc7d1758b)), closes [#127](https://github.com/SimplySF/simply-node/issues/127)

@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.0.1](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply%403.0.0...%40simplysf%2Fsimply%403.0.1) (2026-08-26)
+
+**Note:** Version bump only for package @simplysf/simply
+
 # [3.0.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply%402.22.3...%40simplysf%2Fsimply%403.0.0) (2026-08-26)
 
 - feat(simply-aep)!: add domain-process-binding validate command ([a50e066](https://github.com/SimplySF/simply-node/commit/a50e066b1ff3c564e9afb8ba9a355addc7d1758b)), closes [#127](https://github.com/SimplySF/simply-node/issues/127)

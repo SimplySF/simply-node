@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.4.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-aep-core%400.3.0...%40simplysf%2Fsimply-aep-core%400.4.0) (2026-08-26)
+
+### Features
+
+- **simply-aep-core:** add scope/filePath metadata and filterDomainProcessBindingIssues ([2b70c3e](https://github.com/SimplySF/simply-node/commit/2b70c3e81ff4f6ad620aa49b1befd37d5ff19ec0))
+
 # [0.3.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-aep-core%400.2.1...%40simplysf%2Fsimply-aep-core%400.3.0) (2026-08-26)
 
 - feat(simply-aep)!: add domain-process-binding validate command ([a50e066](https://github.com/SimplySF/simply-node/commit/a50e066b1ff3c564e9afb8ba9a355addc7d1758b)), closes [#127](https://github.com/SimplySF/simply-node/issues/127)
