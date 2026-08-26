@@ -56,10 +56,13 @@ changes to `simply-aep-core`'s public surface — no breaking change this time, 
 
 - Every rule gains a declared `scope` (`'record' | 'scan'`), exported both as a lookup table
   (`DOMAIN_PROCESS_BINDING_RULES`) and stamped onto each `DomainProcessBindingIssue` it produces.
-- One shared projection function, `filterDomainProcessBindingIssues`, implements
-  **validate-then-filter** with defined semantics for scan-scoped issues, so the CLI's `--sobject` and
-  the extension's SObject dropdown go through the same code instead of two hand-rolled filters that
-  disagree.
+- One projection function, `filterDomainProcessBindingIssues`, implements **validate-then-filter**
+  with defined semantics for scan-scoped issues. It is the normative definition of the projection —
+  `simply-aep`'s `validate` calls it, and the round-trip test in Testing is what pins its meaning.
+  The VS Code panel cannot call it (its filtering happens inside a webview, a separate JS context with
+  no access to this package), which is exactly why `scope` is stamped onto each issue as well: the
+  client's filter is then a two-property check against data this package produced, not a hand-copied
+  reimplementation of which rules are scan-scoped.
 - `validateDomainProcessBindings` gains an overload taking a scan result envelope directly, since
   both real callers already hold one.
 - The local scanner records each record's `filePath`.
@@ -170,10 +173,10 @@ export function filterDomainProcessBindingIssues(
   that genuinely wants only the filtered slice ignores `scanWide`; a caller that shows counts is
   forced by the return shape to decide what to do with it rather than losing it by omission.
 
-Returning a partition rather than one array is deliberate: the two halves get rendered differently
-(the extension badges `inScope` onto rows and lists `scanWide` in its own section), and a single
-concatenated array would make "how many problems are in what I'm looking at?" unanswerable without
-re-deriving the split.
+Returning a partition rather than one array is deliberate: the two halves get presented differently
+(`validate` prints them as separate tables; the VS Code panel groups them as "in this SObject" and
+"elsewhere in this scan"), and a single concatenated array would make "how many problems are in what
+I'm looking at?" unanswerable without re-deriving the split.
 
 ### `validateDomainProcessBindings` overload
 
