@@ -18,12 +18,22 @@ import path from 'node:path';
 import { ComponentSet, type SourceComponent } from '@salesforce/source-deploy-retrieve';
 import {
   DOMAIN_PROCESS_BINDING_LOCAL_OBJECT_NAME,
+  type AmbiguousDomainProcessBindingRecord,
   type DomainProcessType,
+  type MalformedDomainProcessBindingRecord,
   type ProcessContext,
   type RawDomainProcessBindingRecord,
   type TriggerOperation,
 } from './at4dxDomainProcessBindingTypes.js';
 import { extractValues, fieldValue, toBoolean, toNumber, type CustomMetadataXml } from './customMetadataXml.js';
+
+export type DomainProcessLocalScanResult = {
+  records: RawDomainProcessBindingRecord[];
+  /** Records with neither SObject reference field set — excluded from `records`, see `MalformedDomainProcessBindingRecord`. */
+  malformed: MalformedDomainProcessBindingRecord[];
+  /** Records with both SObject reference fields set to different values — still included in `records`, see `AmbiguousDomainProcessBindingRecord`. */
+  ambiguous: AmbiguousDomainProcessBindingRecord[];
+};
 
 /** @returns The source-format package/project directory name a metadata file belongs to (the directory containing `customMetadata`), same convention `at4dxLocalScan.ts` uses. */
 function deriveProjectName(filePath: string | undefined): string {
@@ -38,33 +48,53 @@ function deriveProjectName(filePath: string | undefined): string {
   return path.basename(normalized.slice(0, index));
 }
 
-/** @returns The normalized binding record for one `DomainProcessBinding.*` `CustomMetadata` component, or `undefined` if it has no resolvable SObject. */
-function toRawRecord(component: SourceComponent, developerName: string): RawDomainProcessBindingRecord | undefined {
+export type LocalDomainProcessBindingScanEntry =
+  | { kind: 'record'; value: RawDomainProcessBindingRecord }
+  | { kind: 'malformed'; value: MalformedDomainProcessBindingRecord };
+
+/** @returns The normalized binding record for one `DomainProcessBinding.*` `CustomMetadata` component, tagged `malformed` if it has no resolvable SObject, plus the ambiguous-SObject diagnostic when both reference fields are set to different values. */
+function toRawRecord(
+  component: SourceComponent,
+  developerName: string,
+): { entry: LocalDomainProcessBindingScanEntry; ambiguous?: AmbiguousDomainProcessBindingRecord } {
   const xml = component.parseXmlSync<CustomMetadataXml>();
   const values = extractValues(xml);
+  const source = deriveProjectName(component.xml);
 
-  const sobject =
-    fieldValue(values, 'RelatedDomainBindingSObject__c') ??
-    fieldValue(values, 'RelatedDomainBindingSObjectAlternate__c');
+  const primarySObject = fieldValue(values, 'RelatedDomainBindingSObject__c');
+  const alternateSObject = fieldValue(values, 'RelatedDomainBindingSObjectAlternate__c');
+  const sobject = primarySObject ?? alternateSObject;
+
   if (!sobject) {
-    return undefined;
+    return { entry: { kind: 'malformed', value: { developerName, source } } };
   }
 
+  const ambiguous: AmbiguousDomainProcessBindingRecord | undefined =
+    primarySObject && alternateSObject && primarySObject !== alternateSObject
+      ? { developerName, sobject: primarySObject, alternateSobject: alternateSObject, source }
+      : undefined;
+
   return {
-    developerName,
-    sobject,
-    processContext: fieldValue(values, 'ProcessContext__c') as ProcessContext,
-    triggerOperation: fieldValue(values, 'TriggerOperation__c') as TriggerOperation | undefined,
-    domainMethodToken: fieldValue(values, 'DomainMethodToken__c'),
-    type: fieldValue(values, 'Type__c') as DomainProcessType,
-    classToInject: fieldValue(values, 'ClassToInject__c') ?? '',
-    order: toNumber(fieldValue(values, 'OrderOfExecution__c')) ?? 0,
-    isActive: toBoolean(fieldValue(values, 'IsActive__c'), true),
-    executeAsynchronous: toBoolean(fieldValue(values, 'ExecuteAsynchronous__c'), false),
-    logicalInverse: toBoolean(fieldValue(values, 'LogicalInverse__c'), false),
-    preventRecursive: toBoolean(fieldValue(values, 'PreventRecursive__c'), false),
-    description: fieldValue(values, 'Description__c'),
-    source: deriveProjectName(component.xml),
+    entry: {
+      kind: 'record',
+      value: {
+        developerName,
+        sobject,
+        processContext: fieldValue(values, 'ProcessContext__c') as ProcessContext,
+        triggerOperation: fieldValue(values, 'TriggerOperation__c') as TriggerOperation | undefined,
+        domainMethodToken: fieldValue(values, 'DomainMethodToken__c'),
+        type: fieldValue(values, 'Type__c') as DomainProcessType,
+        classToInject: fieldValue(values, 'ClassToInject__c') ?? '',
+        order: toNumber(fieldValue(values, 'OrderOfExecution__c')) ?? 0,
+        isActive: toBoolean(fieldValue(values, 'IsActive__c'), true),
+        executeAsynchronous: toBoolean(fieldValue(values, 'ExecuteAsynchronous__c'), false),
+        logicalInverse: toBoolean(fieldValue(values, 'LogicalInverse__c'), false),
+        preventRecursive: toBoolean(fieldValue(values, 'PreventRecursive__c'), false),
+        description: fieldValue(values, 'Description__c'),
+        source,
+      },
+    },
+    ambiguous,
   };
 }
 
@@ -79,10 +109,12 @@ function toRawRecord(component: SourceComponent, developerName: string): RawDoma
  * an empty result as "AT4DX's Trigger Action Framework isn't configured here."
  *
  * @param sourceDirs - The source directories to scan.
- * @returns The discovered bindings.
+ * @returns The discovered bindings, plus the malformed/ambiguous diagnostics `validateDomainProcessBindings` consumes.
  */
-export function scanLocalDomainProcessBindings(sourceDirs: string[]): RawDomainProcessBindingRecord[] {
+export function scanLocalDomainProcessBindings(sourceDirs: string[]): DomainProcessLocalScanResult {
   const records: RawDomainProcessBindingRecord[] = [];
+  const malformed: MalformedDomainProcessBindingRecord[] = [];
+  const ambiguous: AmbiguousDomainProcessBindingRecord[] = [];
 
   const components = ComponentSet.fromSource(sourceDirs);
 
@@ -102,11 +134,16 @@ export function scanLocalDomainProcessBindings(sourceDirs: string[]): RawDomainP
     }
     const developerName = component.name.slice(separatorIndex + 1);
 
-    const record = toRawRecord(component, developerName);
-    if (record) {
-      records.push(record);
+    const { entry, ambiguous: ambiguousRecord } = toRawRecord(component, developerName);
+    if (entry.kind === 'record') {
+      records.push(entry.value);
+    } else {
+      malformed.push(entry.value);
+    }
+    if (ambiguousRecord) {
+      ambiguous.push(ambiguousRecord);
     }
   }
 
-  return records;
+  return { records, malformed, ambiguous };
 }

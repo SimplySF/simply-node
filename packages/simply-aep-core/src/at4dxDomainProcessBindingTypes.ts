@@ -93,3 +93,57 @@ export type At4dxDomainProcessBindingListResult = {
   source: string;
   bindings: DomainProcessBindingRow[];
 };
+
+/**
+ * A `DomainProcessBinding__mdt` record with neither `RelatedDomainBindingSObject__c` nor
+ * `RelatedDomainBindingSObjectAlternate__c` set. Excluded from a scan's `records` entirely (there's no
+ * SObject to bind against), reported here instead so `validateDomainProcessBindings` can surface it —
+ * `resolveDomainProcessBindings`/`list` keep silently excluding it, unchanged.
+ */
+export type MalformedDomainProcessBindingRecord = {
+  developerName: string;
+  source: string;
+};
+
+/**
+ * A `DomainProcessBinding__mdt` record with both `RelatedDomainBindingSObject__c` and
+ * `RelatedDomainBindingSObjectAlternate__c` set to different values. Still included in a scan's
+ * `records` (using `RelatedDomainBindingSObject__c`'s resolved value, the same fallback order
+ * `resolveSObject` already applies), but also reported here since the field's own description says
+ * "only specify... or this one; not both."
+ */
+export type AmbiguousDomainProcessBindingRecord = {
+  developerName: string;
+  /** `RelatedDomainBindingSObject__c`'s resolved value — what `records` uses for this record. */
+  sobject: string;
+  /** `RelatedDomainBindingSObjectAlternate__c`'s raw value. */
+  alternateSobject: string;
+  source: string;
+};
+
+/** The severity of a `DomainProcessBindingIssue` — whether it fails `validate`'s exit code or is advisory only. */
+export type DomainProcessBindingIssueSeverity = 'error' | 'warning';
+
+/** Which check in `validateDomainProcessBindings` produced a `DomainProcessBindingIssue`. */
+export type DomainProcessBindingIssueRule =
+  | 'order-collision'
+  | 'missing-sobject-reference'
+  | 'missing-context-field'
+  | 'duplicate-developer-name'
+  | 'ambiguous-sobject-reference';
+
+/** One problem `validateDomainProcessBindings` found with a scanned `DomainProcessBinding__mdt` record. */
+export type DomainProcessBindingIssue = {
+  severity: DomainProcessBindingIssueSeverity;
+  rule: DomainProcessBindingIssueRule;
+  message: string;
+  developerName?: string;
+  sobject?: string;
+  source: string;
+};
+
+export type At4dxDomainProcessBindingValidateResult = {
+  source: string;
+  bindingCount: number;
+  issues: DomainProcessBindingIssue[];
+};

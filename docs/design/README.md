@@ -45,7 +45,7 @@ refactors that keep the public surface identical (though a short doc is welcome 
 | [0007](0007-at4dx-binding-list.md)                    | `simply aep at4dx binding list`                    | Implemented           |
 | [0008](0008-at4dx-domain-process-binding-list.md)     | `simply aep at4dx domain-process-binding list`     | Implemented           |
 | [0009](0009-aep-library-consumption.md)               | Splitting `simply-aep-core` out of `simply-aep`    | Implemented           |
-| [0010](0010-at4dx-domain-process-binding-validate.md) | `simply aep at4dx domain-process-binding validate` | Draft                 |
+| [0010](0010-at4dx-domain-process-binding-validate.md) | `simply aep at4dx domain-process-binding validate` | Implemented           |
 
 ## Template
 

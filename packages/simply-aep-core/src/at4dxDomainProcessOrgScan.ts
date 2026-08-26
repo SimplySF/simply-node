@@ -17,7 +17,9 @@
 import type { AepConnection } from './at4dxBindingTypes.js';
 import {
   DOMAIN_PROCESS_BINDING_OBJECT,
+  type AmbiguousDomainProcessBindingRecord,
   type DomainProcessType,
+  type MalformedDomainProcessBindingRecord,
   type ProcessContext,
   type RawDomainProcessBindingRecord,
   type TriggerOperation,
@@ -57,13 +59,25 @@ function resolveSObject(record: OrgDomainProcessBindingRecord): string | undefin
   return record.RelatedDomainBindingSObjectAlternate__c ?? undefined;
 }
 
-/** @returns The normalized binding record, or `undefined` if the record has no resolvable SObject. */
-function toRawRecord(record: OrgDomainProcessBindingRecord, source: string): RawDomainProcessBindingRecord | undefined {
-  const sobject = resolveSObject(record);
-  if (!sobject) {
-    return undefined;
+/** @returns An `AmbiguousDomainProcessBindingRecord` if both SObject reference fields are set to different values, else `undefined`. */
+function ambiguousSObject(
+  record: OrgDomainProcessBindingRecord,
+  sobject: string,
+  source: string,
+): AmbiguousDomainProcessBindingRecord | undefined {
+  const alternate = record.RelatedDomainBindingSObjectAlternate__c;
+  if (record.RelatedDomainBindingSObject__c && alternate && alternate !== sobject) {
+    return { developerName: record.DeveloperName, sobject, alternateSobject: alternate, source };
   }
+  return undefined;
+}
 
+/** @returns The normalized binding record for an already-resolved `sobject`. */
+function toRawRecord(
+  record: OrgDomainProcessBindingRecord,
+  sobject: string,
+  source: string,
+): RawDomainProcessBindingRecord {
   return {
     developerName: record.DeveloperName,
     sobject,
@@ -84,6 +98,10 @@ function toRawRecord(record: OrgDomainProcessBindingRecord, source: string): Raw
 
 export type DomainProcessOrgScanResult = {
   records: RawDomainProcessBindingRecord[];
+  /** Records with neither SObject reference field set — excluded from `records`, see `MalformedDomainProcessBindingRecord`. */
+  malformed: MalformedDomainProcessBindingRecord[];
+  /** Records with both SObject reference fields set to different values — still included in `records`, see `AmbiguousDomainProcessBindingRecord`. */
+  ambiguous: AmbiguousDomainProcessBindingRecord[];
   /** `true` when the `DomainProcessBinding__mdt` Custom Metadata Type doesn't exist in this org. */
   missing: boolean;
 };
@@ -101,13 +119,29 @@ export async function scanOrgDomainProcessBindings(connection: AepConnection): P
 
   try {
     const result = await connection.autoFetchQuery(SOQL);
-    const records = (result.records as unknown as OrgDomainProcessBindingRecord[])
-      .map((record) => toRawRecord(record, source))
-      .filter((record): record is RawDomainProcessBindingRecord => record !== undefined);
-    return { records, missing: false };
+    const records: RawDomainProcessBindingRecord[] = [];
+    const malformed: MalformedDomainProcessBindingRecord[] = [];
+    const ambiguous: AmbiguousDomainProcessBindingRecord[] = [];
+
+    for (const record of result.records as unknown as OrgDomainProcessBindingRecord[]) {
+      const sobject = resolveSObject(record);
+      if (!sobject) {
+        malformed.push({ developerName: record.DeveloperName, source });
+        continue;
+      }
+
+      const ambiguousRecord = ambiguousSObject(record, sobject, source);
+      if (ambiguousRecord) {
+        ambiguous.push(ambiguousRecord);
+      }
+
+      records.push(toRawRecord(record, sobject, source));
+    }
+
+    return { records, malformed, ambiguous, missing: false };
   } catch (error) {
     if ((error as Error).name === 'INVALID_TYPE') {
-      return { records: [], missing: true };
+      return { records: [], malformed: [], ambiguous: [], missing: true };
     }
     throw error;
   }

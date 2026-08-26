@@ -17,48 +17,47 @@
 import { Messages } from '@salesforce/core';
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import {
-  resolveDomainProcessBindings,
+  validateDomainProcessBindings,
   scanLocalDomainProcessBindings,
   scanOrgDomainProcessBindings,
-  type At4dxDomainProcessBindingListResult,
-  type DomainProcessBindingRow,
+  type AmbiguousDomainProcessBindingRecord,
+  type At4dxDomainProcessBindingValidateResult,
+  type DomainProcessBindingIssue,
+  type MalformedDomainProcessBindingRecord,
   type RawDomainProcessBindingRecord,
 } from '@simplysf/simply-aep-core';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('@simplysf/simply-aep', 'simply.aep.at4dx.domain-process-binding.list');
+const messages = Messages.loadMessages('@simplysf/simply-aep', 'simply.aep.at4dx.domain-process-binding.validate');
 
-/** The table's presentational shape — `triggerOperation`/`domainMethodToken` collapse into one `context` column, and `orderCollision` folds into the `order` column's display text. The `--json` result keeps the full `DomainProcessBindingRow` shape; this is display-only. */
+/** The table's presentational shape for one issue — `--json` keeps the full `DomainProcessBindingIssue` shape; this is display-only. */
 type DisplayRow = {
+  severity: string;
+  rule: string;
   sobject: string;
-  context: string;
-  type: string;
-  order: string;
-  class: string;
-  active: string;
-  async: string;
+  developerName: string;
   source: string;
+  message: string;
 };
 
-function toDisplayRow(row: DomainProcessBindingRow): DisplayRow {
+function toDisplayRow(issue: DomainProcessBindingIssue): DisplayRow {
   return {
-    sobject: row.sobject,
-    context: row.triggerOperation?.replace(/_/g, ' ') ?? row.domainMethodToken ?? '',
-    type: row.type,
-    order: row.orderCollision ? `${row.order} (collision)` : String(row.order),
-    class: row.classToInject,
-    active: String(row.isActive),
-    async: String(row.executeAsynchronous),
-    source: row.source,
+    severity: issue.severity,
+    rule: issue.rule,
+    sobject: issue.sobject ?? '',
+    developerName: issue.developerName ?? '',
+    source: issue.source,
+    message: issue.message,
   };
 }
 
 /**
- * Lists the AT4DX Trigger Action Framework bindings (`DomainProcessBinding__mdt`) configured in a
- * target org or local DX source — the criteria/action classes bound to each SObject's trigger events
- * (or domain method tokens), in execution order.
+ * Validates the AT4DX Trigger Action Framework bindings (`DomainProcessBinding__mdt`) configured in a
+ * target org or local DX source — order collisions, dead bindings, and other wiring problems that are
+ * invisible to `domain-process-binding list` — and fails (non-zero exit) when any of them is a real
+ * bug, for use as a CI gate.
  */
-export default class At4dxDomainProcessBindingList extends SfCommand<At4dxDomainProcessBindingListResult> {
+export default class At4dxDomainProcessBindingValidate extends SfCommand<At4dxDomainProcessBindingValidateResult> {
   public static readonly summary = messages.getMessage('summary');
   public static readonly description = messages.getMessage('description');
   public static readonly examples = messages.getMessages('examples');
@@ -81,15 +80,11 @@ export default class At4dxDomainProcessBindingList extends SfCommand<At4dxDomain
       char: 's',
       multiple: true,
     }),
-    'active-only': Flags.boolean({
-      summary: messages.getMessage('flags.active-only.summary'),
-      default: false,
-    }),
   };
 
-  /** @returns The resolved Trigger Action Framework bindings for the requested source, optionally filtered to specific SObjects. */
-  public async run(): Promise<At4dxDomainProcessBindingListResult> {
-    const { flags } = await this.parse(At4dxDomainProcessBindingList);
+  /** @returns The validation issues found for the requested source, optionally filtered to specific SObjects. Sets `process.exitCode = 1` when any issue is severity `error`. */
+  public async run(): Promise<At4dxDomainProcessBindingValidateResult> {
+    const { flags } = await this.parse(At4dxDomainProcessBindingValidate);
 
     const targetOrg = flags['target-org'];
     const sourceDirs = flags['source-dir'] ?? [];
@@ -102,6 +97,8 @@ export default class At4dxDomainProcessBindingList extends SfCommand<At4dxDomain
 
     let source: string;
     let records: RawDomainProcessBindingRecord[];
+    let malformed: MalformedDomainProcessBindingRecord[];
+    let ambiguous: AmbiguousDomainProcessBindingRecord[];
 
     if (targetOrg) {
       const connection = targetOrg.getConnection(flags['api-version']);
@@ -121,44 +118,51 @@ export default class At4dxDomainProcessBindingList extends SfCommand<At4dxDomain
         throw messages.createError('error.at4dxNotDetected');
       }
 
-      records = scanResult.records;
+      ({ records, malformed, ambiguous } = scanResult);
     } else {
       source = 'local';
 
       this.spinner.start(messages.getMessage('info.scanningLocalSource'));
       try {
-        ({ records } = scanLocalDomainProcessBindings(sourceDirs));
+        ({ records, malformed, ambiguous } = scanLocalDomainProcessBindings(sourceDirs));
       } catch (error) {
         this.spinner.stop();
         throw messages.createError('error.localScanFailed', [(error as Error).message]);
       }
       this.spinner.stop();
 
-      if (records.length === 0) {
+      if (records.length === 0 && malformed.length === 0) {
         throw messages.createError('error.at4dxNotDetected');
       }
     }
 
     const filteredRecords = sobjectFilter ? records.filter((record) => sobjectFilter.has(record.sobject)) : records;
-    const resolvedRows = resolveDomainProcessBindings(filteredRecords);
-    const bindings = flags['active-only'] ? resolvedRows.filter((row) => row.isActive) : resolvedRows;
+    const filteredAmbiguous = sobjectFilter
+      ? ambiguous.filter((record) => sobjectFilter.has(record.sobject))
+      : ambiguous;
 
-    this.table({
-      data: bindings.map(toDisplayRow),
-      columns: [
-        { key: 'sobject', name: 'SOBJECT' },
-        { key: 'context', name: 'CONTEXT' },
-        { key: 'type', name: 'TYPE' },
-        { key: 'order', name: 'ORDER' },
-        { key: 'class', name: 'CLASS' },
-        { key: 'active', name: 'ACTIVE' },
-        { key: 'async', name: 'ASYNC' },
-        { key: 'source', name: 'SOURCE' },
-      ],
-    });
+    const issues = validateDomainProcessBindings(filteredRecords, { malformed, ambiguous: filteredAmbiguous });
 
-    this.info(messages.getMessage('info.complete', [bindings.length, source]));
+    if (issues.length > 0) {
+      this.table({
+        data: issues.map(toDisplayRow),
+        columns: [
+          { key: 'severity', name: 'SEVERITY' },
+          { key: 'rule', name: 'RULE' },
+          { key: 'sobject', name: 'SOBJECT' },
+          { key: 'developerName', name: 'DEVELOPER NAME' },
+          { key: 'source', name: 'SOURCE' },
+          { key: 'message', name: 'MESSAGE' },
+        ],
+      });
+    } else {
+      this.info(messages.getMessage('info.valid', [filteredRecords.length, source]));
+    }
 
-    return { source, bindings };
+    if (issues.some((issue) => issue.severity === 'error')) {
+      process.exitCode = 1;
+    }
+
+    return { source, bindingCount: filteredRecords.length, issues };
   }
 }

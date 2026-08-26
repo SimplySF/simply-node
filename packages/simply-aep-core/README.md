@@ -44,20 +44,30 @@ const rows = resolveBindings(records);
 
 `DomainProcessBinding__mdt` — AT4DX's Trigger Action Framework metadata wiring an SObject's trigger events to ordered criteria/action Apex classes. See [`simply-aep`'s design doc](https://github.com/SimplySF/simply-node/blob/main/docs/design/0008-at4dx-domain-process-binding-list.md) for the resolution model.
 
-| Export                                                                                                                                                       | Description                                                                                         |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
-| `scanOrgDomainProcessBindings(connection)`                                                                                                                   | Queries a live org for `DomainProcessBinding__mdt` records.                                         |
-| `scanLocalDomainProcessBindings(sourceDirs)`                                                                                                                 | Scans local DX source for the same data.                                                            |
-| `resolveDomainProcessBindings(records)`                                                                                                                      | Pure function: orders bindings per SObject/process context by execution order.                      |
-| `ALL_TRIGGER_OPERATIONS`, `DOMAIN_PROCESS_BINDING_OBJECT`, `DOMAIN_PROCESS_BINDING_LOCAL_OBJECT_NAME`                                                        | Constants for the Custom Metadata Type's API name, local object name, and trigger operation values. |
-| `DomainProcessBindingRow`, `RawDomainProcessBindingRecord`, `At4dxDomainProcessBindingListResult`, `DomainProcessType`, `ProcessContext`, `TriggerOperation` | Types for the row shapes above.                                                                     |
+| Export                                                                                                                                                       | Description                                                                                                                                                                                                                                                                             |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scanOrgDomainProcessBindings(connection)`                                                                                                                   | Queries a live org for `DomainProcessBinding__mdt` records.                                                                                                                                                                                                                             |
+| `scanLocalDomainProcessBindings(sourceDirs)`                                                                                                                 | Scans local DX source for the same data.                                                                                                                                                                                                                                                |
+| `resolveDomainProcessBindings(records)`                                                                                                                      | Pure function: orders bindings per SObject/process context by execution order.                                                                                                                                                                                                          |
+| `validateDomainProcessBindings(records, diagnostics)`                                                                                                        | Pure function: checks a scan's records/diagnostics for order collisions, dead bindings, duplicate `DeveloperName`s, and SObject-reference problems. See [design doc 0010](https://github.com/SimplySF/simply-node/blob/main/docs/design/0010-at4dx-domain-process-binding-validate.md). |
+| `ALL_TRIGGER_OPERATIONS`, `DOMAIN_PROCESS_BINDING_OBJECT`, `DOMAIN_PROCESS_BINDING_LOCAL_OBJECT_NAME`                                                        | Constants for the Custom Metadata Type's API name, local object name, and trigger operation values.                                                                                                                                                                                     |
+| `DomainProcessBindingRow`, `RawDomainProcessBindingRecord`, `At4dxDomainProcessBindingListResult`, `DomainProcessType`, `ProcessContext`, `TriggerOperation` | Types for the row shapes above.                                                                                                                                                                                                                                                         |
+| `DomainProcessBindingIssue`, `DomainProcessBindingIssueRule`, `DomainProcessBindingIssueSeverity`, `At4dxDomainProcessBindingValidateResult`                 | Types for `validateDomainProcessBindings`'s output.                                                                                                                                                                                                                                     |
+| `MalformedDomainProcessBindingRecord`, `AmbiguousDomainProcessBindingRecord`                                                                                 | The diagnostics a scan reports alongside `records` — pass both to `validateDomainProcessBindings`.                                                                                                                                                                                      |
 
 ```ts
-import { scanLocalDomainProcessBindings, resolveDomainProcessBindings } from '@simplysf/simply-aep-core';
+import {
+  scanLocalDomainProcessBindings,
+  resolveDomainProcessBindings,
+  validateDomainProcessBindings,
+} from '@simplysf/simply-aep-core';
 
-const records = scanLocalDomainProcessBindings(['force-app/main/default']);
+const { records, malformed, ambiguous } = scanLocalDomainProcessBindings(['force-app/main/default']);
 const rows = resolveDomainProcessBindings(records);
 // rows filtered/sorted by sobject give you Account's Before_Insert handler order, for example
+
+const issues = validateDomainProcessBindings(records, { malformed, ambiguous });
+// issues.some(issue => issue.severity === 'error') tells you whether this project's AT4DX wiring is broken
 ```
 
 ## Issues

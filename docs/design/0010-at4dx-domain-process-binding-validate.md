@@ -1,6 +1,6 @@
 # 0010 — `simply aep at4dx domain-process-binding validate`
 
-**Status:** Draft
+**Status:** Implemented
 **Package:** `packages/simply-aep-core`, `packages/simply-aep`
 **Date:** 2026-08-25
 

@@ -15,8 +15,12 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { resolveDomainProcessBindings } from '../src/at4dxDomainProcessResolve.js';
-import type { RawDomainProcessBindingRecord } from '../src/at4dxDomainProcessBindingTypes.js';
+import { resolveDomainProcessBindings, validateDomainProcessBindings } from '../src/at4dxDomainProcessResolve.js';
+import type {
+  AmbiguousDomainProcessBindingRecord,
+  MalformedDomainProcessBindingRecord,
+  RawDomainProcessBindingRecord,
+} from '../src/at4dxDomainProcessBindingTypes.js';
 
 function record(
   overrides: Partial<RawDomainProcessBindingRecord> & Pick<RawDomainProcessBindingRecord, 'order'>,
@@ -129,6 +133,17 @@ describe('resolveDomainProcessBindings', () => {
     }
   });
 
+  it('does not flag a collision between two active records of the same type in the same scope at different orders', () => {
+    const first = record({ order: 1, developerName: 'First' });
+    const second = record({ order: 2, developerName: 'Second' });
+
+    const rows = resolveDomainProcessBindings([first, second]);
+
+    for (const row of rows) {
+      expect(row.orderCollision).toBeUndefined();
+    }
+  });
+
   it('groups DomainMethodExecution records by domainMethodToken instead of triggerOperation', () => {
     const first = record({
       order: 1,
@@ -154,5 +169,117 @@ describe('resolveDomainProcessBindings', () => {
 
   it('returns an empty array for an empty input', () => {
     expect(resolveDomainProcessBindings([])).toEqual([]);
+  });
+});
+
+describe('validateDomainProcessBindings', () => {
+  const noDiagnostics = {
+    malformed: [] as MalformedDomainProcessBindingRecord[],
+    ambiguous: [] as AmbiguousDomainProcessBindingRecord[],
+  };
+
+  it('returns an empty array for well-formed input with no problems', () => {
+    const a = record({ order: 1, developerName: 'A' });
+    const b = record({ order: 2, developerName: 'B' });
+
+    expect(validateDomainProcessBindings([a, b], noDiagnostics)).toEqual([]);
+  });
+
+  it('returns an empty array for empty input', () => {
+    expect(validateDomainProcessBindings([], noDiagnostics)).toEqual([]);
+  });
+
+  it('flags an order-collision error for each active record sharing an order in the same group', () => {
+    const a = record({ order: 1, developerName: 'A' });
+    const b = record({ order: 1, developerName: 'B' });
+
+    const issues = validateDomainProcessBindings([a, b], noDiagnostics);
+
+    expect(issues).toHaveLength(2);
+    for (const issue of issues) {
+      expect(issue.severity).toBe('error');
+      expect(issue.rule).toBe('order-collision');
+    }
+    expect(issues.map((issue) => issue.developerName).sort()).toEqual(['A', 'B']);
+  });
+
+  it('flags a missing-context-field error when TriggerExecution has no triggerOperation', () => {
+    const dead = record({ order: 1, developerName: 'Dead', triggerOperation: undefined });
+
+    const issues = validateDomainProcessBindings([dead], noDiagnostics);
+
+    expect(issues).toEqual([
+      expect.objectContaining({ severity: 'error', rule: 'missing-context-field', developerName: 'Dead' }),
+    ]);
+  });
+
+  it('flags a missing-context-field error when DomainMethodExecution has no domainMethodToken', () => {
+    const dead = record({
+      order: 1,
+      developerName: 'Dead',
+      processContext: 'DomainMethodExecution',
+      triggerOperation: undefined,
+      domainMethodToken: undefined,
+    });
+
+    const issues = validateDomainProcessBindings([dead], noDiagnostics);
+
+    expect(issues).toEqual([
+      expect.objectContaining({ severity: 'error', rule: 'missing-context-field', developerName: 'Dead' }),
+    ]);
+  });
+
+  it('flags a missing-sobject-reference error for each malformed record', () => {
+    const malformed: MalformedDomainProcessBindingRecord[] = [{ developerName: 'Unresolvable', source: 'core' }];
+
+    const issues = validateDomainProcessBindings([], { malformed, ambiguous: [] });
+
+    expect(issues).toEqual([
+      expect.objectContaining({
+        severity: 'error',
+        rule: 'missing-sobject-reference',
+        developerName: 'Unresolvable',
+        source: 'core',
+      }),
+    ]);
+  });
+
+  it('flags an ambiguous-sobject-reference warning for each ambiguous record', () => {
+    const ambiguous: AmbiguousDomainProcessBindingRecord[] = [
+      { developerName: 'Ambiguous', sobject: 'Account', alternateSobject: 'Contact', source: 'core' },
+    ];
+
+    const issues = validateDomainProcessBindings([], { malformed: [], ambiguous });
+
+    expect(issues).toEqual([
+      expect.objectContaining({
+        severity: 'warning',
+        rule: 'ambiguous-sobject-reference',
+        developerName: 'Ambiguous',
+        sobject: 'Account',
+      }),
+    ]);
+  });
+
+  it('flags a duplicate-developer-name error for each occurrence of a DeveloperName defined more than once', () => {
+    const core = record({ order: 1, developerName: 'Shared', source: 'core' });
+    const app = record({ order: 1, developerName: 'Shared', sobject: 'Contact', source: 'app' });
+
+    const issues = validateDomainProcessBindings([core, app], noDiagnostics);
+
+    const duplicateIssues = issues.filter((issue) => issue.rule === 'duplicate-developer-name');
+    expect(duplicateIssues).toHaveLength(2);
+    expect(duplicateIssues.map((issue) => issue.source).sort()).toEqual(['app', 'core']);
+    for (const issue of duplicateIssues) {
+      expect(issue.severity).toBe('error');
+    }
+  });
+
+  it('does not flag duplicate-developer-name for a single occurrence', () => {
+    const a = record({ order: 1, developerName: 'Unique' });
+
+    const issues = validateDomainProcessBindings([a], noDiagnostics);
+
+    expect(issues.filter((issue) => issue.rule === 'duplicate-developer-name')).toEqual([]);
   });
 });
