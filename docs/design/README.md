@@ -34,17 +34,18 @@ refactors that keep the public surface identical (though a short doc is welcome 
 
 ## Index
 
-| #                                                 | Title                                           | Status                |
-| ------------------------------------------------- | ----------------------------------------------- | --------------------- |
-| [0001](0001-package-version-get.md)               | `simply package version get`                    | Implemented           |
-| [0002](0002-utam-playwright-adapter.md)           | UTAM on Playwright                              | Draft — research only |
-| [0003](0003-community-custom-url.md)              | `simply community url set`                      | Draft                 |
-| [0004](0004-undici-multipart-upload.md)           | Multipart upload without `form-data`            | Implemented           |
-| [0005](0005-path-on-client-file-name.md)          | Send only the file name as `PathOnClient`       | Implemented           |
-| [0006](0006-api-request-budget.md)                | API request budget check                        | Implemented           |
-| [0007](0007-at4dx-binding-list.md)                | `simply aep at4dx binding list`                 | Implemented           |
-| [0008](0008-at4dx-domain-process-binding-list.md) | `simply aep at4dx domain-process-binding list`  | Implemented           |
-| [0009](0009-aep-library-consumption.md)           | Splitting `simply-aep-core` out of `simply-aep` | Implemented           |
+| #                                                     | Title                                              | Status                |
+| ----------------------------------------------------- | -------------------------------------------------- | --------------------- |
+| [0001](0001-package-version-get.md)                   | `simply package version get`                       | Implemented           |
+| [0002](0002-utam-playwright-adapter.md)               | UTAM on Playwright                                 | Draft — research only |
+| [0003](0003-community-custom-url.md)                  | `simply community url set`                         | Draft                 |
+| [0004](0004-undici-multipart-upload.md)               | Multipart upload without `form-data`               | Implemented           |
+| [0005](0005-path-on-client-file-name.md)              | Send only the file name as `PathOnClient`          | Implemented           |
+| [0006](0006-api-request-budget.md)                    | API request budget check                           | Implemented           |
+| [0007](0007-at4dx-binding-list.md)                    | `simply aep at4dx binding list`                    | Implemented           |
+| [0008](0008-at4dx-domain-process-binding-list.md)     | `simply aep at4dx domain-process-binding list`     | Implemented           |
+| [0009](0009-aep-library-consumption.md)               | Splitting `simply-aep-core` out of `simply-aep`    | Implemented           |
+| [0010](0010-at4dx-domain-process-binding-validate.md) | `simply aep at4dx domain-process-binding validate` | Draft                 |
 
 ## Template
 
