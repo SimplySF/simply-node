@@ -79,11 +79,12 @@ export type RawDomainProcessBindingRecord = {
 /** A `RawDomainProcessBindingRecord` annotated with the resolution outcome `resolveDomainProcessBindings` computed for it. */
 export type DomainProcessBindingRow = RawDomainProcessBindingRecord & {
   /**
-   * `true` when more than one *active* record in the same group (same `sobject`, `processContext`,
-   * and `triggerOperation`/`domainMethodToken`) shares this record's `order` — AT4DX's Custom
-   * Metadata query has no `ORDER BY` tiebreak for equal `OrderOfExecution__c` values, so which one
-   * actually runs first isn't something this command can determine, the same "flag it, don't guess"
-   * precedent `at4dxResolve.ts` applies to ambiguous Domain bindings.
+   * `true` when more than one *active* record of the same `type` in the same group (same `sobject`,
+   * `processContext`, and `triggerOperation`/`domainMethodToken`) shares this record's `order` —
+   * AT4DX's Custom Metadata query has no `ORDER BY` tiebreak for equal `OrderOfExecution__c` values
+   * within a type, so which one actually runs first isn't something this command can determine, the
+   * same "flag it, don't guess" precedent `at4dxResolve.ts` applies to ambiguous Domain bindings. A
+   * Criteria and an Action sharing an order never collide — AT4DX's runtime map keys them separately.
    */
   orderCollision?: boolean;
 };

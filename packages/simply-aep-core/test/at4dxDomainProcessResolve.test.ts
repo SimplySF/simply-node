@@ -97,6 +97,26 @@ describe('resolveDomainProcessBindings', () => {
     expect(rows.find((row) => row.developerName === 'Action')?.orderCollision).toBeUndefined();
   });
 
+  it('orders a Criteria before an Action sharing the same sequence, regardless of input order', () => {
+    const action = record({ order: 1, developerName: 'Action', type: 'Action' });
+    const criteria = record({ order: 1, developerName: 'Criteria', type: 'Criteria' });
+
+    const rows = resolveDomainProcessBindings([action, criteria]);
+
+    expect(rows.map((row) => row.developerName)).toEqual(['Criteria', 'Action']);
+  });
+
+  it('interleaves Criteria and Action by order across a mixed sequence', () => {
+    const actionOne = record({ order: 1, developerName: 'ActionOne', type: 'Action' });
+    const criteriaOne = record({ order: 1, developerName: 'CriteriaOne', type: 'Criteria' });
+    const criteriaTwo = record({ order: 2, developerName: 'CriteriaTwo', type: 'Criteria' });
+    const actionTwo = record({ order: 2, developerName: 'ActionTwo', type: 'Action' });
+
+    const rows = resolveDomainProcessBindings([actionOne, actionTwo, criteriaTwo, criteriaOne]);
+
+    expect(rows.map((row) => row.developerName)).toEqual(['CriteriaOne', 'ActionOne', 'CriteriaTwo', 'ActionTwo']);
+  });
+
   it('flags a collision between two active records of the same type sharing an order', () => {
     const first = record({ order: 1, developerName: 'FirstCriteria', type: 'Criteria' });
     const second = record({ order: 1, developerName: 'SecondCriteria', type: 'Criteria' });
