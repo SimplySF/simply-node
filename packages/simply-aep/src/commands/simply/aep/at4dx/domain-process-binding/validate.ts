@@ -17,6 +17,7 @@
 import { Messages } from '@salesforce/core';
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import {
+  filterDomainProcessBindingIssues,
   validateDomainProcessBindings,
   scanLocalDomainProcessBindings,
   scanOrgDomainProcessBindings,
@@ -50,6 +51,15 @@ function toDisplayRow(issue: DomainProcessBindingIssue): DisplayRow {
     message: issue.message,
   };
 }
+
+const ISSUE_TABLE_COLUMNS: Array<{ key: keyof DisplayRow; name: string }> = [
+  { key: 'severity', name: 'SEVERITY' },
+  { key: 'rule', name: 'RULE' },
+  { key: 'sobject', name: 'SOBJECT' },
+  { key: 'developerName', name: 'DEVELOPER NAME' },
+  { key: 'source', name: 'SOURCE' },
+  { key: 'message', name: 'MESSAGE' },
+];
 
 /**
  * Validates the AT4DX Trigger Action Framework bindings (`DomainProcessBinding__mdt`) configured in a
@@ -137,32 +147,56 @@ export default class At4dxDomainProcessBindingValidate extends SfCommand<At4dxDo
     }
 
     const filteredRecords = sobjectFilter ? records.filter((record) => sobjectFilter.has(record.sobject)) : records;
-    const filteredAmbiguous = sobjectFilter
-      ? ambiguous.filter((record) => sobjectFilter.has(record.sobject))
-      : ambiguous;
 
-    const issues = validateDomainProcessBindings(filteredRecords, { malformed, ambiguous: filteredAmbiguous });
+    const { inScope, scanWide } = filterDomainProcessBindingIssues(
+      validateDomainProcessBindings(records, { malformed, ambiguous }),
+      { sobjects: flags.sobject },
+    );
+    const allIssues = [...inScope, ...scanWide];
 
-    if (issues.length > 0) {
-      this.table({
-        data: issues.map(toDisplayRow),
-        columns: [
-          { key: 'severity', name: 'SEVERITY' },
-          { key: 'rule', name: 'RULE' },
-          { key: 'sobject', name: 'SOBJECT' },
-          { key: 'developerName', name: 'DEVELOPER NAME' },
-          { key: 'source', name: 'SOURCE' },
-          { key: 'message', name: 'MESSAGE' },
-        ],
-      });
-    } else {
-      this.info(messages.getMessage('info.valid', [filteredRecords.length, source]));
-    }
+    this.printIssues(
+      sobjectFilter,
+      inScope,
+      scanWide,
+      messages.getMessage('info.valid', [filteredRecords.length, source]),
+    );
 
-    if (issues.some((issue) => issue.severity === 'error')) {
+    if (allIssues.some((issue) => issue.severity === 'error')) {
       process.exitCode = 1;
     }
 
-    return { source, bindingCount: filteredRecords.length, issues };
+    return { source, bindingCount: filteredRecords.length, issues: allIssues };
+  }
+
+  /**
+   * Prints `inScope` and `scanWide` as one table when no `--sobject` filter is active (there's no
+   * distinction worth drawing), or as two separate tables — with a header on the second — when a
+   * filter is active, per docs/design/0011-domain-process-binding-issue-scoping.md.
+   */
+  private printIssues(
+    sobjectFilter: Set<string> | undefined,
+    inScope: DomainProcessBindingIssue[],
+    scanWide: DomainProcessBindingIssue[],
+    emptyMessage: string,
+  ): void {
+    if (!sobjectFilter) {
+      if (inScope.length + scanWide.length > 0) {
+        this.table({ data: [...inScope, ...scanWide].map(toDisplayRow), columns: ISSUE_TABLE_COLUMNS });
+      } else {
+        this.info(emptyMessage);
+      }
+      return;
+    }
+
+    if (inScope.length > 0) {
+      this.table({ data: inScope.map(toDisplayRow), columns: ISSUE_TABLE_COLUMNS });
+    }
+    if (scanWide.length > 0) {
+      this.info(messages.getMessage('info.scanWideHeader'));
+      this.table({ data: scanWide.map(toDisplayRow), columns: ISSUE_TABLE_COLUMNS });
+    }
+    if (inScope.length === 0 && scanWide.length === 0) {
+      this.info(emptyMessage);
+    }
   }
 }
