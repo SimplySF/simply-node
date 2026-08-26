@@ -49,11 +49,16 @@ rules rather than re-deriving "is this binding going to work," and follows the s
 refuse a silent runtime bug than author a `DeveloperName` that will never fire, or that collides with one
 that already exists.
 
-`RelatedDomainBindingSObjectAlternate__c` is intentionally not writable by either command — both always
-populate `RelatedDomainBindingSObject__c`. [0010](0010-at4dx-domain-process-binding-validate.md)'s
-`ambiguous-sobject-reference` rule and the field's own description ("only specify... or this one; not
-both") make the Alternate field a legacy/edge-case path, not something a tool that generates new records
-should ever produce.
+Both commands populate `RelatedDomainBindingSObject__c` by default and never populate both fields at
+once — [0010](0010-at4dx-domain-process-binding-validate.md)'s `ambiguous-sobject-reference` rule and the
+field's own description ("only specify... or this one; not both") make setting both a known-bad pattern,
+so the two fields are always exactly one write target, never two. But `RelatedDomainBindingSObjectAlternate__c`
+is not a legacy fallback to avoid — it's the *only* way to bind against certain Setup objects (e.g.
+`ServiceResource`) that cannot be referenced through an `EntityDefinition`-type field at all. A generator
+that only ever wrote the Primary field would be unable to author a real, valid binding for exactly those
+objects. `--sobject-alternate` (see Behavior) makes the target field an explicit choice instead of an
+implicit default, so the common case (Primary, which gets real referential validation at deploy time) stays
+the default while the Setup-object case stays fully supported.
 
 ## Behavior
 
@@ -77,6 +82,13 @@ sf simply aep at4dx domain-process-binding create \
   --developer-name Account_Before_Insert_Assign_Owner --label "Account Assign Owner" \
   --sobject Account --process-context TriggerExecution --trigger-operation Before_Insert \
   --type Action --class-to-inject AccountAssignOwnerAction --order 10 --description "Assigns the default owner"
+
+sf simply aep at4dx domain-process-binding create \
+  --source-dir sfdx-source/core \
+  --developer-name ServiceResource_Before_Update_Sync \
+  --sobject ServiceResource --sobject-alternate \
+  --process-context TriggerExecution --trigger-operation Before_Update \
+  --type Action --class-to-inject ServiceResourceSyncAction --order 10
 ```
 
 `requiresProject = false`. At least one of `--target-org`/`--source-dir` is required (both may be given);
@@ -92,7 +104,8 @@ this is the one place an AT4DX command's flag rule is not XOR — see Alternativ
 | `--wait`                 |      | No       | Deploy poll timeout in minutes, only meaningful with `--target-org`. Default `33`, matching `simply community url set`.                               |
 | `--developer-name`       | `-n` | Yes      | `DeveloperName`. Must match `^[A-Za-z][A-Za-z0-9_]*$`, max 40 chars, no consecutive/trailing underscore.                                              |
 | `--label`                |      | No       | `label`. Defaults to `--developer-name` verbatim. Max 40 chars.                                                                                       |
-| `--sobject`              | `-s` | Yes      | Written to `RelatedDomainBindingSObject__c`.                                                                                                          |
+| `--sobject`              | `-s` | Yes      | The SObject API name to bind against.                                                                                                                  |
+| `--sobject-alternate`    |      | No       | Write `--sobject` to `RelatedDomainBindingSObjectAlternate__c` instead of `RelatedDomainBindingSObject__c`. For SObjects that can't be referenced through an `EntityDefinition` field at all (e.g. `ServiceResource` and other Setup objects) — see Decision. `allowNo: true`, **no `default`** (tri-state `true`/`false`/unset — `set` relies on "unset" meaning "don't change this"; `create` treats unset the same as `false`). Never sets both fields. |
 | `--process-context`      |      | Yes      | `TriggerExecution` \| `DomainMethodExecution`.                                                                                                        |
 | `--trigger-operation`    |      | See note | One of `ALL_TRIGGER_OPERATIONS`. Required (and only allowed) when `--process-context TriggerExecution`.                                              |
 | `--domain-method-token`  |      | See note | Required (and only allowed) when `--process-context DomainMethodExecution`.                                                                           |
@@ -116,7 +129,8 @@ this is the one place an AT4DX command's flag rule is not XOR — see Alternativ
    `scanOrgDomainProcessBindings(connection)`. (When both are given, the local scan is the validation
    context — see Alternatives considered.)
 3. If a record with this `DeveloperName` already exists in that scan → `error.developerNameAlreadyExists`.
-4. Build the candidate `RawDomainProcessBindingRecord` from flags, append it to the scanned `records`, and
+4. Build the candidate `RawDomainProcessBindingRecord` from flags (`sobjectField: 'alternate'` when
+   `--sobject-alternate` is truthy, else `'primary'`), append it to the scanned `records`, and
    call `validateDomainProcessBindings({ records: [...records, candidate], malformed, ambiguous })`. Print
    any issues. If any is `error`-severity and `--force` is not set → throw `error.validationFailed`
    (nothing written).
@@ -157,10 +171,36 @@ At least one field flag beyond `--developer-name` must be given, or `error.noFie
 1. Locate the existing record:
    - `--source-dir` given (regardless of whether `--target-org` is also given): `scanLocalDomainProcessBindings(sourceDirs)`, find by `developerName`. Not found → `error.developerNameNotFound`. The match's `filePath` is what gets rewritten.
    - `--source-dir` absent, `--target-org` given: `scanOrgDomainProcessBindings(connection)`, find by `developerName`. Not found → `error.developerNameNotFound`.
-2. Merge the given field flags onto the found record (unset flags keep the found value).
+2. Merge the given field flags onto the found record (unset flags keep the found value) — including
+   `sobjectField` (see `RawDomainProcessBindingRecord` change below): `--sobject-alternate` is a tri-state
+   flag with no default, so "not passed" means "keep the found record's existing field," `--sobject-alternate`/`--no-sobject-alternate`
+   explicitly override it. This matters specifically because the found record doesn't otherwise say which
+   underlying field it came from — without it, a `set` that only touches an unrelated field (e.g. `--order`)
+   on a `ServiceResource`-style binding would silently rewrite it onto `RelatedDomainBindingSObject__c`,
+   which can't reference that SObject at all, breaking a binding `set` never meant to touch.
 3. Validate exactly as `create` step 4, using the found record's scan set with the merged record substituted for the original.
 4. Serialize with `buildDomainProcessBindingXml`.
 5. Write to the found `filePath` (local mode) or a temp directory (org-only mode), then deploy if `--target-org` is given — same as `create` steps 6–7.
+
+### `RawDomainProcessBindingRecord` addition (`simply-aep-core`)
+
+```ts
+export type DomainProcessBindingSObjectField = 'primary' | 'alternate';
+
+export type RawDomainProcessBindingRecord = {
+  // ...existing fields
+  /** Which underlying field `sobject` was read from: `RelatedDomainBindingSObject__c` ('primary') or
+   *  `RelatedDomainBindingSObjectAlternate__c` ('alternate'). Needed so `set` can preserve an
+   *  Alternate-field binding (e.g. a Setup object like `ServiceResource`) when it only changes an
+   *  unrelated field — see `set`'s Resolution. */
+  sobjectField: DomainProcessBindingSObjectField;
+};
+```
+
+Additive to both scanners' `toRawRecord`: local scan sets it from which of the two XML fields resolved
+(primary preferred, matching the existing fallback); org scan sets it from `resolveSObject`'s existing
+primary/alternate branch. Matches [0011](0011-domain-process-binding-issue-scoping.md)'s precedent of
+adding fields to this type additively rather than reshaping it.
 
 ### `buildDomainProcessBindingXml` (`simply-aep-core`)
 
@@ -168,8 +208,9 @@ At least one field flag beyond `--developer-name` must be given, or `error.noFie
 export function buildDomainProcessBindingXml(
   record: Pick<
     RawDomainProcessBindingRecord,
-    | 'sobject' | 'processContext' | 'triggerOperation' | 'domainMethodToken' | 'type' | 'classToInject'
-    | 'order' | 'isActive' | 'executeAsynchronous' | 'logicalInverse' | 'preventRecursive' | 'description'
+    | 'sobject' | 'sobjectField' | 'processContext' | 'triggerOperation' | 'domainMethodToken' | 'type'
+    | 'classToInject' | 'order' | 'isActive' | 'executeAsynchronous' | 'logicalInverse' | 'preventRecursive'
+    | 'description'
   >,
   meta: { label: string; developerName: string },
 ): string;
@@ -179,9 +220,12 @@ A pure function producing the full `.md-meta.xml` text — header, `<label>`, `<
 then one `<values>` block per field, mirroring exactly the shape
 `test/at4dxDomainProcessLocalScan.test.ts`'s fixtures already assert (`xsi:type="xsd:double"` for `order`,
 `xsi:type="xsd:boolean"` for the four boolean fields, `xsi:nil="true"` for an absent
-`triggerOperation`/`domainMethodToken`/`description`, plain string otherwise). Always writes
-`RelatedDomainBindingSObject__c`, never `RelatedDomainBindingSObjectAlternate__c`. `protected` is always
-`false` — nothing in this doc's scope needs a managed-package-protected binding.
+`triggerOperation`/`domainMethodToken`/`description`, plain string otherwise). Writes `sobject` to
+`RelatedDomainBindingSObject__c` when `sobjectField` is `'primary'`, or to
+`RelatedDomainBindingSObjectAlternate__c` when `'alternate'` — always exactly one of the two, emitting the
+other as `xsi:nil="true"` rather than omitting it, so a re-scan of the written file never sees both fields
+populated (which would itself be an `ambiguous-sobject-reference`). `protected` is always `false` —
+nothing in this doc's scope needs a managed-package-protected binding.
 
 This is the one new low-level XML helper needed; it lives in `customMetadataXml.ts` as the write-side
 counterpart to `extractValues`/`fieldValue` (e.g. a shared `buildValuesXml(entries)` used by
@@ -245,10 +289,16 @@ command-shape decision made before writing this doc. A typo'd `--developer-name`
 is an update would silently create an unrelated new binding instead of erroring, which is a worse failure
 mode than requiring the user to pick the right verb.
 
-**Allowing `--sobject`/`RelatedDomainBindingSObjectAlternate__c` to be written.** Rejected: every
-alternate-field record this package already knows about is either a fallback for a legacy binding or an
-`ambiguous-sobject-reference` warning waiting to happen. A generator command has no reason to create new
-instances of a pattern [0010](0010-at4dx-domain-process-binding-validate.md) flags as suspect.
+**Never writing `RelatedDomainBindingSObjectAlternate__c`, only ever `RelatedDomainBindingSObject__c`.**
+This was this doc's original position and is wrong: certain Setup objects (`ServiceResource` is the
+concrete example) cannot be referenced through an `EntityDefinition`-type field at all, so the Alternate
+field isn't a legacy fallback — it's the only way to author a valid binding against those objects.
+Refusing to write it would make this command unable to produce a real, correct binding for a real category
+of SObjects. `--sobject-alternate` makes the target field explicit instead. The one thing that stays
+rejected is auto-detecting which field to use (e.g. a describe call to check whether the SObject supports
+`EntityDefinition`): it would require an org connection even in `--source-dir`-only mode, where no
+connection exists to ask, and 0010's `ambiguous-sobject-reference` rule already makes "guess wrong" cheap
+to avoid by simply always writing exactly one field, explicitly chosen.
 
 **Hoisting `deployChangedFiles`/`deployMetadataFile` into `simply-core` as a shared utility**, since
 `simply-community` and `simply-aep-core` would then both need the same ~25-line "deploy exactly these
@@ -276,26 +326,30 @@ that has to explain what happens to references elsewhere.
 
 1. **`customMetadataXml.ts`** (`simply-aep-core`) — add `buildValuesXml`/serialization counterpart to
    `extractValues`.
-2. **`at4dxDomainProcessBuildXml.ts`** (new) — `buildDomainProcessBindingXml`.
-3. **`at4dxDomainProcessDeploy.ts`** (new) — `deployMetadataFile`.
-4. **`at4dxDomainProcessWrite.ts`** (new) — the orchestration shared by both commands: locate-or-reject,
+2. **`at4dxDomainProcessBindingTypes.ts`** — add `sobjectField` to `RawDomainProcessBindingRecord`.
+3. **`at4dxDomainProcessLocalScan.ts`**/**`at4dxDomainProcessOrgScan.ts`** — set `sobjectField` alongside
+   the existing primary/alternate resolution each already does.
+4. **`at4dxDomainProcessBuildXml.ts`** (new) — `buildDomainProcessBindingXml`.
+5. **`at4dxDomainProcessDeploy.ts`** (new) — `deployMetadataFile`.
+6. **`at4dxDomainProcessWrite.ts`** (new) — the orchestration shared by both commands: locate-or-reject,
    merge, validate-or-reject, serialize, write (local and/or temp), deploy. Exposed as two thin named
    functions (`createDomainProcessBinding`, `setDomainProcessBinding`) so the VS Code extension can call
    either without re-implementing the sequencing.
-5. **`at4dxDomainProcessBindingTypes.ts`** — add `At4dxDomainProcessBindingWriteResult` and the flag-shaped
+7. **`at4dxDomainProcessBindingTypes.ts`** — add `At4dxDomainProcessBindingWriteResult` and the flag-shaped
    input types both write functions take.
-6. **`packages/simply-aep/src/commands/simply/aep/at4dx/domain-process-binding/create.ts`** and
+8. **`packages/simply-aep/src/commands/simply/aep/at4dx/domain-process-binding/create.ts`** and
    **`.../set.ts`** — flags, calls into the `simply-aep-core` write functions, table/JSON output.
-7. **`messages/simply.aep.at4dx.domain-process-binding.create.md`** and **`.../set.md`**.
-8. **`src/index.ts`** barrels (both packages) — export the new functions/types/commands.
-9. **Tests** — `at4dxDomainProcessBuildXml.test.ts` (byte-exact XML for every field combination, matching
-   the existing local-scan fixtures byte-for-byte so a round trip through `scanLocalDomainProcessBindings`
-   reproduces the input record), `at4dxDomainProcessWrite.test.ts` (create/set orchestration, validation
-   blocking + `--force`, org-only temp-write-and-discard), command-level tests for both new commands
-   (mirroring `validate.test.ts`'s style).
-10. **Housekeeping**, per `CLAUDE.md`: `pnpm run readme` for both packages; `pnpm run build` at the root so
+9. **`messages/simply.aep.at4dx.domain-process-binding.create.md`** and **`.../set.md`**.
+10. **`src/index.ts`** barrels (both packages) — export the new functions/types/commands.
+11. **Tests** — `at4dxDomainProcessBuildXml.test.ts` (byte-exact XML for every field combination, matching
+    the existing local-scan fixtures byte-for-byte so a round trip through `scanLocalDomainProcessBindings`
+    reproduces the input record, including a `sobjectField: 'alternate'` case), `at4dxDomainProcessWrite.test.ts`
+    (create/set orchestration, validation blocking + `--force`, org-only temp-write-and-discard,
+    `--sobject-alternate` field-preservation on `set`), command-level tests for both new commands
+    (mirroring `validate.test.ts`'s style).
+12. **Housekeeping**, per `CLAUDE.md`: `pnpm run readme` for both packages; `pnpm run build` at the root so
     `command-snapshot.json` picks up both new commands.
-11. **Cross-reference** — add this doc's row to `docs/design/README.md`'s index.
+13. **Cross-reference** — add this doc's row to `docs/design/README.md`'s index.
 
 ## Testing
 
@@ -303,10 +357,13 @@ that has to explain what happens to references elsewhere.
 
 | Case                                                                                     | What it pins down                                                                 |
 | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `buildDomainProcessBindingXml` output parsed back through `scanLocalDomainProcessBindings` | Round-trips to the same `RawDomainProcessBindingRecord` for every field combination (present/absent optional fields, both `processContext` values, both `type` values). |
+| `buildDomainProcessBindingXml` output parsed back through `scanLocalDomainProcessBindings` | Round-trips to the same `RawDomainProcessBindingRecord` for every field combination (present/absent optional fields, both `processContext` values, both `type` values, both `sobjectField` values). |
+| `create --sobject-alternate`                                                               | Writes only `RelatedDomainBindingSObjectAlternate__c` (nil `RelatedDomainBindingSObject__c`); re-scanning reports `sobjectField: 'alternate'`, no `ambiguous-sobject-reference` issue. |
 | `create`: `DeveloperName` collision in the scanned scope                                  | Rejected before any write.                                                          |
 | `create`: candidate introduces an `order-collision` with an existing active record        | Rejected without `--force`; written with `--force`, issue still present in the result. |
 | `set`: found record's untouched fields are preserved                                      | Only the flags given change; everything else matches the original record.          |
+| `set` on a `sobjectField: 'alternate'` record, changing only `--order` (no `--sobject-alternate`)  | Rewritten file still uses `RelatedDomainBindingSObjectAlternate__c` — the regression this doc's field-preservation rule exists to prevent. |
+| `set --sobject-alternate=false` on an alternate-field record                               | Explicitly moves the SObject reference to `RelatedDomainBindingSObject__c` — an intentional override, not preserved. |
 | `set`: `DeveloperName` not found                                                          | Rejected before any write.                                                          |
 | `set`: no field flags beyond `--developer-name`                                           | `error.noFieldsToUpdate`.                                                           |
 | Org-only mode (`--target-org`, no `--source-dir`)                                         | Temp directory is created, deployed from, and removed; no file left on disk after the call. |
