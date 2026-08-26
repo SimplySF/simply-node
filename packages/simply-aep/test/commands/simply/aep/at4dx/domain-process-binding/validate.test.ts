@@ -244,19 +244,137 @@ describe('simply aep at4dx domain-process-binding validate', () => {
       const result = await At4dxDomainProcessBindingValidate.run(['--source-dir', sourceDir, '--json']);
 
       expect(result.bindingCount).to.equal(0);
-      expect(result.issues).to.deep.equal([
-        {
-          severity: 'error',
-          rule: 'missing-sobject-reference',
-          message:
-            'Unresolvable: neither RelatedDomainBindingSObject__c nor RelatedDomainBindingSObjectAlternate__c is set — this binding has no SObject to bind against.',
-          developerName: 'Unresolvable',
-          source: 'my-project',
-        },
-      ]);
+      expect(result.issues).to.have.lengthOf(1);
+      expect(result.issues[0]).to.deep.include({
+        severity: 'error',
+        rule: 'missing-sobject-reference',
+        scope: 'scan',
+        message:
+          'Unresolvable: neither RelatedDomainBindingSObject__c nor RelatedDomainBindingSObjectAlternate__c is set — this binding has no SObject to bind against.',
+        developerName: 'Unresolvable',
+        source: 'my-project',
+      });
+      expect(result.issues[0].filePath).to.include('DomainProcessBinding.Unresolvable.md-meta.xml');
       expect(process.exitCode).to.equal(1);
     } finally {
       fs.rmSync(sourceDir, { recursive: true, force: true });
     }
+  });
+
+  it('should report a duplicate DeveloperName shared across SObjects even when --sobject filters to one of them', async () => {
+    $$.SANDBOX.stub(Connection.prototype, 'autoFetchQuery').callsFake(
+      async () =>
+        ({
+          records: [
+            {
+              DeveloperName: 'Shared',
+              RelatedDomainBindingSObject__c: null,
+              RelatedDomainBindingSObject__r: null,
+              RelatedDomainBindingSObjectAlternate__c: 'Account',
+              ProcessContext__c: 'TriggerExecution',
+              TriggerOperation__c: 'Before_Insert',
+              DomainMethodToken__c: null,
+              Type__c: 'Action',
+              ClassToInject__c: 'AccountAction',
+              OrderOfExecution__c: 1,
+              IsActive__c: true,
+              ExecuteAsynchronous__c: false,
+              LogicalInverse__c: false,
+              PreventRecursive__c: false,
+              Description__c: null,
+            },
+            {
+              DeveloperName: 'Shared',
+              RelatedDomainBindingSObject__c: null,
+              RelatedDomainBindingSObject__r: null,
+              RelatedDomainBindingSObjectAlternate__c: 'Contact',
+              ProcessContext__c: 'TriggerExecution',
+              TriggerOperation__c: 'Before_Insert',
+              DomainMethodToken__c: null,
+              Type__c: 'Action',
+              ClassToInject__c: 'ContactAction',
+              OrderOfExecution__c: 1,
+              IsActive__c: true,
+              ExecuteAsynchronous__c: false,
+              LogicalInverse__c: false,
+              PreventRecursive__c: false,
+              Description__c: null,
+            },
+          ],
+          done: true,
+          totalSize: 2,
+        }) as never,
+    );
+
+    const result = await At4dxDomainProcessBindingValidate.run([
+      '--target-org',
+      testOrg.username,
+      '--sobject',
+      'Account',
+      '--json',
+    ]);
+
+    const duplicateIssues = result.issues.filter((issue) => issue.rule === 'duplicate-developer-name');
+    expect(duplicateIssues).to.have.lengthOf(2);
+    expect(duplicateIssues.every((issue) => issue.scope === 'scan')).to.equal(true);
+    expect(process.exitCode).to.equal(1);
+  });
+
+  it('should not print a Scan-wide issues table when only in-scope issues are found', async () => {
+    $$.SANDBOX.stub(Connection.prototype, 'autoFetchQuery').callsFake(
+      async () =>
+        ({
+          records: [
+            {
+              DeveloperName: 'Account_Action_Two',
+              RelatedDomainBindingSObject__c: null,
+              RelatedDomainBindingSObject__r: null,
+              RelatedDomainBindingSObjectAlternate__c: 'Account',
+              ProcessContext__c: 'TriggerExecution',
+              TriggerOperation__c: 'Before_Insert',
+              DomainMethodToken__c: null,
+              Type__c: 'Action',
+              ClassToInject__c: 'AccountActionTwo',
+              OrderOfExecution__c: 1,
+              IsActive__c: true,
+              ExecuteAsynchronous__c: false,
+              LogicalInverse__c: false,
+              PreventRecursive__c: false,
+              Description__c: null,
+            },
+            {
+              DeveloperName: 'Account_Action_One',
+              RelatedDomainBindingSObject__c: null,
+              RelatedDomainBindingSObject__r: null,
+              RelatedDomainBindingSObjectAlternate__c: 'Account',
+              ProcessContext__c: 'TriggerExecution',
+              TriggerOperation__c: 'Before_Insert',
+              DomainMethodToken__c: null,
+              Type__c: 'Action',
+              ClassToInject__c: 'AccountActionOne',
+              OrderOfExecution__c: 1,
+              IsActive__c: true,
+              ExecuteAsynchronous__c: false,
+              LogicalInverse__c: false,
+              PreventRecursive__c: false,
+              Description__c: null,
+            },
+          ],
+          done: true,
+          totalSize: 2,
+        }) as never,
+    );
+
+    const result = await At4dxDomainProcessBindingValidate.run([
+      '--target-org',
+      testOrg.username,
+      '--sobject',
+      'Account',
+      '--json',
+    ]);
+
+    expect(result.issues.filter((issue) => issue.rule === 'order-collision')).to.have.lengthOf(2);
+    expect(result.issues.filter((issue) => issue.scope === 'scan')).to.have.lengthOf(0);
+    expect(process.exitCode).to.equal(1);
   });
 });

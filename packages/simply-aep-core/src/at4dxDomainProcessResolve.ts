@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-import type {
-  AmbiguousDomainProcessBindingRecord,
-  DomainProcessBindingIssue,
-  DomainProcessBindingRow,
-  MalformedDomainProcessBindingRecord,
-  RawDomainProcessBindingRecord,
+import {
+  DOMAIN_PROCESS_BINDING_RULES,
+  type AmbiguousDomainProcessBindingRecord,
+  type DomainProcessBindingIssue,
+  type DomainProcessBindingRow,
+  type MalformedDomainProcessBindingRecord,
+  type RawDomainProcessBindingRecord,
 } from './at4dxDomainProcessBindingTypes.js';
+import type { DomainProcessLocalScanResult } from './at4dxDomainProcessLocalScan.js';
 
 /**
  * Groups records by the (SObject, process context, trigger operation/domain method token) scope
@@ -106,81 +108,117 @@ export function resolveDomainProcessBindings(records: RawDomainProcessBindingRec
  * populated (dead — never matches any real execution), duplicate `DeveloperName`s across everything
  * scanned, and an ambiguous SObject reference (both fields set to different values).
  *
+ * Every issue is stamped with the `scope` its rule declares in `DOMAIN_PROCESS_BINDING_RULES`
+ * (`'record'` or `'scan'`) — see docs/design/0011-domain-process-binding-issue-scoping.md. This
+ * function always validates every record passed in; a caller that wants a scoped view of the result
+ * calls `filterDomainProcessBindingIssues` on the returned issues afterward, rather than filtering
+ * `records` first, which would silently break `duplicate-developer-name`.
+ *
  * See docs/design/0010-at4dx-domain-process-binding-validate.md for the full rationale behind each rule.
  *
- * @param records - The raw binding records to validate, as returned by `scanOrgDomainProcessBindings`/`scanLocalDomainProcessBindings`.
- * @param diagnostics - The `malformed`/`ambiguous` records the same scan reported alongside `records`.
+ * @param scanOrRecords - Either a scan result envelope (`{ records, malformed, ambiguous }`, as returned by `scanOrgDomainProcessBindings`/`scanLocalDomainProcessBindings`), or the raw binding records alone.
+ * @param diagnostics - The `malformed`/`ambiguous` records the same scan reported alongside `records`. Omitted when the first argument is already a scan envelope.
  * @returns One issue per problem found. Empty when nothing's wrong.
  */
 export function validateDomainProcessBindings(
+  scan: Pick<DomainProcessLocalScanResult, 'records' | 'malformed' | 'ambiguous'>,
+): DomainProcessBindingIssue[];
+export function validateDomainProcessBindings(
   records: RawDomainProcessBindingRecord[],
   diagnostics: { malformed: MalformedDomainProcessBindingRecord[]; ambiguous: AmbiguousDomainProcessBindingRecord[] },
+): DomainProcessBindingIssue[];
+export function validateDomainProcessBindings(
+  scanOrRecords:
+    Pick<DomainProcessLocalScanResult, 'records' | 'malformed' | 'ambiguous'> | RawDomainProcessBindingRecord[],
+  diagnostics?: {
+    malformed: MalformedDomainProcessBindingRecord[];
+    ambiguous: AmbiguousDomainProcessBindingRecord[];
+  },
 ): DomainProcessBindingIssue[] {
+  const { records, malformed, ambiguous } = Array.isArray(scanOrRecords)
+    ? { records: scanOrRecords, malformed: diagnostics!.malformed, ambiguous: diagnostics!.ambiguous }
+    : scanOrRecords;
+
   const issues: DomainProcessBindingIssue[] = [];
 
   for (const row of resolveDomainProcessBindings(records)) {
     if (row.orderCollision) {
+      const info = DOMAIN_PROCESS_BINDING_RULES['order-collision'];
       issues.push({
-        severity: 'error',
-        rule: 'order-collision',
+        severity: info.severity,
+        rule: info.rule,
+        scope: info.scope,
         message: `${row.developerName}: shares OrderOfExecution__c ${row.order} with another active ${row.type} record for the same SObject/context/trigger-or-token — one of them will silently never run.`,
         developerName: row.developerName,
         sobject: row.sobject,
         source: row.source,
+        filePath: row.filePath,
       });
     }
 
     if (row.processContext === 'TriggerExecution' && !row.triggerOperation) {
+      const info = DOMAIN_PROCESS_BINDING_RULES['missing-context-field'];
       issues.push({
-        severity: 'error',
-        rule: 'missing-context-field',
+        severity: info.severity,
+        rule: info.rule,
+        scope: info.scope,
         message: `${row.developerName}: processContext is TriggerExecution but TriggerOperation__c is blank — this binding will never match any trigger execution.`,
         developerName: row.developerName,
         sobject: row.sobject,
         source: row.source,
+        filePath: row.filePath,
       });
     } else if (row.processContext === 'DomainMethodExecution' && !row.domainMethodToken) {
+      const info = DOMAIN_PROCESS_BINDING_RULES['missing-context-field'];
       issues.push({
-        severity: 'error',
-        rule: 'missing-context-field',
+        severity: info.severity,
+        rule: info.rule,
+        scope: info.scope,
         message: `${row.developerName}: processContext is DomainMethodExecution but DomainMethodToken__c is blank — this binding will never match any domain method call.`,
         developerName: row.developerName,
         sobject: row.sobject,
         source: row.source,
+        filePath: row.filePath,
       });
     }
   }
 
-  for (const record of diagnostics.malformed) {
+  for (const record of malformed) {
+    const info = DOMAIN_PROCESS_BINDING_RULES['missing-sobject-reference'];
     issues.push({
-      severity: 'error',
-      rule: 'missing-sobject-reference',
+      severity: info.severity,
+      rule: info.rule,
+      scope: info.scope,
       message: `${record.developerName}: neither RelatedDomainBindingSObject__c nor RelatedDomainBindingSObjectAlternate__c is set — this binding has no SObject to bind against.`,
       developerName: record.developerName,
       source: record.source,
+      filePath: record.filePath,
     });
   }
 
-  for (const record of diagnostics.ambiguous) {
+  for (const record of ambiguous) {
+    const info = DOMAIN_PROCESS_BINDING_RULES['ambiguous-sobject-reference'];
     issues.push({
-      severity: 'warning',
-      rule: 'ambiguous-sobject-reference',
+      severity: info.severity,
+      rule: info.rule,
+      scope: info.scope,
       message: `${record.developerName}: RelatedDomainBindingSObject__c (${record.sobject}) and RelatedDomainBindingSObjectAlternate__c (${record.alternateSobject}) are both set to different values — only one should be specified.`,
       developerName: record.developerName,
       sobject: record.sobject,
       source: record.source,
+      filePath: record.filePath,
     });
   }
 
-  const occurrencesByDeveloperName = new Map<string, Array<{ sobject?: string; source: string }>>();
+  const occurrencesByDeveloperName = new Map<string, Array<{ sobject?: string; source: string; filePath?: string }>>();
   for (const record of records) {
     const occurrences = occurrencesByDeveloperName.get(record.developerName) ?? [];
-    occurrences.push({ sobject: record.sobject, source: record.source });
+    occurrences.push({ sobject: record.sobject, source: record.source, filePath: record.filePath });
     occurrencesByDeveloperName.set(record.developerName, occurrences);
   }
-  for (const record of diagnostics.malformed) {
+  for (const record of malformed) {
     const occurrences = occurrencesByDeveloperName.get(record.developerName) ?? [];
-    occurrences.push({ source: record.source });
+    occurrences.push({ source: record.source, filePath: record.filePath });
     occurrencesByDeveloperName.set(record.developerName, occurrences);
   }
 
@@ -189,9 +227,11 @@ export function validateDomainProcessBindings(
       continue;
     }
     for (const occurrence of occurrences) {
+      const info = DOMAIN_PROCESS_BINDING_RULES['duplicate-developer-name'];
       issues.push({
-        severity: 'error',
-        rule: 'duplicate-developer-name',
+        severity: info.severity,
+        rule: info.rule,
+        scope: info.scope,
         message: `${developerName}: defined more than once (also in ${occurrences
           .filter((other) => other !== occurrence)
           .map((other) => other.source)
@@ -201,9 +241,46 @@ export function validateDomainProcessBindings(
         developerName,
         sobject: occurrence.sobject,
         source: occurrence.source,
+        filePath: occurrence.filePath,
       });
     }
   }
 
   return issues;
+}
+
+/**
+ * Project a whole-scan `validateDomainProcessBindings` result onto the SObjects a consumer is
+ * currently showing, without ever silently dropping a scan-scoped issue.
+ *
+ * `record`-scoped issues (see `DOMAIN_PROCESS_BINDING_RULES`) are filtered by `sobject`, since
+ * filtering them after validating gives the same answer as filtering the records before validating.
+ * `scan`-scoped issues can't be computed from a subset at all, so every one is returned in `scanWide`
+ * regardless of `filter` — the caller decides how to present them, but can't lose them by omission.
+ * See docs/design/0011-domain-process-binding-issue-scoping.md.
+ *
+ * @param issues - The full, unfiltered result of `validateDomainProcessBindings`.
+ * @param filter - SObjects to keep record-scoped issues for. Every record-scoped issue passes when omitted or empty.
+ * @returns `inScope` (record-scoped issues matching `filter`) and `scanWide` (every scan-scoped issue, unfiltered).
+ */
+export function filterDomainProcessBindingIssues(
+  issues: DomainProcessBindingIssue[],
+  filter: { sobjects?: string[] },
+): { inScope: DomainProcessBindingIssue[]; scanWide: DomainProcessBindingIssue[] } {
+  const sobjects = filter.sobjects?.length ? new Set(filter.sobjects) : undefined;
+
+  const inScope: DomainProcessBindingIssue[] = [];
+  const scanWide: DomainProcessBindingIssue[] = [];
+
+  for (const issue of issues) {
+    if (issue.scope === 'scan') {
+      scanWide.push(issue);
+      continue;
+    }
+    if (!sobjects || (issue.sobject !== undefined && sobjects.has(issue.sobject))) {
+      inScope.push(issue);
+    }
+  }
+
+  return { inScope, scanWide };
 }

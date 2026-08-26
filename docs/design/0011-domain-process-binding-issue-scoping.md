@@ -1,6 +1,6 @@
 # 0011 — Scoped domain-process-binding validation for interactive consumers
 
-**Status:** Draft
+**Status:** Implemented
 **Package:** `packages/simply-aep-core`, `packages/simply-aep`
 **Date:** 2026-08-26
 
@@ -22,12 +22,12 @@ that today:
 1. **Rule scope isn't expressed anywhere, so filtering before validating silently changes the
    answers.** `duplicate-developer-name` is inherently scan-scoped: it can only be computed by seeing
    every scanned record's name at once. `missing-sobject-reference` is worse — the records it reports
-   have *no* SObject by definition, so any SObject filter drops all of them. The four other rules are
+   have _no_ SObject by definition, so any SObject filter drops all of them. The four other rules are
    record-scoped and filter cleanly. Nothing in the types says which is which, so every consumer has
    to rediscover it by reading `at4dxDomainProcessResolve.ts`.
 
    This isn't hypothetical, and it isn't only the extension's problem: **our own `validate` command
-   has this bug today.** `validate.ts` filters `records` by `--sobject` and *then* validates, so
+   has this bug today.** `validate.ts` filters `records` by `--sobject` and _then_ validates, so
    `sf simply aep at4dx domain-process-binding validate --sobject Account` cannot detect a
    `DeveloperName` shared between an Account binding and a Contact binding — the exact conflict the
    rule exists to catch. It also passes `malformed` through unfiltered while filtering `ambiguous`,
@@ -37,7 +37,7 @@ that today:
 2. **An issue can't be tied back to the row it's about.** The panel wants to badge the specific row
    on screen. `DomainProcessBindingIssue` carries `developerName`, `sobject?`, and `source`, and
    nothing states that `(developerName, source)` is meant to be the join key — or that it is exactly
-   the pair that is *not* unique in the case `duplicate-developer-name` exists to report.
+   the pair that is _not_ unique in the case `duplicate-developer-name` exists to report.
 
 3. **`message` is CLI table prose.** Each string leads with `` `${developerName}: ` `` and explains
    the rule inline, because it has to stand alone in a `MESSAGE` column. A UI wants a short rule
@@ -78,16 +78,16 @@ The extension-side design that consumes all of this is
 
 ### Rule scope
 
-| Rule                          | Severity  | Scope    | Why                                                                                                                                                          |
-| ----------------------------- | --------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `order-collision`             | `error`   | `record` | A collision is computed within one (SObject, context, operation/token, type) group, so it never spans SObjects — filtering by SObject can't change the answer. |
-| `missing-context-field`       | `error`   | `record` | Depends on one record's own fields only.                                                                                                                      |
-| `ambiguous-sobject-reference` | `warning` | `record`  | Depends on one record's own two fields; the issue carries the primary SObject, which is what the record resolves as.                                          |
-| `duplicate-developer-name`    | `error`   | `scan`    | Only computable across every scanned record. Two records sharing a `DeveloperName` routinely sit under different SObjects — filtering to one hides the conflict. |
-| `missing-sobject-reference`   | `error`   | `scan`    | The reported records have no SObject at all, so no SObject filter can ever match them.                                                                        |
+| Rule                          | Severity  | Scope    | Why                                                                                                                                                              |
+| ----------------------------- | --------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `order-collision`             | `error`   | `record` | A collision is computed within one (SObject, context, operation/token, type) group, so it never spans SObjects — filtering by SObject can't change the answer.   |
+| `missing-context-field`       | `error`   | `record` | Depends on one record's own fields only.                                                                                                                         |
+| `ambiguous-sobject-reference` | `warning` | `record` | Depends on one record's own two fields; the issue carries the primary SObject, which is what the record resolves as.                                             |
+| `duplicate-developer-name`    | `error`   | `scan`   | Only computable across every scanned record. Two records sharing a `DeveloperName` routinely sit under different SObjects — filtering to one hides the conflict. |
+| `missing-sobject-reference`   | `error`   | `scan`   | The reported records have no SObject at all, so no SObject filter can ever match them.                                                                           |
 
-"Record-scoped" means precisely: *filtering the issue list by SObject after validating gives the same
-result as filtering the records by SObject before validating.* That equivalence is what makes
+"Record-scoped" means precisely: _filtering the issue list by SObject after validating gives the same
+result as filtering the records by SObject before validating._ That equivalence is what makes
 validate-once-project-many safe, and it's what the tests in Testing pin down.
 
 ### `DOMAIN_PROCESS_BINDING_RULES`
@@ -148,7 +148,7 @@ truth; `validateDomainProcessBindings` is the only thing that copies from it.
   `DomainProcessBinding.<name>.md-meta.xml` files can't share a name within one directory.
 - **Org:** `source` is the username and `DeveloperName` is the CMDT's unique name field.
 
-The one hole: two `--source-dir` roots whose package directories share a *basename* (say
+The one hole: two `--source-dir` roots whose package directories share a _basename_ (say
 `sfdx-source/core` and `vendor/core`) both derive `source: 'core'`. That's precisely a
 `duplicate-developer-name` situation, and it's why `filePath` is added — for local scans it is the
 unambiguous identity, and a consumer that needs to distinguish two same-named records should key on it.
@@ -199,14 +199,14 @@ from somewhere else — so this is purely additive.
 
 `--sobject` becomes a projection over issues instead of a pre-filter over records:
 
-| | Today | After |
-| --- | --- | --- |
-| Order of operations | filter records → validate | validate whole scan → `filterDomainProcessBindingIssues` |
-| `--sobject Account` with a `DeveloperName` shared by an Account and a Contact binding | Not reported | Reported, under Scan-wide issues |
-| `--sobject Account` with a malformed record | All malformed records reported, via the unfiltered `malformed` pass-through | Same records reported, now because they're scan-scoped by rule |
-| Output | One table | Same table for in-scope issues, plus a `Scan-wide issues` table when `scanWide` is non-empty and a `--sobject` filter is active (without a filter there's no distinction worth drawing, so it stays one table) |
-| `bindingCount` in the result | Count of filtered records | Unchanged |
-| Exit code | `1` if any issue is `error` | Unchanged — computed over `inScope` **and** `scanWide`, which is what makes the duplicate case above actually fail CI |
+|                                                                                       | Today                                                                       | After                                                                                                                                                                                                          |
+| ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Order of operations                                                                   | filter records → validate                                                   | validate whole scan → `filterDomainProcessBindingIssues`                                                                                                                                                       |
+| `--sobject Account` with a `DeveloperName` shared by an Account and a Contact binding | Not reported                                                                | Reported, under Scan-wide issues                                                                                                                                                                               |
+| `--sobject Account` with a malformed record                                           | All malformed records reported, via the unfiltered `malformed` pass-through | Same records reported, now because they're scan-scoped by rule                                                                                                                                                 |
+| Output                                                                                | One table                                                                   | Same table for in-scope issues, plus a `Scan-wide issues` table when `scanWide` is non-empty and a `--sobject` filter is active (without a filter there's no distinction worth drawing, so it stays one table) |
+| `bindingCount` in the result                                                          | Count of filtered records                                                   | Unchanged                                                                                                                                                                                                      |
+| Exit code                                                                             | `1` if any issue is `error`                                                 | Unchanged — computed over `inScope` **and** `scanWide`, which is what makes the duplicate case above actually fail CI                                                                                          |
 
 `--json` output gains `scope`/`filePath` on each issue and is otherwise the same
 `At4dxDomainProcessBindingValidateResult` shape: `issues` stays one flat array (both halves
@@ -289,27 +289,27 @@ is ever wanted, it gets its own doc and this is the change it starts from.
 
 **Unit** (`simply-aep-core`):
 
-| Case                                                                                                     | What it pins down                                                                                          |
-| -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| Every `DomainProcessBindingIssueRule` has an entry in `DOMAIN_PROCESS_BINDING_RULES`                     | The table can't fall behind the union type when a sixth rule is added.                                     |
-| Every issue's `severity`/`scope` equals its rule's table entry                                           | The stamped copies can't drift from the source of truth.                                                   |
+| Case                                                                                                                            | What it pins down                                                                                                           |
+| ------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Every `DomainProcessBindingIssueRule` has an entry in `DOMAIN_PROCESS_BINDING_RULES`                                            | The table can't fall behind the union type when a sixth rule is added.                                                      |
+| Every issue's `severity`/`scope` equals its rule's table entry                                                                  | The stamped copies can't drift from the source of truth.                                                                    |
 | **Round-trip:** for each record-scoped rule, `validate(all)` then filter by SObject === `validate(records filtered by SObject)` | The equivalence that makes validate-once-project-many correct. This is the test that would have caught the `--sobject` bug. |
-| Duplicate `DeveloperName` across an Account record and a Contact record, filtered to `Account`            | Reported in `scanWide`, not dropped — the bug being fixed.                                                 |
-| Malformed record, any SObject filter                                                                      | Reported in `scanWide`.                                                                                    |
-| `filterDomainProcessBindingIssues(issues, {})` and `{ sobjects: [] }`                                     | Every record-scoped issue in `inScope`; no filtering.                                                      |
-| Local scan of a fixture directory                                                                         | `filePath` is the actual `.md-meta.xml` path on records and on both diagnostic shapes.                     |
-| Org scan                                                                                                  | `filePath` is `undefined` throughout.                                                                      |
-| `validateDomainProcessBindings(scanResult)` vs. the two-argument form on the same data                    | Identical output — the overload is a convenience, not a second implementation.                             |
-| `test/index.test.ts` exported-keys assertion                                                              | Updated for the new exports (existing convention).                                                         |
+| Duplicate `DeveloperName` across an Account record and a Contact record, filtered to `Account`                                  | Reported in `scanWide`, not dropped — the bug being fixed.                                                                  |
+| Malformed record, any SObject filter                                                                                            | Reported in `scanWide`.                                                                                                     |
+| `filterDomainProcessBindingIssues(issues, {})` and `{ sobjects: [] }`                                                           | Every record-scoped issue in `inScope`; no filtering.                                                                       |
+| Local scan of a fixture directory                                                                                               | `filePath` is the actual `.md-meta.xml` path on records and on both diagnostic shapes.                                      |
+| Org scan                                                                                                                        | `filePath` is `undefined` throughout.                                                                                       |
+| `validateDomainProcessBindings(scanResult)` vs. the two-argument form on the same data                                          | Identical output — the overload is a convenience, not a second implementation.                                              |
+| `test/index.test.ts` exported-keys assertion                                                                                    | Updated for the new exports (existing convention).                                                                          |
 
 **Command** (`simply-aep`), extending `validate.test.ts`:
 
-| Case                                                                | What it pins down                                                        |
-| ------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `--sobject` with a cross-SObject duplicate `DeveloperName`          | `process.exitCode === 1` and the issue present in `--json` — end to end.  |
-| `--sobject` with only in-scope issues                               | No `Scan-wide issues` table printed.                                     |
-| No `--sobject`                                                      | Single table, byte-identical to today's output for the same input.        |
-| `--json`                                                            | `issues` flat, `inScope` first, every element carrying `scope`.           |
+| Case                                                       | What it pins down                                                        |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `--sobject` with a cross-SObject duplicate `DeveloperName` | `process.exitCode === 1` and the issue present in `--json` — end to end. |
+| `--sobject` with only in-scope issues                      | No `Scan-wide issues` table printed.                                     |
+| No `--sobject`                                             | Single table, byte-identical to today's output for the same input.       |
+| `--json`                                                   | `issues` flat, `inScope` first, every element carrying `scope`.          |
 
 **NUT** — none, matching every other AT4DX command.
 
@@ -322,7 +322,7 @@ is ever wanted, it gets its own doc and this is the change it starts from.
   only on issues within a filtered SObject. Not proposed: no one has asked, and the safe default
   (never lose a scan-scoped error) is the one that belongs in a gate.
 - **The two deferred v2 rules from [0010](0010-at4dx-domain-process-binding-validate.md)** — verifying
-  the SObject and `ClassToInject__c` actually exist — are both record-scoped *and* need I/O (a describe
+  the SObject and `ClassToInject__c` actually exist — are both record-scoped _and_ need I/O (a describe
   call, or an Apex class cross-reference). Nothing in this doc blocks them, but they'd be the first
   rules whose evaluation isn't free, which matters for a consumer like the extension that currently
   gets validation at no cost. Whichever doc adds them should say what that means for an interactive

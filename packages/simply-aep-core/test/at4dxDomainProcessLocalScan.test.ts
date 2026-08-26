@@ -106,6 +106,7 @@ describe('scanLocalDomainProcessBindings', () => {
         preventRecursive: false,
         description: 'A test action',
         source: 'my-project',
+        filePath: expect.stringContaining('DomainProcessBinding.Account_Before_Insert_Test.md-meta.xml') as string,
       },
     ]);
   });
@@ -161,7 +162,13 @@ describe('scanLocalDomainProcessBindings', () => {
     const { records, malformed } = scanLocalDomainProcessBindings([tmpDir]);
 
     expect(records).toEqual([]);
-    expect(malformed).toEqual([{ developerName: 'Unresolvable', source: 'my-project' }]);
+    expect(malformed).toEqual([
+      {
+        developerName: 'Unresolvable',
+        source: 'my-project',
+        filePath: expect.stringContaining('DomainProcessBinding.Unresolvable.md-meta.xml') as string,
+      },
+    ]);
   });
 
   it('reports a record with both SObject reference fields set to different values as ambiguous, still included in records using the primary value', () => {
@@ -185,7 +192,13 @@ describe('scanLocalDomainProcessBindings', () => {
     expect(records).toHaveLength(1);
     expect(records[0].sobject).toBe('Account');
     expect(ambiguous).toEqual([
-      { developerName: 'Ambiguous', sobject: 'Account', alternateSobject: 'Contact', source: 'my-project' },
+      {
+        developerName: 'Ambiguous',
+        sobject: 'Account',
+        alternateSobject: 'Contact',
+        source: 'my-project',
+        filePath: expect.stringContaining('DomainProcessBinding.Ambiguous.md-meta.xml') as string,
+      },
     ]);
   });
 

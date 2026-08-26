@@ -79,6 +79,12 @@ error (`error.targetOrgOrSourceDirRequired`) as both existing AT4DX commands.
 | `--source-dir`  | `-d` | Read bindings from local DX source (repeatable). Mutually exclusive with `--target-org`. |
 | `--sobject`     | `-s` | Filter to one or more SObject API names (repeatable). Default: all SObjects.             |
 
+> **Superseded:** the filter-then-validate order this doc describes below (`--sobject` pre-filters
+> `records`/`ambiguous` before `validateDomainProcessBindings` runs) was a correctness bug — it silently
+> broke `duplicate-developer-name`. [0011](0011-domain-process-binding-issue-scoping.md) fixes it to
+> validate-then-filter and is current; read this doc for the rules table and rationale, but read 0011
+> for how `--sobject` actually behaves today.
+
 No `--active-only` — unlike `list`, every check here (other than `order-collision`, which is inherently
 active-only per [0008](0008-at4dx-domain-process-binding-list.md)'s Resolution rules) applies to a
 binding whether or not it's currently active. An inactive binding with a dead context/field mismatch is
