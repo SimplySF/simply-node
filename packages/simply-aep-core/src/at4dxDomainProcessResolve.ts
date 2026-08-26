@@ -14,7 +14,13 @@
  * limitations under the License.
  */
 
-import type { DomainProcessBindingRow, RawDomainProcessBindingRecord } from './at4dxDomainProcessBindingTypes.js';
+import type {
+  AmbiguousDomainProcessBindingRecord,
+  DomainProcessBindingIssue,
+  DomainProcessBindingRow,
+  MalformedDomainProcessBindingRecord,
+  RawDomainProcessBindingRecord,
+} from './at4dxDomainProcessBindingTypes.js';
 
 /**
  * Groups records by the (SObject, process context, trigger operation/domain method token) scope
@@ -71,7 +77,7 @@ export function resolveDomainProcessBindings(records: RawDomainProcessBindingRec
     const activeOrderCounts = new Map<string, number>();
     for (const record of group) {
       if (record.isActive) {
-        const key = collisionKey(record);
+        const key = `${collisionKey(record)} ${record.order}`;
         activeOrderCounts.set(key, (activeOrderCounts.get(key) ?? 0) + 1);
       }
     }
@@ -84,10 +90,120 @@ export function resolveDomainProcessBindings(records: RawDomainProcessBindingRec
     });
 
     for (const record of sorted) {
-      const orderCollision = record.isActive && (activeOrderCounts.get(collisionKey(record)) ?? 0) > 1;
+      const orderCollision =
+        record.isActive && (activeOrderCounts.get(`${collisionKey(record)} ${record.order}`) ?? 0) > 1;
       rows.push({ ...record, ...(orderCollision ? { orderCollision: true } : {}) });
     }
   }
 
   return rows;
+}
+
+/**
+ * Validate a scan's `DomainProcessBinding__mdt` records for wiring problems `resolveDomainProcessBindings`/
+ * `list` don't fail on: order collisions (reused from `resolveDomainProcessBindings`), records with no
+ * resolvable SObject, bindings whose declared `processContext` doesn't match the field that's actually
+ * populated (dead — never matches any real execution), duplicate `DeveloperName`s across everything
+ * scanned, and an ambiguous SObject reference (both fields set to different values).
+ *
+ * See docs/design/0010-at4dx-domain-process-binding-validate.md for the full rationale behind each rule.
+ *
+ * @param records - The raw binding records to validate, as returned by `scanOrgDomainProcessBindings`/`scanLocalDomainProcessBindings`.
+ * @param diagnostics - The `malformed`/`ambiguous` records the same scan reported alongside `records`.
+ * @returns One issue per problem found. Empty when nothing's wrong.
+ */
+export function validateDomainProcessBindings(
+  records: RawDomainProcessBindingRecord[],
+  diagnostics: { malformed: MalformedDomainProcessBindingRecord[]; ambiguous: AmbiguousDomainProcessBindingRecord[] },
+): DomainProcessBindingIssue[] {
+  const issues: DomainProcessBindingIssue[] = [];
+
+  for (const row of resolveDomainProcessBindings(records)) {
+    if (row.orderCollision) {
+      issues.push({
+        severity: 'error',
+        rule: 'order-collision',
+        message: `${row.developerName}: shares OrderOfExecution__c ${row.order} with another active ${row.type} record for the same SObject/context/trigger-or-token — one of them will silently never run.`,
+        developerName: row.developerName,
+        sobject: row.sobject,
+        source: row.source,
+      });
+    }
+
+    if (row.processContext === 'TriggerExecution' && !row.triggerOperation) {
+      issues.push({
+        severity: 'error',
+        rule: 'missing-context-field',
+        message: `${row.developerName}: processContext is TriggerExecution but TriggerOperation__c is blank — this binding will never match any trigger execution.`,
+        developerName: row.developerName,
+        sobject: row.sobject,
+        source: row.source,
+      });
+    } else if (row.processContext === 'DomainMethodExecution' && !row.domainMethodToken) {
+      issues.push({
+        severity: 'error',
+        rule: 'missing-context-field',
+        message: `${row.developerName}: processContext is DomainMethodExecution but DomainMethodToken__c is blank — this binding will never match any domain method call.`,
+        developerName: row.developerName,
+        sobject: row.sobject,
+        source: row.source,
+      });
+    }
+  }
+
+  for (const record of diagnostics.malformed) {
+    issues.push({
+      severity: 'error',
+      rule: 'missing-sobject-reference',
+      message: `${record.developerName}: neither RelatedDomainBindingSObject__c nor RelatedDomainBindingSObjectAlternate__c is set — this binding has no SObject to bind against.`,
+      developerName: record.developerName,
+      source: record.source,
+    });
+  }
+
+  for (const record of diagnostics.ambiguous) {
+    issues.push({
+      severity: 'warning',
+      rule: 'ambiguous-sobject-reference',
+      message: `${record.developerName}: RelatedDomainBindingSObject__c (${record.sobject}) and RelatedDomainBindingSObjectAlternate__c (${record.alternateSobject}) are both set to different values — only one should be specified.`,
+      developerName: record.developerName,
+      sobject: record.sobject,
+      source: record.source,
+    });
+  }
+
+  const occurrencesByDeveloperName = new Map<string, Array<{ sobject?: string; source: string }>>();
+  for (const record of records) {
+    const occurrences = occurrencesByDeveloperName.get(record.developerName) ?? [];
+    occurrences.push({ sobject: record.sobject, source: record.source });
+    occurrencesByDeveloperName.set(record.developerName, occurrences);
+  }
+  for (const record of diagnostics.malformed) {
+    const occurrences = occurrencesByDeveloperName.get(record.developerName) ?? [];
+    occurrences.push({ source: record.source });
+    occurrencesByDeveloperName.set(record.developerName, occurrences);
+  }
+
+  for (const [developerName, occurrences] of occurrencesByDeveloperName) {
+    if (occurrences.length <= 1) {
+      continue;
+    }
+    for (const occurrence of occurrences) {
+      issues.push({
+        severity: 'error',
+        rule: 'duplicate-developer-name',
+        message: `${developerName}: defined more than once (also in ${occurrences
+          .filter((other) => other !== occurrence)
+          .map((other) => other.source)
+          .join(
+            ', ',
+          )}) — Custom Metadata records are keyed by DeveloperName, so deploying these together is a conflict.`,
+        developerName,
+        sobject: occurrence.sobject,
+        source: occurrence.source,
+      });
+    }
+  }
+
+  return issues;
 }

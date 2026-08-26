@@ -40,13 +40,19 @@ export {
   ALL_TRIGGER_OPERATIONS,
   DOMAIN_PROCESS_BINDING_OBJECT,
   DOMAIN_PROCESS_BINDING_LOCAL_OBJECT_NAME,
+  type AmbiguousDomainProcessBindingRecord,
   type At4dxDomainProcessBindingListResult,
+  type At4dxDomainProcessBindingValidateResult,
+  type DomainProcessBindingIssue,
+  type DomainProcessBindingIssueRule,
+  type DomainProcessBindingIssueSeverity,
   type DomainProcessBindingRow,
   type DomainProcessType,
+  type MalformedDomainProcessBindingRecord,
   type ProcessContext,
   type RawDomainProcessBindingRecord,
   type TriggerOperation,
 } from './at4dxDomainProcessBindingTypes.js';
-export { scanLocalDomainProcessBindings } from './at4dxDomainProcessLocalScan.js';
+export { scanLocalDomainProcessBindings, type DomainProcessLocalScanResult } from './at4dxDomainProcessLocalScan.js';
 export { scanOrgDomainProcessBindings, type DomainProcessOrgScanResult } from './at4dxDomainProcessOrgScan.js';
-export { resolveDomainProcessBindings } from './at4dxDomainProcessResolve.js';
+export { resolveDomainProcessBindings, validateDomainProcessBindings } from './at4dxDomainProcessResolve.js';

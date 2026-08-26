@@ -43,6 +43,7 @@ it('exports the expected set of runtime values', () => {
       'scanLocalDomainProcessBindings',
       'scanOrgDomainProcessBindings',
       'resolveDomainProcessBindings',
+      'validateDomainProcessBindings',
     ].sort(),
   );
 });

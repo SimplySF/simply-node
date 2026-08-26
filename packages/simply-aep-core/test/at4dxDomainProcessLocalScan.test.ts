@@ -61,7 +61,7 @@ describe('scanLocalDomainProcessBindings', () => {
       ])}\n</CustomMetadata>\n`,
     );
 
-    const records = scanLocalDomainProcessBindings([tmpDir]);
+    const { records } = scanLocalDomainProcessBindings([tmpDir]);
 
     expect(records).toHaveLength(1);
     expect(records[0].sobject).toBe('Account');
@@ -88,7 +88,7 @@ describe('scanLocalDomainProcessBindings', () => {
       ])}\n</CustomMetadata>\n`,
     );
 
-    const records = scanLocalDomainProcessBindings([tmpDir]);
+    const { records } = scanLocalDomainProcessBindings([tmpDir]);
 
     expect(records).toEqual([
       {
@@ -126,7 +126,7 @@ describe('scanLocalDomainProcessBindings', () => {
       ])}\n</CustomMetadata>\n`,
     );
 
-    const records = scanLocalDomainProcessBindings([tmpDir]);
+    const { records } = scanLocalDomainProcessBindings([tmpDir]);
 
     expect(records).toHaveLength(1);
     expect(records[0].sobject).toBe('Account');
@@ -142,12 +142,12 @@ describe('scanLocalDomainProcessBindings', () => {
       ])}\n</CustomMetadata>\n`,
     );
 
-    const records = scanLocalDomainProcessBindings([tmpDir]);
+    const { records } = scanLocalDomainProcessBindings([tmpDir]);
 
     expect(records).toEqual([]);
   });
 
-  it('skips a record with neither RelatedDomainBindingSObject__c nor RelatedDomainBindingSObjectAlternate__c set', () => {
+  it('reports a record with neither RelatedDomainBindingSObject__c nor RelatedDomainBindingSObjectAlternate__c set as malformed, excluded from records', () => {
     const projectDir = path.join(tmpDir, 'my-project');
     writeCustomMetadata(
       projectDir,
@@ -158,10 +158,59 @@ describe('scanLocalDomainProcessBindings', () => {
       ])}\n</CustomMetadata>\n`,
     );
 
-    expect(scanLocalDomainProcessBindings([tmpDir])).toEqual([]);
+    const { records, malformed } = scanLocalDomainProcessBindings([tmpDir]);
+
+    expect(records).toEqual([]);
+    expect(malformed).toEqual([{ developerName: 'Unresolvable', source: 'my-project' }]);
   });
 
-  it('returns an empty array when no matching CustomMetadata components are found', () => {
-    expect(scanLocalDomainProcessBindings([tmpDir])).toEqual([]);
+  it('reports a record with both SObject reference fields set to different values as ambiguous, still included in records using the primary value', () => {
+    const projectDir = path.join(tmpDir, 'my-project');
+    writeCustomMetadata(
+      projectDir,
+      'DomainProcessBinding.Ambiguous.md-meta.xml',
+      `${XML_HEADER}\n  <label>Ambiguous</label>\n  <protected>false</protected>\n${values([
+        { field: 'RelatedDomainBindingSObject__c', value: 'Account' },
+        { field: 'RelatedDomainBindingSObjectAlternate__c', value: 'Contact' },
+        { field: 'ProcessContext__c', value: 'TriggerExecution' },
+        { field: 'TriggerOperation__c', value: 'Before_Insert' },
+        { field: 'Type__c', value: 'Action' },
+        { field: 'ClassToInject__c', value: 'AmbiguousAction' },
+        { field: 'OrderOfExecution__c', value: '1', type: 'double' },
+      ])}\n</CustomMetadata>\n`,
+    );
+
+    const { records, ambiguous } = scanLocalDomainProcessBindings([tmpDir]);
+
+    expect(records).toHaveLength(1);
+    expect(records[0].sobject).toBe('Account');
+    expect(ambiguous).toEqual([
+      { developerName: 'Ambiguous', sobject: 'Account', alternateSobject: 'Contact', source: 'my-project' },
+    ]);
+  });
+
+  it('does not flag a record as ambiguous when both SObject reference fields are set to the same value', () => {
+    const projectDir = path.join(tmpDir, 'my-project');
+    writeCustomMetadata(
+      projectDir,
+      'DomainProcessBinding.NotAmbiguous.md-meta.xml',
+      `${XML_HEADER}\n  <label>NotAmbiguous</label>\n  <protected>false</protected>\n${values([
+        { field: 'RelatedDomainBindingSObject__c', value: 'Account' },
+        { field: 'RelatedDomainBindingSObjectAlternate__c', value: 'Account' },
+        { field: 'ProcessContext__c', value: 'TriggerExecution' },
+        { field: 'TriggerOperation__c', value: 'Before_Insert' },
+        { field: 'Type__c', value: 'Action' },
+        { field: 'ClassToInject__c', value: 'NotAmbiguousAction' },
+        { field: 'OrderOfExecution__c', value: '1', type: 'double' },
+      ])}\n</CustomMetadata>\n`,
+    );
+
+    const { ambiguous } = scanLocalDomainProcessBindings([tmpDir]);
+
+    expect(ambiguous).toEqual([]);
+  });
+
+  it('returns an empty result when no matching CustomMetadata components are found', () => {
+    expect(scanLocalDomainProcessBindings([tmpDir])).toEqual({ records: [], malformed: [], ambiguous: [] });
   });
 });
