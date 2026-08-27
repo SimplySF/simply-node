@@ -58,6 +58,7 @@ const allPackages = [
   'packages/simply-core',
   'packages/simply-data',
   'packages/simply-document',
+  'packages/simply-flow',
   'packages/simply-package',
   'packages/simply-permissions',
   'packages/simply-plugin-kit',

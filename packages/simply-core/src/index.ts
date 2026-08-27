@@ -77,3 +77,4 @@ export {
   type ResolvePackageNamesByApiNameOptions,
   type ResolvePackageNamesOptions,
 } from './metadata/packageAttribution.js';
+export { readPackageManifestMembers } from './metadata/packageManifest.js';

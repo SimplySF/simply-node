@@ -14,7 +14,7 @@ Thanks for your interest in contributing to Simply! This document covers the rep
 
 ## Repository Structure
 
-This repository is a Lerna monorepo containing twelve Salesforce CLI plugins, plus four internal libraries. Every package has its own `CONTRIBUTING.md` covering what's specific to it — read this file first, then that one.
+This repository is a Lerna monorepo containing thirteen Salesforce CLI plugins, plus four internal libraries. Every package has its own `CONTRIBUTING.md` covering what's specific to it — read this file first, then that one.
 
 | Package                                                       | Description                                                                                                                                 | Bundled into `simply`?    |
 | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
@@ -25,6 +25,7 @@ This repository is a Lerna monorepo containing twelve Salesforce CLI plugins, pl
 | [`@simplysf/simply-community`](packages/simply-community)     | Salesforce Communities commands                                                                                                             | ✅                        |
 | [`@simplysf/simply-data`](packages/simply-data)               | File upload/download commands                                                                                                               | ✅                        |
 | [`@simplysf/simply-document`](packages/simply-document)       | Documentation generation commands                                                                                                           | ✅                        |
+| [`@simplysf/simply-flow`](packages/simply-flow)               | Flow commands                                                                                                                               | ✅                        |
 | [`@simplysf/simply-package`](packages/simply-package)         | Package dependency management commands                                                                                                      | ✅                        |
 | [`@simplysf/simply-permissions`](packages/simply-permissions) | Permissions commands                                                                                                                        | ✅                        |
 | [`@simplysf/simply-project`](packages/simply-project)         | Salesforce project commands                                                                                                                 | ✅                        |
