@@ -41,21 +41,38 @@ export {
   DOMAIN_PROCESS_BINDING_OBJECT,
   DOMAIN_PROCESS_BINDING_LOCAL_OBJECT_NAME,
   DOMAIN_PROCESS_BINDING_RULES,
+  DomainProcessBindingWriteError,
   type AmbiguousDomainProcessBindingRecord,
+  type At4dxDomainProcessBindingCreateResult,
   type At4dxDomainProcessBindingListResult,
+  type At4dxDomainProcessBindingSetResult,
   type At4dxDomainProcessBindingValidateResult,
+  type At4dxDomainProcessBindingWriteResult,
+  type CreateDomainProcessBindingInput,
+  type CreateDomainProcessBindingTarget,
+  type DomainProcessBindingFieldsInput,
   type DomainProcessBindingIssue,
   type DomainProcessBindingIssueRule,
   type DomainProcessBindingIssueScope,
   type DomainProcessBindingIssueSeverity,
   type DomainProcessBindingRow,
   type DomainProcessBindingRuleInfo,
+  type DomainProcessBindingSObjectField,
+  type DomainProcessBindingWriteErrorCode,
   type DomainProcessType,
   type MalformedDomainProcessBindingRecord,
   type ProcessContext,
   type RawDomainProcessBindingRecord,
+  type SetDomainProcessBindingInput,
+  type SetDomainProcessBindingTarget,
   type TriggerOperation,
 } from './at4dxDomainProcessBindingTypes.js';
+export { buildDomainProcessBindingXml, type DomainProcessBindingXmlFields } from './at4dxDomainProcessBuildXml.js';
+export {
+  deployMetadataFile,
+  type DeployComponentFailure,
+  type DeployMetadataFileResult,
+} from './at4dxDomainProcessDeploy.js';
 export { scanLocalDomainProcessBindings, type DomainProcessLocalScanResult } from './at4dxDomainProcessLocalScan.js';
 export { scanOrgDomainProcessBindings, type DomainProcessOrgScanResult } from './at4dxDomainProcessOrgScan.js';
 export {
@@ -63,3 +80,4 @@ export {
   resolveDomainProcessBindings,
   validateDomainProcessBindings,
 } from './at4dxDomainProcessResolve.js';
+export { createDomainProcessBinding, setDomainProcessBinding } from './at4dxDomainProcessWrite.js';

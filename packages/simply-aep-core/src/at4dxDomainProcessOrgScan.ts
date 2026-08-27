@@ -31,10 +31,11 @@ import {
  * holds an EntityDefinition reference, not a usable API name, when read from an org (local source XML
  * stores the API name directly; see `at4dxDomainProcessLocalScan.ts`).
  */
-const SOQL = `SELECT DeveloperName, RelatedDomainBindingSObject__c, RelatedDomainBindingSObject__r.QualifiedApiName, RelatedDomainBindingSObjectAlternate__c, ProcessContext__c, TriggerOperation__c, DomainMethodToken__c, Type__c, ClassToInject__c, OrderOfExecution__c, IsActive__c, ExecuteAsynchronous__c, LogicalInverse__c, PreventRecursive__c, Description__c FROM ${DOMAIN_PROCESS_BINDING_OBJECT}`;
+const SOQL = `SELECT DeveloperName, Label, RelatedDomainBindingSObject__c, RelatedDomainBindingSObject__r.QualifiedApiName, RelatedDomainBindingSObjectAlternate__c, ProcessContext__c, TriggerOperation__c, DomainMethodToken__c, Type__c, ClassToInject__c, OrderOfExecution__c, IsActive__c, ExecuteAsynchronous__c, LogicalInverse__c, PreventRecursive__c, Description__c FROM ${DOMAIN_PROCESS_BINDING_OBJECT}`;
 
 type OrgDomainProcessBindingRecord = {
   DeveloperName: string;
+  Label: string;
   RelatedDomainBindingSObject__c?: string | null;
   RelatedDomainBindingSObject__r?: { QualifiedApiName?: string | null } | null;
   RelatedDomainBindingSObjectAlternate__c?: string | null;
@@ -80,7 +81,9 @@ function toRawRecord(
 ): RawDomainProcessBindingRecord {
   return {
     developerName: record.DeveloperName,
+    label: record.Label,
     sobject,
+    sobjectField: record.RelatedDomainBindingSObject__c ? 'primary' : 'alternate',
     processContext: record.ProcessContext__c as ProcessContext,
     triggerOperation: (record.TriggerOperation__c as TriggerOperation | null) ?? undefined,
     domainMethodToken: record.DomainMethodToken__c ?? undefined,
