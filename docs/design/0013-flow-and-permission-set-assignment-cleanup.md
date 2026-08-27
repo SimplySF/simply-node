@@ -168,3 +168,30 @@ Parses a `<Package><types><name>...</name><members>...</members></types>...</Pac
 - **Should `simply-cicd`'s `pre-destructive`/`post-destructive` stages eventually call these commands automatically**, instead of requiring a project's own `bin/preDestructive.sh` to shell out to them? Left as future work — this doc only makes the commands exist and reusable; wiring them into the stage pipeline as a built-in, no-`bin/`-script-required option is a separate decision with its own tradeoffs (implicit behavior vs. explicit opt-in).
 - **Whether the Tooling API supports a bulk multi-ID `destroy()`** for `Flow` (avoiding one round trip per version) is an implementation-time investigation, not a design decision — the original script loops one at a time; if a bulk form exists, use it, but the command's external behavior (failure-collection, structured result) is unaffected either way.
 - **Namespaced/managed-package Flow or PermissionSet names** — out of scope, no different than any other command in this repo; revisit if a real project needs it.
+
+## Implementation notes (post-implementation)
+
+A few places where implementing this taught something the design above didn't anticipate:
+
+- **A failed `SaveResult` carries `id: undefined`, not the id that failed.** jsforce-node's `SaveResult`
+  type is a discriminated union — `{ success: true; id: string; errors: never[] }` or
+  `{ success: false; id?: undefined; errors: SaveError[] }` — so a failure branch has no `id` to attribute
+  a failure to. `assignment delete`'s chunked `PermissionSetAssignment` delete pairs each response entry
+  with the request chunk's id by array index instead (`connection.sobject(...).delete(idChunk)`'s response
+  array is positional against the request array), rather than reading `result.id`. This wasn't a problem
+  for `flow delete`/`version prune`'s single-id `Flow`/`FlowDefinition` calls, since those never need a
+  result-reported id — the developer name is already known from the calling loop's own variable.
+- **Resolved the "does the Tooling API support a bulk multi-ID `destroy()`" open question, partially.**
+  jsforce's `destroy()`/`delete()` doesn't special-case the Tooling API — `connection.tooling.sobject('Flow').destroy([id1, id2, ...])`
+  would issue a single `DELETE .../tooling/composite/sobjects?ids=...` request the same way the standard
+  API's composite delete works. What's unverified is whether Salesforce's server-side Tooling API REST
+  layer actually accepts that composite-delete path for objects like `Flow` — nothing in this change
+  exercises a real org, so this is a client-library capability, not a confirmed server capability. Given
+  that uncertainty, `flow delete` and `version prune` both keep the original scripts' one-Flow-version-at-a-time
+  loop rather than risk an unverified bulk endpoint. Worth revisiting with a NUT against a real org if
+  per-version round trips become a real performance concern.
+- **`targetOrgFlags`/`requireConnection` from `@simplysf/simply-plugin-kit`** (already used by
+  `simply-permissions`) were used for all three commands' `--target-org`/`--api-version` instead of each
+  command hand-rolling `Flags.optionalOrg({ char: 'o' })` plus its own null-connection check — not a
+  divergence from the design doc's Behavior tables in practice, since `Flags.requiredOrg()` already
+  defaults to the `-o` short char.

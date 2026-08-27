@@ -9,6 +9,22 @@
   },
   {
     "alias": [],
+    "command": "simply:permissions:assignment:delete",
+    "flagAliases": [],
+    "flagChars": ["f", "o"],
+    "flags": [
+      "api-version",
+      "file",
+      "flags-dir",
+      "json",
+      "permission-set-group-name",
+      "permission-set-name",
+      "target-org"
+    ],
+    "plugin": "@simplysf/simply-permissions"
+  },
+  {
+    "alias": [],
     "command": "simply:permissions:build",
     "flagAliases": [],
     "flagChars": ["c", "d", "n"],

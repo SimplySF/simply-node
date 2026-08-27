@@ -226,6 +226,22 @@
   },
   {
     "alias": [],
+    "command": "simply:flow:delete",
+    "flagAliases": [],
+    "flagChars": ["f", "n", "o"],
+    "flags": ["api-version", "file", "flags-dir", "flow-name", "json", "target-org"],
+    "plugin": "@simplysf/simply-flow"
+  },
+  {
+    "alias": [],
+    "command": "simply:flow:version:prune",
+    "flagAliases": [],
+    "flagChars": ["d", "o"],
+    "flags": ["api-version", "dry-run", "flags-dir", "json", "source-dir", "target-org"],
+    "plugin": "@simplysf/simply-flow"
+  },
+  {
+    "alias": [],
     "command": "simply:package:dependencies:install",
     "flagAliases": [],
     "flagChars": ["a", "b", "i", "k", "l", "o", "r", "s", "t", "v", "w", "z"],
@@ -282,6 +298,22 @@
     "flagAliases": [],
     "flagChars": ["f", "o"],
     "flags": ["api-version", "filter", "flags-dir", "json", "output", "target-org"],
+    "plugin": "@simplysf/simply-permissions"
+  },
+  {
+    "alias": [],
+    "command": "simply:permissions:assignment:delete",
+    "flagAliases": [],
+    "flagChars": ["f", "o"],
+    "flags": [
+      "api-version",
+      "file",
+      "flags-dir",
+      "json",
+      "permission-set-group-name",
+      "permission-set-name",
+      "target-org"
+    ],
     "plugin": "@simplysf/simply-permissions"
   },
   {
