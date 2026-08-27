@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.5.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-aep-core%400.4.0...%40simplysf%2Fsimply-aep-core%400.5.0) (2026-08-27)
+
+### Features
+
+- **simply-aep-core:** add DomainProcessBinding__mdt create/set write functions ([8787ac6](https://github.com/SimplySF/simply-node/commit/8787ac68e12c7f38743b0004170b1b08b9440145))
+
 # [0.4.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-aep-core%400.3.0...%40simplysf%2Fsimply-aep-core%400.4.0) (2026-08-26)
 
 ### Features

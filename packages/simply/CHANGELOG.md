@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.1.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply%403.0.1...%40simplysf%2Fsimply%403.1.0) (2026-08-27)
+
+### Features
+
+- **simply-aep:** add domain-process-binding create/set commands ([b3ea68d](https://github.com/SimplySF/simply-node/commit/b3ea68d06bae9f4c6e2a687704aefa34818d2abd))
+
 ## [3.0.1](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply%403.0.0...%40simplysf%2Fsimply%403.0.1) (2026-08-26)
 
 **Note:** Version bump only for package @simplysf/simply
