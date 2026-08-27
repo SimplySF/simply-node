@@ -134,6 +134,7 @@ const OTHER_PLUGIN_DIRS = [
   'simply-community',
   'simply-data',
   'simply-document',
+  'simply-flow',
   'simply-package',
   'simply-permissions',
   'simply-project',

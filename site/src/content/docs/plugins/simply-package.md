@@ -18,33 +18,46 @@ Install package dependencies for a Salesforce project.
 ```
 USAGE
   $ sf simply package dependencies install -o <value> [--json] [--flags-dir <value>] [-a all|package] [--api-version <value>] [-z
-    <value>] [-i All|Delta|Upgrade] [-k <value>...] [-r] [--output-file <value>] [-b <value>] [-s AllUsers|AdminsOnly]
-    [-v <value>] [-t DeprecateOnly|Mixed|Delete] [-w <value>]
+    <value>] [-i All|Delta|Upgrade] [-k <value>...] [-r] [--output-file <value>] [--package-retry-attempts <value>...]
+    [-b <value>] [--retry-attempts <value>] [--retry-backoff <value>] [-s AllUsers|AdminsOnly] [-v <value>] [-t
+    DeprecateOnly|Mixed|Delete] [-w <value>]
 
 FLAGS
-  -a, --apex-compile=<option>        Compile all Apex in the org and package, or only Apex in the package; unlocked
-                                     packages only.
-                                     <options: all|package>
-  -b, --publish-wait=<value>         Maximum number of minutes to wait for the Subscriber Package Version ID to become
-                                     available in the target org before canceling the install request.
-  -i, --install-type=<option>        [default: Upgrade] Install all packages, only deltas, or only newer versions.
-                                     <options: All|Delta|Upgrade>
-  -k, --installation-key=<value>...  Installation key for key-protected packages
-  -o, --target-org=<value>           (required) Username or alias of the target org. Not required if the `target-org`
-                                     configuration variable is already set.
-  -r, --no-prompt                    Don't prompt for confirmation.
-  -s, --security-type=<option>       [default: AdminsOnly] Security access type for the installed package. (deprecation
-                                     notice: The default --security-type value will change from AllUsers to AdminsOnly
-                                     in v47.0 or later.)
-                                     <options: AllUsers|AdminsOnly>
-  -t, --upgrade-type=<option>        [default: Mixed] Upgrade type for the package installation; available only for
-                                     unlocked packages.
-                                     <options: DeprecateOnly|Mixed|Delete>
-  -v, --target-dev-hub=<value>       Username or alias of the Dev Hub org.
-  -w, --wait=<value>                 Number of minutes to wait for installation status.
-  -z, --branch=<value>               Package branch to consider when specifiying a Package/VersionNumber combination
-      --api-version=<value>          Override the api version used for api requests made by this command
-      --output-file=<value>          Path to write a JSON install report to.
+  -a, --apex-compile=<option>              Compile all Apex in the org and package, or only Apex in the package;
+                                           unlocked packages only.
+                                           <options: all|package>
+  -b, --publish-wait=<value>               Maximum number of minutes to wait for the Subscriber Package Version ID to
+                                           become available in the target org before canceling the install request.
+  -i, --install-type=<option>              [default: Upgrade] Install all packages, only deltas, or only newer versions.
+                                           <options: All|Delta|Upgrade>
+  -k, --installation-key=<value>...        Installation key for key-protected packages
+  -o, --target-org=<value>                 (required) Username or alias of the target org. Not required if the
+                                           `target-org` configuration variable is already set.
+  -r, --no-prompt                          Don't prompt for confirmation.
+  -s, --security-type=<option>             [default: AdminsOnly] Security access type for the installed package.
+                                           (deprecation notice: The default --security-type value will change from
+                                           AllUsers to AdminsOnly in v47.0 or later.)
+                                           <options: AllUsers|AdminsOnly>
+  -t, --upgrade-type=<option>              [default: Mixed] Upgrade type for the package installation; available only
+                                           for unlocked packages.
+                                           <options: DeprecateOnly|Mixed|Delete>
+  -v, --target-dev-hub=<value>             Username or alias of the Dev Hub org.
+  -w, --wait=<value>                       Number of minutes to wait for installation status.
+  -z, --branch=<value>                     Package branch to consider when specifiying a Package/VersionNumber
+                                           combination
+      --api-version=<value>                Override the api version used for api requests made by this command
+      --output-file=<value>                Path to write a JSON install report to.
+      --package-retry-attempts=<value>...  Number of retry attempts for a specific package, overriding --retry-attempts
+                                           for that package only.
+      --retry-attempts=<value>             Number of additional attempts to make if a package install fails, before
+                                           giving up on that package. Defaults to 0 (no retries). Does not apply when
+                                           the install is still In-Progress when polling times out, since retrying could
+                                           race or duplicate an install that may still complete server-side. Overridden
+                                           per-package by --package-retry-attempts.
+      --retry-backoff=<value>              [default: 2] Factor the delay between install retries grows by after each
+                                           failed attempt (e.g. 2 doubles the delay each time). Only relevant when a
+                                           package has retries enabled via --retry-attempts or --package-retry-attempts.
+                                           Applies to every package's retries; there is no per-package override.
 
 GLOBAL FLAGS
   --flags-dir=<value>  Import flag values from a directory.
@@ -63,6 +76,10 @@ EXAMPLES
   $ sf simply package dependencies install --target-org myTargetOrg --target-dev-hub myTargetDevHub --installation-key "MyPackage1Alias:MyPackage1Key" --installation-key "MyPackage2Alias:MyPackage2Key"
 
   $ sf simply package dependencies install --target-org myTargetOrg --target-dev-hub myTargetDevHub --output-file install-report.json
+
+  $ sf simply package dependencies install --target-org myTargetOrg --target-dev-hub myTargetDevHub --retry-attempts 3 --retry-backoff 2
+
+  $ sf simply package dependencies install --target-org myTargetOrg --target-dev-hub myTargetDevHub --retry-attempts 1 --package-retry-attempts "MyPackage1Alias:5"
 
 FLAG DESCRIPTIONS
   -a, --apex-compile=all|package
@@ -116,9 +133,17 @@ FLAG DESCRIPTIONS
     addition to the normal terminal output you can continue to monitor as the command runs. Each entry includes the
     package name, the SubscriberPackageVersionId already installed in the org (if any), the SubscriberPackageVersionId
     that was attempted, and the decision made (Skipped, Installed, Installing, or Failed).
+
+  --package-retry-attempts=<value>...
+
+    Number of retry attempts for a specific package, overriding --retry-attempts for that package only.
+
+    Retry attempts for a specific package in the key:value format of SubscriberPackageVersionId:RetryAttempts. You can
+    use an alias in place of the SubscriberPackageVersionId. Repeat this flag to set overrides for multiple packages.
+    Packages not listed here use --retry-attempts.
 ```
 
-_See code: [lib/commands/simply/package/dependencies/install.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-package@2.8.1/packages/simply-package/lib/commands/simply/package/dependencies/install.js)_
+_See code: [lib/commands/simply/package/dependencies/install.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-package@2.9.0/packages/simply-package/lib/commands/simply/package/dependencies/install.js)_
 
 ## `sf simply package dependencies manage`
 
@@ -177,7 +202,7 @@ FLAG DESCRIPTIONS
     version without interactive prompts. Mutually exclusive with --update-to-latest.
 ```
 
-_See code: [lib/commands/simply/package/dependencies/manage.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-package@2.8.1/packages/simply-package/lib/commands/simply/package/dependencies/manage.js)_
+_See code: [lib/commands/simply/package/dependencies/manage.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-package@2.9.0/packages/simply-package/lib/commands/simply/package/dependencies/manage.js)_
 
 ## `sf simply package version cleanup`
 
@@ -231,4 +256,64 @@ FLAG DESCRIPTIONS
     does not match this matcher is deleted. Mutually exclusive with --matcher.
 ```
 
-_See code: [lib/commands/simply/package/version/cleanup.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-package@2.8.1/packages/simply-package/lib/commands/simply/package/version/cleanup.js)_
+_See code: [lib/commands/simply/package/version/cleanup.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-package@2.9.0/packages/simply-package/lib/commands/simply/package/version/cleanup.js)_
+
+## `sf simply package version get`
+
+Get a package version from sfdx-project.json.
+
+```
+USAGE
+  $ sf simply package version get -p <value> [--json] [--flags-dir <value>] [-d <value>]
+
+FLAGS
+  -d, --directory=<value>  Package directory to search.
+  -p, --package=<value>    (required) Package name or alias to look up.
+
+GLOBAL FLAGS
+  --flags-dir=<value>  Import flag values from a directory.
+  --json               Format output as json.
+
+DESCRIPTION
+  Get a package version from sfdx-project.json.
+
+  Reads the version a package is declared at in your project's sfdx-project.json and prints it, so a script doesn't have
+  to parse the project file itself.
+
+  Both dependencies and the project's own package are searched. A dependency declared as an alias (test-package@0.1.0+2)
+  resolves to the version portion of the alias; a dependency declared as a package name plus a versionNumber resolves to
+  that versionNumber; a dependency declared as a raw ID resolves through packageAliases. A package directory that builds
+  the package resolves to that directory's versionNumber.
+
+  The version is returned exactly as it appears in the project file — no normalizing between the 0.1.0+2, 57.0.0-3, and
+  1.2.3.LATEST forms, since each means something to the tool that consumes it.
+
+  This command reads the project file only. It never contacts an org or a Dev Hub, so it can run in a pipeline before
+  any authentication step.
+
+EXAMPLES
+  Get the version of a dependency:
+
+    $ sf simply package version get --package test-package
+
+  Get the version of the package the project itself builds:
+
+    $ sf simply package version get --package my-package
+
+  Get a dependency's version from one package directory:
+
+    $ sf simply package version get --package test-package --directory force-app
+
+FLAG DESCRIPTIONS
+  -d, --directory=<value>  Package directory to search.
+
+    The path of a single package directory to search, matching a "path" value in packageDirectories. Use this when the
+    same package is declared at different versions in more than one package directory.
+
+  -p, --package=<value>  Package name or alias to look up.
+
+    The package name as it appears in sfdx-project.json, without a version suffix. For a dependency declared as
+    "test-package@0.1.0+2", pass "test-package".
+```
+
+_See code: [lib/commands/simply/package/version/get.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-package@2.9.0/packages/simply-package/lib/commands/simply/package/version/get.js)_
