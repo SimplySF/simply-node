@@ -53,7 +53,7 @@ Both commands populate `RelatedDomainBindingSObject__c` by default and never pop
 once — [0010](0010-at4dx-domain-process-binding-validate.md)'s `ambiguous-sobject-reference` rule and the
 field's own description ("only specify... or this one; not both") make setting both a known-bad pattern,
 so the two fields are always exactly one write target, never two. But `RelatedDomainBindingSObjectAlternate__c`
-is not a legacy fallback to avoid — it's the *only* way to bind against certain Setup objects (e.g.
+is not a legacy fallback to avoid — it's the _only_ way to bind against certain Setup objects (e.g.
 `ServiceResource`) that cannot be referenced through an `EntityDefinition`-type field at all. A generator
 that only ever wrote the Primary field would be unable to author a real, valid binding for exactly those
 objects. `--sobject-alternate` (see Behavior) makes the target field an explicit choice instead of an
@@ -96,28 +96,28 @@ this is the one place an AT4DX command's flag rule is not XOR — see Alternativ
 
 #### Flags
 
-| Flag                     | Char | Required | Purpose                                                                                                                                              |
-| ------------------------ | ---- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--source-dir`           | `-d` | No\*     | The package directory to create `customMetadata/DomainProcessBinding.<name>.md-meta.xml` under (created if absent). Exactly one — not `multiple`, unlike `list`/`validate`, since a create needs one destination, not a search scope. |
-| `--target-org`           | `-o` | No\*     | Deploy the generated record to this org after writing/building it.                                                                                    |
-| `--api-version`          |      | No       | Standard org API version override.                                                                                                                    |
-| `--wait`                 |      | No       | Deploy poll timeout in minutes, only meaningful with `--target-org`. Default `33`, matching `simply community url set`.                               |
-| `--developer-name`       | `-n` | Yes      | `DeveloperName`. Must match `^[A-Za-z][A-Za-z0-9_]*$`, max 40 chars, no consecutive/trailing underscore.                                              |
-| `--label`                |      | No       | `label`. Defaults to `--developer-name` verbatim. Max 40 chars.                                                                                       |
-| `--sobject`              | `-s` | Yes      | The SObject API name to bind against.                                                                                                                  |
+| Flag                     | Char | Required | Purpose                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ------------------------ | ---- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--source-dir`           | `-d` | No\*     | The package directory to create `customMetadata/DomainProcessBinding.<name>.md-meta.xml` under (created if absent). Exactly one — not `multiple`, unlike `list`/`validate`, since a create needs one destination, not a search scope.                                                                                                                                                                                                                      |
+| `--target-org`           | `-o` | No\*     | Deploy the generated record to this org after writing/building it.                                                                                                                                                                                                                                                                                                                                                                                         |
+| `--api-version`          |      | No       | Standard org API version override.                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `--wait`                 |      | No       | Deploy poll timeout in minutes, only meaningful with `--target-org`. Default `33`, matching `simply community url set`.                                                                                                                                                                                                                                                                                                                                    |
+| `--developer-name`       | `-n` | Yes      | `DeveloperName`. Must match `^[A-Za-z][A-Za-z0-9_]*$`, max 40 chars, no consecutive/trailing underscore.                                                                                                                                                                                                                                                                                                                                                   |
+| `--label`                |      | No       | `label`. Defaults to `--developer-name` verbatim. Max 40 chars.                                                                                                                                                                                                                                                                                                                                                                                            |
+| `--sobject`              | `-s` | Yes      | The SObject API name to bind against.                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `--sobject-alternate`    |      | No       | Write `--sobject` to `RelatedDomainBindingSObjectAlternate__c` instead of `RelatedDomainBindingSObject__c`. For SObjects that can't be referenced through an `EntityDefinition` field at all (e.g. `ServiceResource` and other Setup objects) — see Decision. `allowNo: true`, **no `default`** (tri-state `true`/`false`/unset — `set` relies on "unset" meaning "don't change this"; `create` treats unset the same as `false`). Never sets both fields. |
-| `--process-context`      |      | Yes      | `TriggerExecution` \| `DomainMethodExecution`.                                                                                                        |
-| `--trigger-operation`    |      | See note | One of `ALL_TRIGGER_OPERATIONS`. Required (and only allowed) when `--process-context TriggerExecution`.                                              |
-| `--domain-method-token`  |      | See note | Required (and only allowed) when `--process-context DomainMethodExecution`.                                                                           |
-| `--type`                 | `-t` | Yes      | `Action` \| `Criteria`.                                                                                                                                |
-| `--class-to-inject`      | `-c` | Yes      | `ClassToInject__c`.                                                                                                                                    |
-| `--order`                |      | Yes      | `OrderOfExecution__c`. Numeric, decimals allowed (AT4DX convention: same integer "slot" with a Criteria/Action decimal split, per [0008](0008-at4dx-domain-process-binding-list.md)). |
-| `--active`               |      | No       | `IsActive__c`. Default `true`. `allowNo` (`--no-active`).                                                                                              |
-| `--execute-asynchronous` |      | No       | `ExecuteAsynchronous__c`. Default `false`.                                                                                                            |
-| `--logical-inverse`      |      | No       | `LogicalInverse__c`. Default `false`.                                                                                                                 |
-| `--prevent-recursive`    |      | No       | `PreventRecursive__c`. Default `false`.                                                                                                               |
-| `--description`          |      | No       | `Description__c`.                                                                                                                                     |
-| `--force`                |      | No       | Write/deploy even if validation finds an `error`-severity issue. Validation still runs and its issues are still printed/returned.                    |
+| `--process-context`      |      | Yes      | `TriggerExecution` \| `DomainMethodExecution`.                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `--trigger-operation`    |      | See note | One of `ALL_TRIGGER_OPERATIONS`. Required (and only allowed) when `--process-context TriggerExecution`.                                                                                                                                                                                                                                                                                                                                                    |
+| `--domain-method-token`  |      | See note | Required (and only allowed) when `--process-context DomainMethodExecution`.                                                                                                                                                                                                                                                                                                                                                                                |
+| `--type`                 | `-t` | Yes      | `Action` \| `Criteria`.                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `--class-to-inject`      | `-c` | Yes      | `ClassToInject__c`.                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `--order`                |      | Yes      | `OrderOfExecution__c`. Numeric, decimals allowed (AT4DX convention: same integer "slot" with a Criteria/Action decimal split, per [0008](0008-at4dx-domain-process-binding-list.md)).                                                                                                                                                                                                                                                                      |
+| `--active`               |      | No       | `IsActive__c`. Default `true`. `allowNo` (`--no-active`).                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `--execute-asynchronous` |      | No       | `ExecuteAsynchronous__c`. Default `false`.                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `--logical-inverse`      |      | No       | `LogicalInverse__c`. Default `false`.                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `--prevent-recursive`    |      | No       | `PreventRecursive__c`. Default `false`.                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `--description`          |      | No       | `Description__c`.                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `--force`                |      | No       | Write/deploy even if validation finds an `error`-severity issue. Validation still runs and its issues are still printed/returned.                                                                                                                                                                                                                                                                                                                          |
 
 \* At least one of `--source-dir`/`--target-org` required; both may be given.
 
@@ -158,11 +158,11 @@ sf simply aep at4dx domain-process-binding set \
 
 Same flag set as `create`, with these differences:
 
-| Flag               | Difference from `create`                                                                                                                          |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Flag               | Difference from `create`                                                                                                                                                         |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `--source-dir`     | `multiple: true` — a search scope across one or more roots, same convention as `list`/`validate`, since `set` locates an existing file rather than choosing where to create one. |
-| `--developer-name` | Identifies the record to update; not itself updatable (renaming a `DeveloperName` is a delete+create from Salesforce's perspective — out of scope, see Open questions). |
-| All field flags    | Optional. Only the ones supplied are changed; every other field keeps its current value from the found record.                                       |
+| `--developer-name` | Identifies the record to update; not itself updatable (renaming a `DeveloperName` is a delete+create from Salesforce's perspective — out of scope, see Open questions).          |
+| All field flags    | Optional. Only the ones supplied are changed; every other field keeps its current value from the found record.                                                                   |
 
 At least one field flag beyond `--developer-name` must be given, or `error.noFieldsToUpdate`.
 
@@ -208,8 +208,18 @@ adding fields to this type additively rather than reshaping it.
 export function buildDomainProcessBindingXml(
   record: Pick<
     RawDomainProcessBindingRecord,
-    | 'sobject' | 'sobjectField' | 'processContext' | 'triggerOperation' | 'domainMethodToken' | 'type'
-    | 'classToInject' | 'order' | 'isActive' | 'executeAsynchronous' | 'logicalInverse' | 'preventRecursive'
+    | 'sobject'
+    | 'sobjectField'
+    | 'processContext'
+    | 'triggerOperation'
+    | 'domainMethodToken'
+    | 'type'
+    | 'classToInject'
+    | 'order'
+    | 'isActive'
+    | 'executeAsynchronous'
+    | 'logicalInverse'
+    | 'preventRecursive'
     | 'description'
   >,
   meta: { label: string; developerName: string },
@@ -257,20 +267,20 @@ structural difference).
 
 ### Errors
 
-| Condition                                                                          | Behavior                          |
-| ----------------------------------------------------------------------------------- | ---------------------------------- |
-| Neither `--source-dir` nor `--target-org` given                                     | `error.sourceDirOrTargetOrgRequired` |
-| `--trigger-operation`/`--domain-method-token` given without/mismatched `--process-context` | `error.contextFieldMismatch`    |
-| `--developer-name` fails the format check                                           | `error.invalidDeveloperName`      |
-| `--label` (or the default) exceeds 40 characters                                    | `error.labelTooLong`              |
-| `create`: `DeveloperName` already exists in the scanned scope                       | `error.developerNameAlreadyExists`|
-| `set`: `DeveloperName` not found in the scanned scope                               | `error.developerNameNotFound`     |
-| `set`: no field flags given besides `--developer-name`                              | `error.noFieldsToUpdate`          |
-| Validation finds an `error`-severity issue and `--force` is not set                 | `error.validationFailed` (issues still printed/returned) |
-| `DomainProcessBinding__mdt` doesn't exist (org `INVALID_TYPE`, or local scan finds nothing and `set` needed to find a record) | `error.at4dxNotDetected` |
-| Local scan/write fails                                                              | `error.localScanFailed` / `error.localWriteFailed`, wrapping the message |
-| Org query fails for a reason other than "type doesn't exist"                        | `error.orgQueryFailed`, wrapping the message |
-| Deploy fails                                                                         | `error.deployFailed`, wrapping the failure summary (matching `simply community url set`) |
+| Condition                                                                                                                     | Behavior                                                                                 |
+| ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Neither `--source-dir` nor `--target-org` given                                                                               | `error.sourceDirOrTargetOrgRequired`                                                     |
+| `--trigger-operation`/`--domain-method-token` given without/mismatched `--process-context`                                    | `error.contextFieldMismatch`                                                             |
+| `--developer-name` fails the format check                                                                                     | `error.invalidDeveloperName`                                                             |
+| `--label` (or the default) exceeds 40 characters                                                                              | `error.labelTooLong`                                                                     |
+| `create`: `DeveloperName` already exists in the scanned scope                                                                 | `error.developerNameAlreadyExists`                                                       |
+| `set`: `DeveloperName` not found in the scanned scope                                                                         | `error.developerNameNotFound`                                                            |
+| `set`: no field flags given besides `--developer-name`                                                                        | `error.noFieldsToUpdate`                                                                 |
+| Validation finds an `error`-severity issue and `--force` is not set                                                           | `error.validationFailed` (issues still printed/returned)                                 |
+| `DomainProcessBinding__mdt` doesn't exist (org `INVALID_TYPE`, or local scan finds nothing and `set` needed to find a record) | `error.at4dxNotDetected`                                                                 |
+| Local scan/write fails                                                                                                        | `error.localScanFailed` / `error.localWriteFailed`, wrapping the message                 |
+| Org query fails for a reason other than "type doesn't exist"                                                                  | `error.orgQueryFailed`, wrapping the message                                             |
+| Deploy fails                                                                                                                  | `error.deployFailed`, wrapping the failure summary (matching `simply community url set`) |
 
 ## Alternatives considered
 
@@ -355,19 +365,19 @@ that has to explain what happens to references elsewhere.
 
 **Unit** (`simply-aep-core`):
 
-| Case                                                                                     | What it pins down                                                                 |
-| ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `buildDomainProcessBindingXml` output parsed back through `scanLocalDomainProcessBindings` | Round-trips to the same `RawDomainProcessBindingRecord` for every field combination (present/absent optional fields, both `processContext` values, both `type` values, both `sobjectField` values). |
-| `create --sobject-alternate`                                                               | Writes only `RelatedDomainBindingSObjectAlternate__c` (nil `RelatedDomainBindingSObject__c`); re-scanning reports `sobjectField: 'alternate'`, no `ambiguous-sobject-reference` issue. |
-| `create`: `DeveloperName` collision in the scanned scope                                  | Rejected before any write.                                                          |
-| `create`: candidate introduces an `order-collision` with an existing active record        | Rejected without `--force`; written with `--force`, issue still present in the result. |
-| `set`: found record's untouched fields are preserved                                      | Only the flags given change; everything else matches the original record.          |
-| `set` on a `sobjectField: 'alternate'` record, changing only `--order` (no `--sobject-alternate`)  | Rewritten file still uses `RelatedDomainBindingSObjectAlternate__c` — the regression this doc's field-preservation rule exists to prevent. |
-| `set --sobject-alternate=false` on an alternate-field record                               | Explicitly moves the SObject reference to `RelatedDomainBindingSObject__c` — an intentional override, not preserved. |
-| `set`: `DeveloperName` not found                                                          | Rejected before any write.                                                          |
-| `set`: no field flags beyond `--developer-name`                                           | `error.noFieldsToUpdate`.                                                           |
-| Org-only mode (`--target-org`, no `--source-dir`)                                         | Temp directory is created, deployed from, and removed; no file left on disk after the call. |
-| Deploy failure                                                                             | Local file (when `--source-dir` was given) is still left in place — only the deploy step failed, not the source write. |
+| Case                                                                                              | What it pins down                                                                                                                                                                                   |
+| ------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `buildDomainProcessBindingXml` output parsed back through `scanLocalDomainProcessBindings`        | Round-trips to the same `RawDomainProcessBindingRecord` for every field combination (present/absent optional fields, both `processContext` values, both `type` values, both `sobjectField` values). |
+| `create --sobject-alternate`                                                                      | Writes only `RelatedDomainBindingSObjectAlternate__c` (nil `RelatedDomainBindingSObject__c`); re-scanning reports `sobjectField: 'alternate'`, no `ambiguous-sobject-reference` issue.              |
+| `create`: `DeveloperName` collision in the scanned scope                                          | Rejected before any write.                                                                                                                                                                          |
+| `create`: candidate introduces an `order-collision` with an existing active record                | Rejected without `--force`; written with `--force`, issue still present in the result.                                                                                                              |
+| `set`: found record's untouched fields are preserved                                              | Only the flags given change; everything else matches the original record.                                                                                                                           |
+| `set` on a `sobjectField: 'alternate'` record, changing only `--order` (no `--sobject-alternate`) | Rewritten file still uses `RelatedDomainBindingSObjectAlternate__c` — the regression this doc's field-preservation rule exists to prevent.                                                          |
+| `set --sobject-alternate=false` on an alternate-field record                                      | Explicitly moves the SObject reference to `RelatedDomainBindingSObject__c` — an intentional override, not preserved.                                                                                |
+| `set`: `DeveloperName` not found                                                                  | Rejected before any write.                                                                                                                                                                          |
+| `set`: no field flags beyond `--developer-name`                                                   | `error.noFieldsToUpdate`.                                                                                                                                                                           |
+| Org-only mode (`--target-org`, no `--source-dir`)                                                 | Temp directory is created, deployed from, and removed; no file left on disk after the call.                                                                                                         |
+| Deploy failure                                                                                    | Local file (when `--source-dir` was given) is still left in place — only the deploy step failed, not the source write.                                                                              |
 
 **Command** (`simply-aep`), mirroring `validate.test.ts`'s style: flag validation (context-field mismatch,
 invalid developer name, neither source given), `--force` end-to-end, `--json` output shape.
@@ -388,3 +398,40 @@ invalid developer name, neither source given), `--force` end-to-end, `--json` ou
   is different enough that it deserves its own sizing, same reasoning [0008](0008-at4dx-domain-process-binding-list.md)
   already applied when it got its own `list` instead of folding into `binding list`.
 - **Namespaced AT4DX installs** — out of scope, same reasoning as every prior AT4DX doc in this repo.
+
+## Implementation notes (post-implementation)
+
+A few places where implementing this taught something the design above didn't anticipate:
+
+- **`RawDomainProcessBindingRecord` gained a `label: string` field**, populated by both scanners
+  (`CustomMetadata.label` locally, the standard `Label` field in an org SOQL query) — not proposed
+  anywhere above. It turned out `set` cannot preserve an existing binding's label when `--label` isn't
+  passed without it: nothing previously read `label` back off a scanned record, so `set` had no value to
+  fall back to and would have silently renamed every binding it touched to its own `DeveloperName`.
+  Additive, matching [0011](0011-domain-process-binding-issue-scoping.md)'s precedent for growing this
+  type; `list`/`validate` are unaffected since neither reads it.
+- **`buildDomainProcessBindingXml`'s `meta` parameter dropped `developerName`.** `DeveloperName` is
+  carried by the file name only, never the XML body, so the parameter this doc originally specified
+  (`meta: { label, developerName }`) had no use for the second field.
+- **`context-field-mismatch` ended up narrower than "required, and only allowed, when
+  `--process-context` X"**: it fires only on an actual contradiction (both
+  `triggerOperation`/`domainMethodToken` given, or the one that doesn't match the declared context).
+  "The matching field is missing entirely" is left to `validateDomainProcessBindings`'s existing
+  `missing-context-field` rule (and thus `--force`), rather than a second hard-coded requirement — one
+  rule owns "is this binding well-formed," instead of splitting it across two layers with different
+  escape hatches. `create`'s CLI command still hard-requires the matching field as a fast-fail flag
+  check (`error.triggerOperationRequired`/`error.domainMethodTokenRequired`), since a brand new binding
+  has no legitimate reason to be created dead-on-arrival; `set` does not add this hard requirement,
+  since forcing it would block an otherwise-valid update that only touches an unrelated field.
+- **`setDomainProcessBinding` clears the opposite context field automatically** when
+  `triggerOperation`/`domainMethodToken` is given explicitly (giving one clears the other, unless both
+  are given, which `context-field-mismatch` still catches). Without this, switching
+  `--process-context` while also giving the correct matching field would still fail
+  `context-field-mismatch` on the stale opposite field carried over from the existing record — a false
+  positive for exactly the case a caller is trying to fix.
+- **A defensive `source-or-target-required` error code** was added to
+  `DomainProcessBindingWriteErrorCode` for the library functions themselves (`createDomainProcessBinding`/
+  `setDomainProcessBinding` throw it if neither destination is given), even though both CLI commands also
+  check this before calling in — matching `list`/`validate`'s existing convention of owning that check at
+  the command layer. The library-level guard exists for a non-CLI caller (the VS Code extension) that
+  might construct a target object without going through flag parsing.

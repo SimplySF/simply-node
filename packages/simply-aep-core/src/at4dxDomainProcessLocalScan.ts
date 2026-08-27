@@ -80,7 +80,9 @@ function toRawRecord(
       kind: 'record',
       value: {
         developerName,
+        label: xml.CustomMetadata?.label ?? developerName,
         sobject,
+        sobjectField: primarySObject ? 'primary' : 'alternate',
         processContext: fieldValue(values, 'ProcessContext__c') as ProcessContext,
         triggerOperation: fieldValue(values, 'TriggerOperation__c') as TriggerOperation | undefined,
         domainMethodToken: fieldValue(values, 'DomainMethodToken__c'),

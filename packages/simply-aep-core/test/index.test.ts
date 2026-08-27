@@ -46,6 +46,11 @@ it('exports the expected set of runtime values', () => {
       'resolveDomainProcessBindings',
       'validateDomainProcessBindings',
       'filterDomainProcessBindingIssues',
+      'DomainProcessBindingWriteError',
+      'buildDomainProcessBindingXml',
+      'deployMetadataFile',
+      'createDomainProcessBinding',
+      'setDomainProcessBinding',
     ].sort(),
   );
 });

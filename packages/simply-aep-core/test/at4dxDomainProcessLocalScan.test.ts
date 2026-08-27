@@ -93,7 +93,9 @@ describe('scanLocalDomainProcessBindings', () => {
     expect(records).toEqual([
       {
         developerName: 'Account_Before_Insert_Test',
+        label: 'Account Before Insert Test',
         sobject: 'Account',
+        sobjectField: 'alternate',
         processContext: 'TriggerExecution',
         triggerOperation: 'Before_Insert',
         domainMethodToken: undefined,

@@ -14,8 +14,21 @@
  * limitations under the License.
  */
 
+import type { Connection } from '@salesforce/core';
+import type { Duration } from '@salesforce/kit';
+
 /** Whether a `DomainProcessBinding__mdt` record contributes a criteria filter or an action. */
 export type DomainProcessType = 'Action' | 'Criteria';
+
+/**
+ * Which of `DomainProcessBinding__mdt`'s two SObject-reference fields a record's `sobject` came from
+ * (or, when writing, which one to populate): `RelatedDomainBindingSObject__c` ('primary') is an
+ * `EntityDefinition` reference with real referential validation; `RelatedDomainBindingSObjectAlternate__c`
+ * ('alternate') is a plain text field with none, but it's the only way to bind against a Setup object
+ * (e.g. `ServiceResource`) that can't be referenced through `EntityDefinition` at all. See
+ * docs/design/0012-at4dx-domain-process-binding-create-set.md.
+ */
+export type DomainProcessBindingSObjectField = 'primary' | 'alternate';
 
 /** What kind of process invokes this binding: a trigger event, or a domain method's explicit process token. */
 export type ProcessContext = 'TriggerExecution' | 'DomainMethodExecution';
@@ -57,7 +70,11 @@ export const DOMAIN_PROCESS_BINDING_LOCAL_OBJECT_NAME = 'DomainProcessBinding';
  */
 export type RawDomainProcessBindingRecord = {
   developerName: string;
+  /** The record's `label` (`CustomMetadata.label` locally, the standard `Label` field in an org). Not used by any resolution/validation rule — carried only so `set` can preserve it when `--label` isn't passed. */
+  label: string;
   sobject: string;
+  /** Which field `sobject` was read from. See `DomainProcessBindingSObjectField`. */
+  sobjectField: DomainProcessBindingSObjectField;
   processContext: ProcessContext;
   /** `TriggerOperation__c`. Present when `processContext` is `TriggerExecution`. */
   triggerOperation?: TriggerOperation;
@@ -221,3 +238,98 @@ export type At4dxDomainProcessBindingValidateResult = {
   bindingCount: number;
   issues: DomainProcessBindingIssue[];
 };
+
+/** The fields `createDomainProcessBinding`/`setDomainProcessBinding` accept, shared with the CLI's flags. On `set`, every field is optional — only the ones supplied change. */
+export type DomainProcessBindingFieldsInput = {
+  label?: string;
+  sobject?: string;
+  /**
+   * Tri-state on purpose (`true` | `false` | `undefined`): `undefined` means "don't change which
+   * field this is stored in" on `set` (defaulting to `'primary'` on `create`, where there's no
+   * existing record to preserve). See `DomainProcessBindingSObjectField`.
+   */
+  sobjectAlternate?: boolean;
+  processContext?: ProcessContext;
+  triggerOperation?: TriggerOperation;
+  domainMethodToken?: string;
+  type?: DomainProcessType;
+  classToInject?: string;
+  order?: number;
+  isActive?: boolean;
+  executeAsynchronous?: boolean;
+  logicalInverse?: boolean;
+  preventRecursive?: boolean;
+  description?: string;
+};
+
+/** Where a write reads its validation context from and, when writing locally, where the file goes. Exactly one of `sourceDir`/`connection` is required; both may be given (see docs/design/0012-at4dx-domain-process-binding-create-set.md). */
+export type CreateDomainProcessBindingTarget = {
+  /** The package directory `customMetadata/DomainProcessBinding.<name>.md-meta.xml` is created under. */
+  sourceDir?: string;
+  connection?: Connection;
+  /** Deploy poll timeout. Only meaningful when `connection` is given. */
+  wait?: Duration;
+};
+
+/** Same shape as `CreateDomainProcessBindingTarget`, but `sourceDirs` is a search scope (one or more roots) rather than a single destination, since `set` locates an existing file instead of choosing where to create one. */
+export type SetDomainProcessBindingTarget = {
+  sourceDirs?: string[];
+  connection?: Connection;
+  wait?: Duration;
+};
+
+export type CreateDomainProcessBindingInput = DomainProcessBindingFieldsInput & {
+  developerName: string;
+  sobject: string;
+  processContext: ProcessContext;
+  type: DomainProcessType;
+  classToInject: string;
+  order: number;
+  /** Write/deploy even if validation finds an `error`-severity issue. The issue still appears in the result. */
+  force?: boolean;
+};
+
+export type SetDomainProcessBindingInput = DomainProcessBindingFieldsInput & {
+  developerName: string;
+  force?: boolean;
+};
+
+/** The error conditions `createDomainProcessBinding`/`setDomainProcessBinding` signal structurally (via `code`) rather than by message text, so a `Messages`-based caller (the CLI) can map each one to its own error key without string-matching. Errors outside this list (a scan/deploy I/O failure) are rethrown as the underlying error. */
+export type DomainProcessBindingWriteErrorCode =
+  | 'source-or-target-required'
+  | 'context-field-mismatch'
+  | 'invalid-developer-name'
+  | 'label-too-long'
+  | 'developer-name-already-exists'
+  | 'developer-name-not-found'
+  | 'no-fields-to-update'
+  | 'at4dx-not-detected'
+  | 'validation-failed'
+  | 'deploy-failed';
+
+export class DomainProcessBindingWriteError extends Error {
+  public readonly code: DomainProcessBindingWriteErrorCode;
+  /** Populated only for `code: 'validation-failed'` — the blocking issues, so a caller can display them without re-running validation. */
+  public readonly issues?: DomainProcessBindingIssue[];
+
+  public constructor(code: DomainProcessBindingWriteErrorCode, message: string, issues?: DomainProcessBindingIssue[]) {
+    super(message);
+    this.name = 'DomainProcessBindingWriteError';
+    this.code = code;
+    this.issues = issues;
+  }
+}
+
+export type At4dxDomainProcessBindingWriteResult = {
+  developerName: string;
+  sobject: string;
+  /** Absent when written only to a temp directory for a `connection`-only (org-direct) run. */
+  filePath?: string;
+  /** Absent when no `connection` was given. */
+  deploy?: { id: string; status: string; success: boolean };
+  /** The full validation result, even when `force` was used to write past a blocking issue. */
+  issues: DomainProcessBindingIssue[];
+};
+
+export type At4dxDomainProcessBindingCreateResult = At4dxDomainProcessBindingWriteResult;
+export type At4dxDomainProcessBindingSetResult = At4dxDomainProcessBindingWriteResult;

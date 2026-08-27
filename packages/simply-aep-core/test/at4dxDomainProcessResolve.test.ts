@@ -33,7 +33,9 @@ function record(
 ): RawDomainProcessBindingRecord {
   return {
     developerName: `Record_${overrides.order}`,
+    label: `Record_${overrides.order}`,
     sobject: 'Account',
+    sobjectField: 'primary',
     processContext: 'TriggerExecution',
     triggerOperation: 'Before_Insert',
     type: 'Action',
