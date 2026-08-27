@@ -53,7 +53,7 @@ FLAG DESCRIPTIONS
     The path to write the generated HTML report to.
 ```
 
-_See code: [lib/commands/simply/permissions/analyze.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-permissions@1.2.13/packages/simply-permissions/lib/commands/simply/permissions/analyze.js)_
+_See code: [lib/commands/simply/permissions/analyze.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-permissions@1.2.31/packages/simply-permissions/lib/commands/simply/permissions/analyze.js)_
 
 ## `sf simply permissions build`
 
@@ -120,4 +120,4 @@ FLAG DESCRIPTIONS
     'view-all' additionally grants view-all-records, and 'modify-all' grants full CRUD and modify-all-records access.
 ```
 
-_See code: [lib/commands/simply/permissions/build.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-permissions@1.2.13/packages/simply-permissions/lib/commands/simply/permissions/build.js)_
+_See code: [lib/commands/simply/permissions/build.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-permissions@1.2.31/packages/simply-permissions/lib/commands/simply/permissions/build.js)_

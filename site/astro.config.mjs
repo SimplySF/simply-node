@@ -17,7 +17,7 @@ export default defineConfig({
     starlight({
       title: 'Simply',
       description:
-        'Salesforce CLI plugins by SimplySF for Apex, communities, data, documentation, packages, permissions, projects, schema, and SObjects — plus simply-cicd for CI/CD pipelines.',
+        'Salesforce CLI plugins by SimplySF for Apex, communities, data, documentation, Flows, packages, permissions, projects, schema, and SObjects — plus simply-cicd for CI/CD pipelines.',
       logo: {
         light: './src/assets/logo-icon.png',
         dark: './src/assets/logo-icon-dark.png',
@@ -39,6 +39,7 @@ export default defineConfig({
             { label: 'Community', slug: 'plugins/simply-community' },
             { label: 'Data', slug: 'plugins/simply-data' },
             { label: 'Document', slug: 'plugins/simply-document' },
+            { label: 'Flow', slug: 'plugins/simply-flow' },
             { label: 'Package', slug: 'plugins/simply-package' },
             { label: 'Permissions', slug: 'plugins/simply-permissions' },
             { label: 'Project', slug: 'plugins/simply-project' },

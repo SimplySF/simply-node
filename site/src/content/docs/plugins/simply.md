@@ -11,6 +11,319 @@ sf plugins install @simplysf/simply
 
 ## Commands
 
+## `sf simply aep at4dx binding list`
+
+List the AT4DX Application Factory bindings configured in an org or local source, resolved to show which record wins for each binding key.
+
+```
+USAGE
+  $ sf simply aep at4dx binding list [--json] [--flags-dir <value>] [-o <value>] [--api-version <value>] [-d <value>...] [-t
+    service|selector|domain|unit-of-work...] [--effective-only]
+
+FLAGS
+  -d, --source-dir=<value>...  One or more paths to directories containing Salesforce DX source. Use this for
+                               local-source discovery.
+  -o, --target-org=<value>     Username or alias of the org to read bindings from. Use this for live-org discovery.
+  -t, --type=<option>...       Binding type(s) to include: service, selector, domain, unit-of-work.
+                               <options: service|selector|domain|unit-of-work>
+      --api-version=<value>    Override the api version used for api requests made by this command
+      --effective-only         Only show the bindings that actually win for their key; hide shadowed/non-winning
+                               records.
+
+GLOBAL FLAGS
+  --flags-dir=<value>  Import flag values from a directory.
+  --json               Format output as json.
+
+DESCRIPTION
+  List the AT4DX Application Factory bindings configured in an org or local source, resolved to show which record wins
+  for each binding key.
+
+  Reads the four AT4DX Application Factory Custom Metadata Types — `ApplicationFactory_ServiceBinding__mdt`,
+  `ApplicationFactory_SelectorBinding__mdt`, `ApplicationFactory_DomainBinding__mdt`, and
+  `ApplicationFactory_UnitOfWorkBinding__mdt` — either from a live org or from local Salesforce DX source, and
+  reproduces the resolution rules AT4DX applies at runtime so you can see which record actually wins for a given
+  interface or SObject, and which ones are shadowed. Exactly one of `--target-org` or `--source-dir` must be specified.
+
+  Service and Selector bindings resolve deterministically on `Priority__c` (highest wins). Domain bindings have no
+  priority field, so a duplicated key is flagged `ambiguous` rather than reporting a guessed winner. UnitOfWork bindings
+  have no winner concept at all — every record contributes to one ordered registration list.
+
+EXAMPLES
+  $ sf simply aep at4dx binding list --target-org myOrg
+
+  $ sf simply aep at4dx binding list --source-dir sfdx-source/core --source-dir sfdx-source/app
+
+  $ sf simply aep at4dx binding list --target-org myOrg --type service,selector
+
+  $ sf simply aep at4dx binding list --target-org myOrg --effective-only --json
+
+FLAG DESCRIPTIONS
+  -t, --type=service|selector|domain|unit-of-work...
+
+    Binding type(s) to include: service, selector, domain, unit-of-work.
+
+    Comma-separated list of binding types to include. If not specified, all four are included.
+```
+
+_See code: [@simplysf/simply-aep](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.6.1/packages/simply-aep/lib/commands/simply/aep/at4dx/binding/list.js)_
+
+## `sf simply aep at4dx domain-process-binding create`
+
+Create a new AT4DX Trigger Action Framework binding (DomainProcessBinding__mdt) in local source and/or a connected org.
+
+```
+USAGE
+  $ sf simply aep at4dx domain-process-binding create -n <value> -s <value> --process-context TriggerExecution|DomainMethodExecution -t
+    Action|Criteria -c <value> --order <value> [--json] [--flags-dir <value>] [-d <value>] [-o <value>] [--api-version
+    <value>] [--wait <value>] [--label <value>] [--sobject-alternate] [--trigger-operation
+    Before_Insert|After_Insert|Before_Update|After_Update|Before_Delete|After_Delete|After_Undelete]
+    [--domain-method-token <value>] [--active] [--execute-asynchronous] [--logical-inverse] [--prevent-recursive]
+    [--description <value>] [--force]
+
+FLAGS
+  -c, --class-to-inject=<value>      (required) The Apex class this binding wires in.
+  -d, --source-dir=<value>           The package directory to create
+                                     customMetadata/DomainProcessBinding.<name>.md-meta.xml under. Created if the
+                                     customMetadata folder doesn't exist yet.
+  -n, --developer-name=<value>       (required) The binding's DeveloperName. Must start with a letter, contain only
+                                     letters, numbers, and single underscores, not end with an underscore, and be 40
+                                     characters or fewer.
+  -o, --target-org=<value>           Deploy the generated binding to this org after writing it.
+  -s, --sobject=<value>              (required) The SObject API name to bind against.
+  -t, --type=<option>                (required) Whether this binding contributes a Criteria filter or an Action.
+                                     <options: Action|Criteria>
+      --[no-]active                  IsActive__c.
+      --api-version=<value>          Override the api version used for api requests made by this command
+      --description=<value>          Description__c.
+      --domain-method-token=<value>  The domain method's process token this binding matches. Required, and only allowed,
+                                     when --process-context is DomainMethodExecution.
+      --execute-asynchronous         ExecuteAsynchronous__c.
+      --force                        Write (and deploy) even if validation finds an error-severity issue. Validation
+                                     still runs and its issues are still printed and returned.
+      --label=<value>                The binding's label. Defaults to --developer-name. Must be 40 characters or fewer.
+      --logical-inverse              LogicalInverse__c.
+      --order=<value>                (required) OrderOfExecution__c. Numeric; decimals are allowed.
+      --prevent-recursive            PreventRecursive__c.
+      --process-context=<option>     (required) What kind of process invokes this binding: TriggerExecution or
+                                     DomainMethodExecution.
+                                     <options: TriggerExecution|DomainMethodExecution>
+      --[no-]sobject-alternate       Write --sobject to RelatedDomainBindingSObjectAlternate__c instead of
+                                     RelatedDomainBindingSObject__c. Use this for a SObject that can't be referenced
+                                     through an EntityDefinition field at all (for example ServiceResource and other
+                                     Setup objects).
+      --trigger-operation=<option>   The trigger event this binding fires on. Required, and only allowed, when
+                                     --process-context is TriggerExecution.
+                                     <options: Before_Insert|After_Insert|Before_Update|After_Update|Before_Delete|After
+                                     _Delete|After_Undelete>
+      --wait=<value>                 [default: 33] Deploy poll timeout, in minutes. Only meaningful with --target-org.
+
+GLOBAL FLAGS
+  --flags-dir=<value>  Import flag values from a directory.
+  --json               Format output as json.
+
+DESCRIPTION
+  Create a new AT4DX Trigger Action Framework binding (DomainProcessBinding__mdt) in local source and/or a connected
+  org.
+
+  Generates a `DomainProcessBinding.<DeveloperName>.md-meta.xml` file from the given flags and writes it under
+  --source-dir, deploys it to --target-org, or both. Validates the resulting binding — alongside everything else already
+  in scope — with the same rules `simply aep at4dx domain-process-binding validate` uses, and refuses to write if that
+  introduces an error-severity issue unless --force is passed. At least one of --source-dir/--target-org is required;
+  unlike `list`/`validate`, both may be given at once (write to source and deploy it live in the same run). Given
+  --target-org alone, the file is written to a temporary directory, deployed, and discarded — no working-tree footprint.
+
+  Writes RelatedDomainBindingSObject__c by default. Pass --sobject-alternate to write
+  RelatedDomainBindingSObjectAlternate__c instead, for a SObject (such as ServiceResource and other Setup objects) that
+  can't be referenced through an EntityDefinition field at all.
+
+EXAMPLES
+  $ sf simply aep at4dx domain-process-binding create --source-dir sfdx-source/core --developer-name Account_Before_Insert_Assign_Owner --sobject Account --process-context TriggerExecution --trigger-operation Before_Insert --type Action --class-to-inject AccountAssignOwnerAction --order 10
+
+  $ sf simply aep at4dx domain-process-binding create --target-org myOrg --developer-name Account_Before_Insert_Assign_Owner --sobject Account --process-context TriggerExecution --trigger-operation Before_Insert --type Action --class-to-inject AccountAssignOwnerAction --order 10
+
+  $ sf simply aep at4dx domain-process-binding create --source-dir sfdx-source/core --target-org myOrg --developer-name Account_Before_Insert_Assign_Owner --sobject Account --process-context TriggerExecution --trigger-operation Before_Insert --type Action --class-to-inject AccountAssignOwnerAction --order 10
+
+  $ sf simply aep at4dx domain-process-binding create --source-dir sfdx-source/core --developer-name ServiceResource_Before_Update_Sync --sobject ServiceResource --sobject-alternate --process-context TriggerExecution --trigger-operation Before_Update --type Action --class-to-inject ServiceResourceSyncAction --order 10
+```
+
+_See code: [@simplysf/simply-aep](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.6.1/packages/simply-aep/lib/commands/simply/aep/at4dx/domain-process-binding/create.js)_
+
+## `sf simply aep at4dx domain-process-binding list`
+
+List the AT4DX Trigger Action Framework bindings configured in an org or local source, in execution order.
+
+```
+USAGE
+  $ sf simply aep at4dx domain-process-binding list [--json] [--flags-dir <value>] [-o <value>] [--api-version <value>] [-d <value>...] [-s
+    <value>...] [--active-only]
+
+FLAGS
+  -d, --source-dir=<value>...  One or more paths to directories containing Salesforce DX source. Use this for
+                               local-source discovery.
+  -o, --target-org=<value>     Username or alias of the org to read bindings from. Use this for live-org discovery.
+  -s, --sobject=<value>...     SObject API name(s) to filter to. If not specified, bindings for every SObject are
+                               included.
+      --active-only            Only show active bindings; hide inactive records.
+      --api-version=<value>    Override the api version used for api requests made by this command
+
+GLOBAL FLAGS
+  --flags-dir=<value>  Import flag values from a directory.
+  --json               Format output as json.
+
+DESCRIPTION
+  List the AT4DX Trigger Action Framework bindings configured in an org or local source, in execution order.
+
+  Reads AT4DX's Trigger Action Framework Custom Metadata Type — `DomainProcessBinding__mdt` — either from a live org or
+  from local Salesforce DX source, showing which criteria/action classes are bound to each SObject's trigger events (or
+  domain method tokens), and the order they run in. Exactly one of `--target-org` or `--source-dir` must be specified.
+
+  Unlike `simply aep at4dx binding list`, there's no "winner" here — every active record in a group (same SObject,
+  process context, and trigger operation or domain method token) runs, in `OrderOfExecution__c` order. Two active
+  records sharing the same order within a group are flagged as a collision, since AT4DX doesn't guarantee which one runs
+  first in that case.
+
+EXAMPLES
+  $ sf simply aep at4dx domain-process-binding list --target-org myOrg
+
+  $ sf simply aep at4dx domain-process-binding list --source-dir sfdx-source/core --source-dir sfdx-source/app
+
+  $ sf simply aep at4dx domain-process-binding list --target-org myOrg --sobject Account
+
+  $ sf simply aep at4dx domain-process-binding list --target-org myOrg --active-only --json
+```
+
+_See code: [@simplysf/simply-aep](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.6.1/packages/simply-aep/lib/commands/simply/aep/at4dx/domain-process-binding/list.js)_
+
+## `sf simply aep at4dx domain-process-binding set`
+
+Update an existing AT4DX Trigger Action Framework binding (DomainProcessBinding__mdt) in local source and/or a connected org.
+
+```
+USAGE
+  $ sf simply aep at4dx domain-process-binding set -n <value> [--json] [--flags-dir <value>] [-d <value>...] [-o <value>] [--api-version <value>]
+    [--wait <value>] [--label <value>] [-s <value>] [--sobject-alternate] [--process-context
+    TriggerExecution|DomainMethodExecution] [--trigger-operation
+    Before_Insert|After_Insert|Before_Update|After_Update|Before_Delete|After_Delete|After_Undelete]
+    [--domain-method-token <value>] [-t Action|Criteria] [-c <value>] [--order <value>] [--active]
+    [--execute-asynchronous] [--logical-inverse] [--prevent-recursive] [--description <value>] [--force]
+
+FLAGS
+  -c, --class-to-inject=<value>      The Apex class this binding wires in. If not given, the existing value is kept.
+  -d, --source-dir=<value>...        One or more paths to directories containing Salesforce DX source, searched for the
+                                     binding to update.
+  -n, --developer-name=<value>       (required) The DeveloperName of the binding to update.
+  -o, --target-org=<value>           Locate (when --source-dir isn't given) and/or deploy the binding to this org.
+  -s, --sobject=<value>              The SObject API name to bind against. If not given, the existing value is kept.
+  -t, --type=<option>                Whether this binding contributes a Criteria filter or an Action. If not given, the
+                                     existing value is kept.
+                                     <options: Action|Criteria>
+      --[no-]active                  IsActive__c. If not given, the existing value is kept.
+      --api-version=<value>          Override the api version used for api requests made by this command
+      --description=<value>          Description__c. If not given, the existing value is kept.
+      --domain-method-token=<value>  The domain method's process token this binding matches. If you change
+                                     --process-context to DomainMethodExecution, pass this too.
+      --[no-]execute-asynchronous    ExecuteAsynchronous__c. If not given, the existing value is kept.
+      --force                        Write (and deploy) even if validation finds an error-severity issue. Validation
+                                     still runs and its issues are still printed and returned.
+      --label=<value>                The binding's label. If not given, the existing label is kept.
+      --[no-]logical-inverse         LogicalInverse__c. If not given, the existing value is kept.
+      --order=<value>                OrderOfExecution__c. Numeric; decimals are allowed. If not given, the existing
+                                     value is kept.
+      --[no-]prevent-recursive       PreventRecursive__c. If not given, the existing value is kept.
+      --process-context=<option>     What kind of process invokes this binding: TriggerExecution or
+                                     DomainMethodExecution. If not given, the existing value is kept.
+                                     <options: TriggerExecution|DomainMethodExecution>
+      --[no-]sobject-alternate       Write --sobject to RelatedDomainBindingSObjectAlternate__c instead of
+                                     RelatedDomainBindingSObject__c, for a SObject that can't be referenced through an
+                                     EntityDefinition field at all (for example ServiceResource and other Setup
+                                     objects). If not given, the binding keeps whichever field it already uses — this
+                                     flag only needs to be passed to change it.
+      --trigger-operation=<option>   The trigger event this binding fires on. If you change --process-context to
+                                     TriggerExecution, pass this too.
+                                     <options: Before_Insert|After_Insert|Before_Update|After_Update|Before_Delete|After
+                                     _Delete|After_Undelete>
+      --wait=<value>                 [default: 33] Deploy poll timeout, in minutes. Only meaningful with --target-org.
+
+GLOBAL FLAGS
+  --flags-dir=<value>  Import flag values from a directory.
+  --json               Format output as json.
+
+DESCRIPTION
+  Update an existing AT4DX Trigger Action Framework binding (DomainProcessBinding__mdt) in local source and/or a
+  connected org.
+
+  Finds the binding named --developer-name in local source and/or a connected org, applies only the fields given as
+  flags — everything else, including which SObject reference field the binding uses, is preserved from the found record
+  — and rewrites the `DomainProcessBinding.<DeveloperName>.md-meta.xml` file. Validates the resulting binding —
+  alongside everything else already in scope — with the same rules `simply aep at4dx domain-process-binding validate`
+  uses, and refuses to write if that introduces an error-severity issue unless --force is passed.
+
+  When --source-dir is given, the binding is located there (searched across every directory given, same as
+  `list`/`validate`) and that exact file is rewritten; the found file is also deployed if --target-org is given. When
+  only --target-org is given, the binding is located and updated directly in the org via a temporary file, deployed,
+  then discarded — no working-tree footprint.
+
+  --developer-name identifies the binding to update and can't itself be changed by this command.
+
+EXAMPLES
+  $ sf simply aep at4dx domain-process-binding set --source-dir sfdx-source/core --source-dir sfdx-source/app --developer-name Account_Before_Insert_Assign_Owner --order 20 --no-active
+
+  $ sf simply aep at4dx domain-process-binding set --target-org myOrg --developer-name Account_Before_Insert_Assign_Owner --class-to-inject AccountAssignOwnerActionV2
+```
+
+_See code: [@simplysf/simply-aep](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.6.1/packages/simply-aep/lib/commands/simply/aep/at4dx/domain-process-binding/set.js)_
+
+## `sf simply aep at4dx domain-process-binding validate`
+
+Validate the AT4DX Trigger Action Framework bindings configured in an org or local source, failing when a wiring problem is found.
+
+```
+USAGE
+  $ sf simply aep at4dx domain-process-binding validate [--json] [--flags-dir <value>] [-o <value>] [--api-version <value>] [-d <value>...] [-s
+    <value>...]
+
+FLAGS
+  -d, --source-dir=<value>...  One or more paths to directories containing Salesforce DX source. Use this for
+                               local-source discovery.
+  -o, --target-org=<value>     Username or alias of the org to read bindings from. Use this for live-org discovery.
+  -s, --sobject=<value>...     SObject API name(s) to filter to. Applies only to issues that name an SObject; issues
+                               that span the whole scan (a duplicate DeveloperName, or a binding with no resolvable
+                               SObject) are always reported, since filtering could hide the exact conflict they exist to
+                               catch. If not specified, every issue is included.
+      --api-version=<value>    Override the api version used for api requests made by this command
+
+GLOBAL FLAGS
+  --flags-dir=<value>  Import flag values from a directory.
+  --json               Format output as json.
+
+DESCRIPTION
+  Validate the AT4DX Trigger Action Framework bindings configured in an org or local source, failing when a wiring
+  problem is found.
+
+  Reads AT4DX's Trigger Action Framework Custom Metadata Type — `DomainProcessBinding__mdt` — either from a live org or
+  from local Salesforce DX source, and checks it for problems `simply aep at4dx domain-process-binding list` doesn't
+  fail on: two active records silently fighting over the same execution slot, a binding with no resolvable SObject, a
+  binding whose declared process context doesn't match the field that's actually populated (so it never runs), the same
+  DeveloperName defined more than once, and an ambiguous SObject reference. Exactly one of `--target-org` or
+  `--source-dir` must be specified.
+
+  Prints a table of every issue found. When --sobject is specified, scan-wide issues (a duplicate DeveloperName, or a
+  binding with no resolvable SObject) print in their own section below the filtered table, since they can't be
+  attributed to one SObject. Exits non-zero when any issue is an error (a warning alone doesn't fail the command) — use
+  this in CI to gate on AT4DX wiring problems before they reach an org.
+
+EXAMPLES
+  $ sf simply aep at4dx domain-process-binding validate --target-org myOrg
+
+  $ sf simply aep at4dx domain-process-binding validate --source-dir sfdx-source/core --source-dir sfdx-source/app
+
+  $ sf simply aep at4dx domain-process-binding validate --target-org myOrg --sobject Account
+
+  $ sf simply aep at4dx domain-process-binding validate --target-org myOrg --json
+```
+
+_See code: [@simplysf/simply-aep](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.6.1/packages/simply-aep/lib/commands/simply/aep/at4dx/domain-process-binding/validate.js)_
+
 ## `sf simply apex execute`
 
 Execute anonymous Apex code.
@@ -44,7 +357,7 @@ FLAG DESCRIPTIONS
     The path to the local .apex file containing the anonymous Apex code to execute.
 ```
 
-_See code: [@simplysf/simply-apex](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-apex@1.6.2/packages/simply-apex/lib/commands/simply/apex/execute.js)_
+_See code: [@simplysf/simply-apex](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-apex@1.6.6/packages/simply-apex/lib/commands/simply/apex/execute.js)_
 
 ## `sf simply apex logs purge`
 
@@ -100,7 +413,7 @@ FLAG DESCRIPTIONS
     elapses, then throws.
 ```
 
-_See code: [@simplysf/simply-apex](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-apex@1.6.2/packages/simply-apex/lib/commands/simply/apex/logs/purge.js)_
+_See code: [@simplysf/simply-apex](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-apex@1.6.6/packages/simply-apex/lib/commands/simply/apex/logs/purge.js)_
 
 ## `sf simply apex trace setup`
 
@@ -160,7 +473,7 @@ FLAG DESCRIPTIONS
     Defaults to the current date/time.
 ```
 
-_See code: [@simplysf/simply-apex](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-apex@1.6.2/packages/simply-apex/lib/commands/simply/apex/trace/setup.js)_
+_See code: [@simplysf/simply-apex](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-apex@1.6.6/packages/simply-apex/lib/commands/simply/apex/trace/setup.js)_
 
 ## `sf simply apex trace silence`
 
@@ -224,7 +537,7 @@ FLAG DESCRIPTIONS
     Adds di_Binding, di_Module, di_PlatformCache, and di_Injector to the classes to silence.
 ```
 
-_See code: [@simplysf/simply-apex](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-apex@1.6.2/packages/simply-apex/lib/commands/simply/apex/trace/silence.js)_
+_See code: [@simplysf/simply-apex](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-apex@1.6.6/packages/simply-apex/lib/commands/simply/apex/trace/silence.js)_
 
 ## `sf simply community publish`
 
@@ -273,7 +586,81 @@ EXAMPLES
   $ sf simply community publish --target-org my-org --name "My Community" --ignore-errors
 ```
 
-_See code: [@simplysf/simply-community](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-community@0.1.0/packages/simply-community/lib/commands/simply/community/publish.js)_
+_See code: [@simplysf/simply-community](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-community@0.6.2/packages/simply-community/lib/commands/simply/community/publish.js)_
+
+## `sf simply community url set`
+
+Set an Experience Cloud site's custom domain (and optionally its URL path prefix) by patching the site's metadata in place.
+
+```
+USAGE
+  $ sf simply community url set -s <value> -d <value> [--json] [--flags-dir <value>] [-p <value>] [--primary] [--directory
+    <value>] [--deploy] [--publish] [-o <value>] [--api-version <value>] [-w <value>] [--ignore-missing-domain]
+
+FLAGS
+  -d, --domain=<value>         (required) Fully qualified custom domain to set, e.g. `partners.acme.com`. Must already
+                               be registered in the target org (Setup → Custom URLs); this command cannot register one.
+  -o, --target-org=<value>     Username or alias of the target org.
+  -p, --path-prefix=<value>    URL path prefix. When given, written to both the site file and the `Network` metadata
+                               file that references the site.
+  -s, --site=<value>           (required) CustomSite API name — the basename of `sites/<name>.site-meta.xml`.
+  -w, --wait=<value>           [default: 33] Minutes to wait for the deploy to complete before giving up. Matches `sf
+                               project deploy start`'s default of 33. Only relevant with --deploy.
+      --api-version=<value>    Override the api version used for api requests made by this command
+      --deploy                 Deploy the files this command changed, then restore their original contents so the
+                               working tree ends up unmodified. Requires --target-org.
+      --directory=<value>      Root directory to search for the site (and, if needed, network) metadata files. Defaults
+                               to searching every package directory listed in sfdx-project.json. Also used as the
+                               destination if the site file needs to be retrieved from --target-org, defaulting in that
+                               case to the project's default package directory.
+      --ignore-missing-domain  Downgrade "domain is not registered in this org" from an error to a warning, and proceed
+                               anyway. Has no effect without --target-org, since there's no check to ignore.
+      --[no-]primary           Whether the custom domain entry is the site's primary URL. Pass --no-primary to set it
+                               false. Defaults to true.
+      --publish                After a successful deploy, publish the site and wait for the publish to complete.
+                               Requires --deploy.
+
+GLOBAL FLAGS
+  --flags-dir=<value>  Import flag values from a directory.
+  --json               Format output as json.
+
+DESCRIPTION
+  Set an Experience Cloud site's custom domain (and optionally its URL path prefix) by patching the site's metadata in
+  place.
+
+  Patches `sites/<Site>.site-meta.xml` — replacing its `customWebAddresses` with a single entry for `--domain` — and,
+  when `--path-prefix` is given, also patches `urlPathPrefix` on both that file and the `Network` metadata file that
+  references the site. It does not touch anything else, and by default it does not deploy: this is a pre-deploy step
+  meant to run right before whatever deploy command the pipeline already runs.
+
+  Pass `--deploy` to also deploy just the files this command changed and restore their original contents afterwards, so
+  the working tree is left exactly as it found it — the only lasting change is in the org. Add `--publish` to publish
+  the site after a successful deploy.
+
+  A domain must already be registered in the target org (Setup → Custom URLs) before a site can be pointed at it; this
+  command cannot register one. When `--target-org` is given, it checks the domain is registered before writing anything,
+  so a typo surfaces immediately instead of as an opaque deploy failure.
+
+  If the site file isn't found locally and `--target-org` is given, it's retrieved from the org instead of erroring — a
+  warning says so, since a `--site` typo now triggers a retrieve rather than a fast local error. This only applies to
+  the site file; a missing `Network` metadata file (needed for `--path-prefix` or `--publish`) still errors even with
+  `--target-org`.
+
+EXAMPLES
+  $ sf simply community url set --site Partner_Portal --domain partners.acme.com
+
+  $ sf simply community url set --site Partner_Portal --domain partners.acme.com --path-prefix partners
+
+  $ sf simply community url set --site Partner_Portal --domain partners.acme.com --target-org my-org --ignore-missing-domain
+
+  $ sf simply community url set --site Partner_Portal --domain partners.acme.com --deploy --target-org my-org
+
+  $ sf simply community url set --site Partner_Portal --domain partners.acme.com --path-prefix partners --deploy --publish --target-org my-org
+
+  $ sf simply community url set --site Partner_Portal --domain partners.acme.com --deploy --target-org my-org # retrieves the site file first if it isn't found locally
+```
+
+_See code: [@simplysf/simply-community](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-community@0.6.2/packages/simply-community/lib/commands/simply/community/url/set.js)_
 
 ## `sf simply data file upload`
 
@@ -282,14 +669,17 @@ Upload a file to a Salesforce org.
 ```
 USAGE
   $ sf simply data file upload -o <value> --file-path <value> [--json] [--flags-dir <value>] [--api-version <value>]
-    [--first-publish-location-id <value>] [--title <value>]
+    [--max-api-usage <value>] [--first-publish-location-id <value>] [--title <value>]
 
 FLAGS
   -o, --target-org=<value>                 (required) Username or alias of the target org. Not required if the
                                            `target-org` configuration variable is already set.
       --api-version=<value>                Override the api version used for api requests made by this command
-      --file-path=<value>                  (required) Path to the file to upload.
+      --file-path=<value>                  (required) Path to the file to upload. May be relative or absolute; only the
+                                           file's name is sent to the org.
       --first-publish-location-id=<value>  Specify a record Id that the file should be linked to.
+      --max-api-usage=<value>              [default: 20] Maximum percentage of the org's remaining API requests this run
+                                           may consume.
       --title=<value>                      Specify the title for the file being uploaded.
 
 GLOBAL FLAGS
@@ -301,13 +691,32 @@ DESCRIPTION
 
   Uploads a file to a Salesforce org.
 
+  Only the file's name is sent to the org — Salesforce stores it as the ContentVersion's PathOnClient and derives
+  FileExtension and FileType from it — so the local directory the file came from is never uploaded.
+
 EXAMPLES
   $ sf simply data file upload --file-path fileToUpload.txt --target-org myTargetOrg
 
   $ sf simply data file upload --file-path fileToUpload.txt --first-publish-location-id 0019000000DmehK --target-org myTargetOrg
+
+FLAG DESCRIPTIONS
+  --max-api-usage=<value>  Maximum percentage of the org's remaining API requests this run may consume.
+
+    Checked before any request is made, so a run that would exceed its budget stops without doing partial work. The
+    percentage applies to the requests the org has left today, not to its daily maximum — an org that has already used
+    most of its allocation gets a proportionally smaller budget.
+
+    Note that uploading a file costs two API requests, not one: the upload itself, and a follow-up query for the
+    resulting ContentDocumentId.
+
+    A run that cannot finish within the org's remaining requests is refused regardless of this value. To allow a larger
+    share, raise it; to allow the maximum, pass 100.
+
+    If the org's remaining allocation can't be read — reading it falls back to the limits API, which needs the "View
+    Setup and Configuration" permission — the command warns and proceeds rather than failing.
 ```
 
-_See code: [@simplysf/simply-data](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-data@2.3.23/packages/simply-data/lib/commands/simply/data/file/upload.js)_
+_See code: [@simplysf/simply-data](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-data@2.4.1/packages/simply-data/lib/commands/simply/data/file/upload.js)_
 
 ## `sf simply data files download`
 
@@ -316,12 +725,14 @@ Download files from a Salesforce org.
 ```
 USAGE
   $ sf simply data files download -o <value> --where-content-version <value> [--json] [--flags-dir <value>] [--api-version
-    <value>] [--max-parallel-jobs <value>]
+    <value>] [--max-api-usage <value>] [--max-parallel-jobs <value>]
 
 FLAGS
   -o, --target-org=<value>             (required) Username or alias of the target org. Not required if the `target-org`
                                        configuration variable is already set.
       --api-version=<value>            Override the api version used for api requests made by this command
+      --max-api-usage=<value>          [default: 20] Maximum percentage of the org's remaining API requests this run may
+                                       consume.
       --max-parallel-jobs=<value>      [default: 1] Maximum number of parallel jobs.
       --where-content-version=<value>  (required) WHERE clause for ContentVersion query.
 
@@ -342,6 +753,21 @@ EXAMPLES
   $ sf simply data files download --where-content-version "IsLatest=true" --max-parallel-jobs 5 --target-org myTargetOrg
 
 FLAG DESCRIPTIONS
+  --max-api-usage=<value>  Maximum percentage of the org's remaining API requests this run may consume.
+
+    Checked before any request is made, so a run that would exceed its budget stops without doing partial work. The
+    percentage applies to the requests the org has left today, not to its daily maximum — an org that has already used
+    most of its allocation gets a proportionally smaller budget.
+
+    Note that uploading a file costs two API requests, not one: the upload itself, and a follow-up query for the
+    resulting ContentDocumentId.
+
+    A run that cannot finish within the org's remaining requests is refused regardless of this value. To allow a larger
+    share, raise it; to allow the maximum, pass 100.
+
+    If the org's remaining allocation can't be read — reading it falls back to the limits API, which needs the "View
+    Setup and Configuration" permission — the command warns and proceeds rather than failing.
+
   --max-parallel-jobs=<value>  Maximum number of parallel jobs.
 
     By default the plugin will only process a single file download at a time. You can increase this value to allow for
@@ -352,7 +778,7 @@ FLAG DESCRIPTIONS
     Provide a WHERE clause to allow the plugin to specify which ContentVersion records should be downloaded.
 ```
 
-_See code: [@simplysf/simply-data](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-data@2.3.23/packages/simply-data/lib/commands/simply/data/files/download.js)_
+_See code: [@simplysf/simply-data](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-data@2.4.1/packages/simply-data/lib/commands/simply/data/files/download.js)_
 
 ## `sf simply data files upload`
 
@@ -361,13 +787,15 @@ Upload files to a Salesforce org.
 ```
 USAGE
   $ sf simply data files upload -o <value> --file-path <value> [--json] [--flags-dir <value>] [--api-version <value>]
-    [--max-parallel-jobs <value>]
+    [--max-api-usage <value>] [--max-parallel-jobs <value>]
 
 FLAGS
   -o, --target-org=<value>         (required) Username or alias of the target org. Not required if the `target-org`
                                    configuration variable is already set.
       --api-version=<value>        Override the api version used for api requests made by this command
       --file-path=<value>          (required) Path to the csv file that specifies the upload.
+      --max-api-usage=<value>      [default: 20] Maximum percentage of the org's remaining API requests this run may
+                                   consume.
       --max-parallel-jobs=<value>  [default: 1] Maximum number of parallel jobs.
 
 GLOBAL FLAGS
@@ -391,13 +819,32 @@ FLAG DESCRIPTIONS
     The csv file must specify the columns PathOnClient and Title. Optionally, a FirstPublishLocationId can be specified
     to have it linked directly to a Salesforce record after upload.
 
+    PathOnClient is the local path each file is read from, and may be relative or absolute. Only the file's name is sent
+    to the org — Salesforce stores it as the ContentVersion's PathOnClient and derives FileExtension and FileType from
+    it — so the local directory the file came from is never uploaded.
+
+  --max-api-usage=<value>  Maximum percentage of the org's remaining API requests this run may consume.
+
+    Checked before any request is made, so a run that would exceed its budget stops without doing partial work. The
+    percentage applies to the requests the org has left today, not to its daily maximum — an org that has already used
+    most of its allocation gets a proportionally smaller budget.
+
+    Note that uploading a file costs two API requests, not one: the upload itself, and a follow-up query for the
+    resulting ContentDocumentId.
+
+    A run that cannot finish within the org's remaining requests is refused regardless of this value. To allow a larger
+    share, raise it; to allow the maximum, pass 100.
+
+    If the org's remaining allocation can't be read — reading it falls back to the limits API, which needs the "View
+    Setup and Configuration" permission — the command warns and proceeds rather than failing.
+
   --max-parallel-jobs=<value>  Maximum number of parallel jobs.
 
     By default the plugin will only process a single file upload at a time. You can increase this value to allow for
     quasi concurrent uploads. Please note that setting this value too high can cause performance issues.
 ```
 
-_See code: [@simplysf/simply-data](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-data@2.3.23/packages/simply-data/lib/commands/simply/data/files/upload.js)_
+_See code: [@simplysf/simply-data](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-data@2.4.1/packages/simply-data/lib/commands/simply/data/files/upload.js)_
 
 ## `sf simply document diff`
 
@@ -498,6 +945,87 @@ FLAG DESCRIPTIONS
 
 _See code: [@simplysf/simply-document](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-document@0.3.6/packages/simply-document/lib/commands/simply/document/generate.js)_
 
+## `sf simply flow delete`
+
+Deactivate and delete every version of one or more Flows.
+
+```
+USAGE
+  $ sf simply flow delete -o <value> [--json] [--flags-dir <value>] [--api-version <value>] [-f <value>] [-n <value>...]
+
+FLAGS
+  -f, --file=<value>          Path to a destructiveChanges.xml/package.xml-shaped file
+  -n, --flow-name=<value>...  Flow DeveloperName(s) to delete
+  -o, --target-org=<value>    (required) Username or alias of the target org. Not required if the `target-org`
+                              configuration variable is already set.
+      --api-version=<value>   Override the api version used for api requests made by this command
+
+GLOBAL FLAGS
+  --flags-dir=<value>  Import flag values from a directory.
+  --json               Format output as json.
+
+DESCRIPTION
+  Deactivate and delete every version of one or more Flows.
+
+  Deactivates every active version of each named Flow (so it no longer counts as "active" against Salesforce's
+  restriction on deleting a Flow that still has one), then hard-deletes every version of it via the Tooling API. This is
+  the pre-step a destructive metadata deploy needs before it can remove a Flow.
+
+  Flows can be named either via `--file`, pointing at a `destructiveChanges.xml`/`package.xml`-shaped file whose `Flow`
+  type members are the flows to delete, or via one or more `--flow-name` flags for scripted or one-off use. Exactly one
+  of the two must be given.
+
+  A failure deactivating or deleting one flow doesn't stop the others from being attempted — every failure is collected
+  and reported, and the command exits non-zero if any occurred.
+
+EXAMPLES
+  $ sf simply flow delete --file destructive/pre/destructiveChanges.xml --target-org myOrg
+
+  $ sf simply flow delete --flow-name My_Flow --flow-name Another_Flow --target-org myOrg
+
+  $ sf simply flow delete --file destructive/pre/destructiveChanges.xml --target-org myOrg --json
+```
+
+_See code: [@simplysf/simply-flow](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-flow@0.2.0/packages/simply-flow/lib/commands/simply/flow/delete.js)_
+
+## `sf simply flow version prune`
+
+Delete obsolete versions of Flows found in local source.
+
+```
+USAGE
+  $ sf simply flow version prune -o <value> -d <value>... [--json] [--flags-dir <value>] [--api-version <value>]
+  [--dry-run]
+
+FLAGS
+  -d, --source-dir=<value>...  (required) Directories to scan for *.flow-meta.xml files
+  -o, --target-org=<value>     (required) Username or alias of the target org. Not required if the `target-org`
+                               configuration variable is already set.
+      --api-version=<value>    Override the api version used for api requests made by this command
+      --dry-run                List obsolete versions without deleting them
+
+GLOBAL FLAGS
+  --flags-dir=<value>  Import flag values from a directory.
+  --json               Format output as json.
+
+DESCRIPTION
+  Delete obsolete versions of Flows found in local source.
+
+  Scans one or more source directories for `*.flow-meta.xml` files, then deletes any Tooling API Flow version already
+  `Status = 'Obsolete'` for those flows — keeping an org's Flow version history from accumulating indefinitely. Unlike
+  `simply flow delete`, this never touches an active Flow; it only removes versions the org itself already marked
+  obsolete.
+
+  Use `--dry-run` to see what would be deleted without deleting anything.
+
+EXAMPLES
+  $ sf simply flow version prune --target-org myOrg --source-dir sfdx-source/core
+
+  $ sf simply flow version prune --target-org myOrg --source-dir sfdx-source/core --dry-run
+```
+
+_See code: [@simplysf/simply-flow](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-flow@0.2.0/packages/simply-flow/lib/commands/simply/flow/version/prune.js)_
+
 ## `sf simply package dependencies install`
 
 Install package dependencies for a Salesforce project.
@@ -505,33 +1033,46 @@ Install package dependencies for a Salesforce project.
 ```
 USAGE
   $ sf simply package dependencies install -o <value> [--json] [--flags-dir <value>] [-a all|package] [--api-version <value>] [-z
-    <value>] [-i All|Delta|Upgrade] [-k <value>...] [-r] [--output-file <value>] [-b <value>] [-s AllUsers|AdminsOnly]
-    [-v <value>] [-t DeprecateOnly|Mixed|Delete] [-w <value>]
+    <value>] [-i All|Delta|Upgrade] [-k <value>...] [-r] [--output-file <value>] [--package-retry-attempts <value>...]
+    [-b <value>] [--retry-attempts <value>] [--retry-backoff <value>] [-s AllUsers|AdminsOnly] [-v <value>] [-t
+    DeprecateOnly|Mixed|Delete] [-w <value>]
 
 FLAGS
-  -a, --apex-compile=<option>        Compile all Apex in the org and package, or only Apex in the package; unlocked
-                                     packages only.
-                                     <options: all|package>
-  -b, --publish-wait=<value>         Maximum number of minutes to wait for the Subscriber Package Version ID to become
-                                     available in the target org before canceling the install request.
-  -i, --install-type=<option>        [default: Upgrade] Install all packages, only deltas, or only newer versions.
-                                     <options: All|Delta|Upgrade>
-  -k, --installation-key=<value>...  Installation key for key-protected packages
-  -o, --target-org=<value>           (required) Username or alias of the target org. Not required if the `target-org`
-                                     configuration variable is already set.
-  -r, --no-prompt                    Don't prompt for confirmation.
-  -s, --security-type=<option>       [default: AdminsOnly] Security access type for the installed package. (deprecation
-                                     notice: The default --security-type value will change from AllUsers to AdminsOnly
-                                     in v47.0 or later.)
-                                     <options: AllUsers|AdminsOnly>
-  -t, --upgrade-type=<option>        [default: Mixed] Upgrade type for the package installation; available only for
-                                     unlocked packages.
-                                     <options: DeprecateOnly|Mixed|Delete>
-  -v, --target-dev-hub=<value>       Username or alias of the Dev Hub org.
-  -w, --wait=<value>                 Number of minutes to wait for installation status.
-  -z, --branch=<value>               Package branch to consider when specifiying a Package/VersionNumber combination
-      --api-version=<value>          Override the api version used for api requests made by this command
-      --output-file=<value>          Path to write a JSON install report to.
+  -a, --apex-compile=<option>              Compile all Apex in the org and package, or only Apex in the package;
+                                           unlocked packages only.
+                                           <options: all|package>
+  -b, --publish-wait=<value>               Maximum number of minutes to wait for the Subscriber Package Version ID to
+                                           become available in the target org before canceling the install request.
+  -i, --install-type=<option>              [default: Upgrade] Install all packages, only deltas, or only newer versions.
+                                           <options: All|Delta|Upgrade>
+  -k, --installation-key=<value>...        Installation key for key-protected packages
+  -o, --target-org=<value>                 (required) Username or alias of the target org. Not required if the
+                                           `target-org` configuration variable is already set.
+  -r, --no-prompt                          Don't prompt for confirmation.
+  -s, --security-type=<option>             [default: AdminsOnly] Security access type for the installed package.
+                                           (deprecation notice: The default --security-type value will change from
+                                           AllUsers to AdminsOnly in v47.0 or later.)
+                                           <options: AllUsers|AdminsOnly>
+  -t, --upgrade-type=<option>              [default: Mixed] Upgrade type for the package installation; available only
+                                           for unlocked packages.
+                                           <options: DeprecateOnly|Mixed|Delete>
+  -v, --target-dev-hub=<value>             Username or alias of the Dev Hub org.
+  -w, --wait=<value>                       Number of minutes to wait for installation status.
+  -z, --branch=<value>                     Package branch to consider when specifiying a Package/VersionNumber
+                                           combination
+      --api-version=<value>                Override the api version used for api requests made by this command
+      --output-file=<value>                Path to write a JSON install report to.
+      --package-retry-attempts=<value>...  Number of retry attempts for a specific package, overriding --retry-attempts
+                                           for that package only.
+      --retry-attempts=<value>             Number of additional attempts to make if a package install fails, before
+                                           giving up on that package. Defaults to 0 (no retries). Does not apply when
+                                           the install is still In-Progress when polling times out, since retrying could
+                                           race or duplicate an install that may still complete server-side. Overridden
+                                           per-package by --package-retry-attempts.
+      --retry-backoff=<value>              [default: 2] Factor the delay between install retries grows by after each
+                                           failed attempt (e.g. 2 doubles the delay each time). Only relevant when a
+                                           package has retries enabled via --retry-attempts or --package-retry-attempts.
+                                           Applies to every package's retries; there is no per-package override.
 
 GLOBAL FLAGS
   --flags-dir=<value>  Import flag values from a directory.
@@ -550,6 +1091,10 @@ EXAMPLES
   $ sf simply package dependencies install --target-org myTargetOrg --target-dev-hub myTargetDevHub --installation-key "MyPackage1Alias:MyPackage1Key" --installation-key "MyPackage2Alias:MyPackage2Key"
 
   $ sf simply package dependencies install --target-org myTargetOrg --target-dev-hub myTargetDevHub --output-file install-report.json
+
+  $ sf simply package dependencies install --target-org myTargetOrg --target-dev-hub myTargetDevHub --retry-attempts 3 --retry-backoff 2
+
+  $ sf simply package dependencies install --target-org myTargetOrg --target-dev-hub myTargetDevHub --retry-attempts 1 --package-retry-attempts "MyPackage1Alias:5"
 
 FLAG DESCRIPTIONS
   -a, --apex-compile=all|package
@@ -603,9 +1148,17 @@ FLAG DESCRIPTIONS
     addition to the normal terminal output you can continue to monitor as the command runs. Each entry includes the
     package name, the SubscriberPackageVersionId already installed in the org (if any), the SubscriberPackageVersionId
     that was attempted, and the decision made (Skipped, Installed, Installing, or Failed).
+
+  --package-retry-attempts=<value>...
+
+    Number of retry attempts for a specific package, overriding --retry-attempts for that package only.
+
+    Retry attempts for a specific package in the key:value format of SubscriberPackageVersionId:RetryAttempts. You can
+    use an alias in place of the SubscriberPackageVersionId. Repeat this flag to set overrides for multiple packages.
+    Packages not listed here use --retry-attempts.
 ```
 
-_See code: [@simplysf/simply-package](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-package@2.8.13/packages/simply-package/lib/commands/simply/package/dependencies/install.js)_
+_See code: [@simplysf/simply-package](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-package@2.10.2/packages/simply-package/lib/commands/simply/package/dependencies/install.js)_
 
 ## `sf simply package dependencies manage`
 
@@ -664,7 +1217,7 @@ FLAG DESCRIPTIONS
     version without interactive prompts. Mutually exclusive with --update-to-latest.
 ```
 
-_See code: [@simplysf/simply-package](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-package@2.8.13/packages/simply-package/lib/commands/simply/package/dependencies/manage.js)_
+_See code: [@simplysf/simply-package](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-package@2.10.2/packages/simply-package/lib/commands/simply/package/dependencies/manage.js)_
 
 ## `sf simply package version cleanup`
 
@@ -718,7 +1271,67 @@ FLAG DESCRIPTIONS
     does not match this matcher is deleted. Mutually exclusive with --matcher.
 ```
 
-_See code: [@simplysf/simply-package](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-package@2.8.13/packages/simply-package/lib/commands/simply/package/version/cleanup.js)_
+_See code: [@simplysf/simply-package](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-package@2.10.2/packages/simply-package/lib/commands/simply/package/version/cleanup.js)_
+
+## `sf simply package version get`
+
+Get a package version from sfdx-project.json.
+
+```
+USAGE
+  $ sf simply package version get -p <value> [--json] [--flags-dir <value>] [-d <value>]
+
+FLAGS
+  -d, --directory=<value>  Package directory to search.
+  -p, --package=<value>    (required) Package name or alias to look up.
+
+GLOBAL FLAGS
+  --flags-dir=<value>  Import flag values from a directory.
+  --json               Format output as json.
+
+DESCRIPTION
+  Get a package version from sfdx-project.json.
+
+  Reads the version a package is declared at in your project's sfdx-project.json and prints it, so a script doesn't have
+  to parse the project file itself.
+
+  Both dependencies and the project's own package are searched. A dependency declared as an alias (test-package@0.1.0+2)
+  resolves to the version portion of the alias; a dependency declared as a package name plus a versionNumber resolves to
+  that versionNumber; a dependency declared as a raw ID resolves through packageAliases. A package directory that builds
+  the package resolves to that directory's versionNumber.
+
+  The version is returned exactly as it appears in the project file — no normalizing between the 0.1.0+2, 57.0.0-3, and
+  1.2.3.LATEST forms, since each means something to the tool that consumes it.
+
+  This command reads the project file only. It never contacts an org or a Dev Hub, so it can run in a pipeline before
+  any authentication step.
+
+EXAMPLES
+  Get the version of a dependency:
+
+    $ sf simply package version get --package test-package
+
+  Get the version of the package the project itself builds:
+
+    $ sf simply package version get --package my-package
+
+  Get a dependency's version from one package directory:
+
+    $ sf simply package version get --package test-package --directory force-app
+
+FLAG DESCRIPTIONS
+  -d, --directory=<value>  Package directory to search.
+
+    The path of a single package directory to search, matching a "path" value in packageDirectories. Use this when the
+    same package is declared at different versions in more than one package directory.
+
+  -p, --package=<value>  Package name or alias to look up.
+
+    The package name as it appears in sfdx-project.json, without a version suffix. For a dependency declared as
+    "test-package@0.1.0+2", pass "test-package".
+```
+
+_See code: [@simplysf/simply-package](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-package@2.10.2/packages/simply-package/lib/commands/simply/package/version/get.js)_
 
 ## `sf simply permissions analyze`
 
@@ -762,7 +1375,50 @@ FLAG DESCRIPTIONS
     The path to write the generated HTML report to.
 ```
 
-_See code: [@simplysf/simply-permissions](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-permissions@1.2.28/packages/simply-permissions/lib/commands/simply/permissions/analyze.js)_
+_See code: [@simplysf/simply-permissions](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-permissions@1.3.0/packages/simply-permissions/lib/commands/simply/permissions/analyze.js)_
+
+## `sf simply permissions assignment delete`
+
+Delete PermissionSetAssignments for one or more PermissionSets/PermissionSetGroups.
+
+```
+USAGE
+  $ sf simply permissions assignment delete -o <value> [--json] [--flags-dir <value>] [--api-version <value>] [-f <value>]
+    [--permission-set-name <value>...] [--permission-set-group-name <value>...]
+
+FLAGS
+  -f, --file=<value>                          Path to a destructiveChanges.xml/package.xml-shaped file
+  -o, --target-org=<value>                    (required) Username or alias of the target org. Not required if the
+                                              `target-org` configuration variable is already set.
+      --api-version=<value>                   Override the api version used for api requests made by this command
+      --permission-set-group-name=<value>...  PermissionSetGroup DeveloperName(s) to delete assignments for
+      --permission-set-name=<value>...        PermissionSet Name(s) to delete assignments for
+
+GLOBAL FLAGS
+  --flags-dir=<value>  Import flag values from a directory.
+  --json               Format output as json.
+
+DESCRIPTION
+  Delete PermissionSetAssignments for one or more PermissionSets/PermissionSetGroups.
+
+  Deletes every `PermissionSetAssignment` against the named `PermissionSet`s and/or `PermissionSetGroup`s — the pre-step
+  a destructive metadata deploy of the permission set/group itself needs, so it doesn't fail or leave orphaned
+  assignments behind.
+
+  Targets can be named either via `--file`, pointing at a `destructiveChanges.xml`/`package.xml`-shaped file whose
+  `PermissionSet`/`PermissionSetGroup` type members are the targets, or via
+  `--permission-set-name`/`--permission-set-group-name` flags (which may be combined with each other) for scripted or
+  one-off use. `--file` is mutually exclusive with the two explicit-name flags.
+
+EXAMPLES
+  $ sf simply permissions assignment delete --file destructive/pre/destructiveChanges.xml --target-org myOrg
+
+  $ sf simply permissions assignment delete --permission-set-name My_Permission_Set --target-org myOrg
+
+  $ sf simply permissions assignment delete --permission-set-group-name My_Permission_Set_Group --target-org myOrg
+```
+
+_See code: [@simplysf/simply-permissions](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-permissions@1.3.0/packages/simply-permissions/lib/commands/simply/permissions/assignment/delete.js)_
 
 ## `sf simply permissions build`
 
@@ -829,7 +1485,7 @@ FLAG DESCRIPTIONS
     'view-all' additionally grants view-all-records, and 'modify-all' grants full CRUD and modify-all-records access.
 ```
 
-_See code: [@simplysf/simply-permissions](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-permissions@1.2.28/packages/simply-permissions/lib/commands/simply/permissions/build.js)_
+_See code: [@simplysf/simply-permissions](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-permissions@1.3.0/packages/simply-permissions/lib/commands/simply/permissions/build.js)_
 
 ## `sf simply project update api-version`
 
@@ -909,7 +1565,7 @@ FLAG DESCRIPTIONS
     A `.csv` file processed as the flat CSV flow, or a `.xlsx`/`.xls` file processed as the Excel flow.
 ```
 
-_See code: [@simplysf/simply-schema](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-schema@0.3.14/packages/simply-schema/lib/commands/simply/schema/generate.js)_
+_See code: [@simplysf/simply-schema](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-schema@0.3.18/packages/simply-schema/lib/commands/simply/schema/generate.js)_
 
 ## `sf simply schema visualize`
 
@@ -971,7 +1627,7 @@ FLAG DESCRIPTIONS
     specified, every discovered object is included. If not specified, every object matching `--object-type` is included.
 ```
 
-_See code: [@simplysf/simply-schema](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-schema@0.3.14/packages/simply-schema/lib/commands/simply/schema/visualize.js)_
+_See code: [@simplysf/simply-schema](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-schema@0.3.18/packages/simply-schema/lib/commands/simply/schema/visualize.js)_
 
 ## `sf simply sobject backup`
 
@@ -1032,7 +1688,7 @@ FLAG DESCRIPTIONS
     OwnerId, are skipped.
 ```
 
-_See code: [@simplysf/simply-sobject](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-sobject@1.6.2/packages/simply-sobject/lib/commands/simply/sobject/backup.js)_
+_See code: [@simplysf/simply-sobject](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-sobject@1.6.6/packages/simply-sobject/lib/commands/simply/sobject/backup.js)_
 
 ## `sf simply sobject deduplicate`
 
@@ -1085,7 +1741,7 @@ FLAG DESCRIPTIONS
     The directory to write the generated CSV files to. Defaults to ./temp/<primaryObjectApiName>.
 ```
 
-_See code: [@simplysf/simply-sobject](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-sobject@1.6.2/packages/simply-sobject/lib/commands/simply/sobject/deduplicate.js)_
+_See code: [@simplysf/simply-sobject](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-sobject@1.6.6/packages/simply-sobject/lib/commands/simply/sobject/deduplicate.js)_
 
 ## `sf simply sobject history export`
 
@@ -1139,7 +1795,7 @@ FLAG DESCRIPTIONS
     The start of the date range to export history for, inclusive.
 ```
 
-_See code: [@simplysf/simply-sobject](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-sobject@1.6.2/packages/simply-sobject/lib/commands/simply/sobject/history/export.js)_
+_See code: [@simplysf/simply-sobject](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-sobject@1.6.6/packages/simply-sobject/lib/commands/simply/sobject/history/export.js)_
 
 ## `sf simply sobject history query`
 
@@ -1195,7 +1851,7 @@ FLAG DESCRIPTIONS
     The API name of the SObject to query field history for (e.g. Account or Custom_Object__c).
 ```
 
-_See code: [@simplysf/simply-sobject](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-sobject@1.6.2/packages/simply-sobject/lib/commands/simply/sobject/history/query.js)_
+_See code: [@simplysf/simply-sobject](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-sobject@1.6.6/packages/simply-sobject/lib/commands/simply/sobject/history/query.js)_
 
 ## `sf simply sobject history schema`
 
@@ -1233,4 +1889,4 @@ FLAG DESCRIPTIONS
     The directory to save the generated CSV and HTML report files to. Defaults to the current directory.
 ```
 
-_See code: [@simplysf/simply-sobject](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-sobject@1.6.2/packages/simply-sobject/lib/commands/simply/sobject/history/schema.js)_
+_See code: [@simplysf/simply-sobject](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-sobject@1.6.6/packages/simply-sobject/lib/commands/simply/sobject/history/schema.js)_

@@ -1,6 +1,6 @@
 # 0012 — `simply aep at4dx domain-process-binding create` / `set`
 
-**Status:** Draft
+**Status:** Implemented (PR #131)
 **Package:** `packages/simply-aep-core`, `packages/simply-aep`
 **Date:** 2026-08-26
 

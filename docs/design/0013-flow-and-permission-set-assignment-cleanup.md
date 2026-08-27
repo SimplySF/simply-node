@@ -1,6 +1,6 @@
 # 0013 — Flow and permission-set-assignment cleanup for destructive deploys
 
-**Status:** Draft
+**Status:** Implemented (PR #133)
 **Package:** new `packages/simply-flow`, `packages/simply-permissions`, `packages/simply-core`
 **Date:** 2026-08-27
 
