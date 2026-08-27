@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.5.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-core%401.4.0...%40simplysf%2Fsimply-core%401.5.0) (2026-08-27)
+
+### Features
+
+- **simply-core:** add readPackageManifestMembers ([b5ddeb3](https://github.com/SimplySF/simply-node/commit/b5ddeb394c4398fbba38232e815eb947052787ba))
+
 # [1.4.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-core%401.3.0...%40simplysf%2Fsimply-core%401.4.0) (2026-08-24)
 
 ### Features

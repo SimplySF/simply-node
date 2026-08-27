@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.2.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply%403.1.0...%40simplysf%2Fsimply%403.2.0) (2026-08-27)
+
+### Features
+
+- **simply-flow:** add flow delete and version prune commands ([997ed35](https://github.com/SimplySF/simply-node/commit/997ed3503a37251e74e68ae63c25108c22cd0887))
+- **simply-permissions:** add assignment delete command ([3dfdc95](https://github.com/SimplySF/simply-node/commit/3dfdc9559f02662cfa2f173b83d875dcb3409d6c))
+
 # [3.1.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply%403.0.1...%40simplysf%2Fsimply%403.1.0) (2026-08-27)
 
 ### Features

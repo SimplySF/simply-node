@@ -1,7 +1,7 @@
 {
   "name": "@simplysf/simply-apex",
   "description": "Utilities for working with Apex",
-  "version": "1.6.5",
+  "version": "1.6.6",
   "author": "@ClayChipps",
   "homepage": "https://github.com/SimplySF/simply-node",
   "bugs": "https://github.com/SimplySF/simply-node/issues",
@@ -69,7 +69,7 @@
     "@salesforce/core": "^8.30.0",
     "@salesforce/kit": "^3.2.6",
     "@salesforce/sf-plugins-core": "^12.2.16",
-    "@simplysf/simply-core": "workspace:^1.4.0",
+    "@simplysf/simply-core": "workspace:^1.5.0",
     "@simplysf/simply-plugin-kit": "workspace:^1.0.4",
     "zod": "^4.1.12"
   },
