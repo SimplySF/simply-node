@@ -66,17 +66,21 @@ Resolution:
 ```sh
 sf simply flow version prune --target-org my-org --source-dir sfdx-source/core
 sf simply flow version prune --target-org my-org --source-dir sfdx-source/core --dry-run
+sf simply flow version prune --target-org my-org --flow-name My_Flow --flow-name Another_Flow
 ```
 
-| Flag           | Char | Required | Purpose                                                                                                                                                                                                                              |
-| -------------- | ---- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `--target-org` | `-o` | Yes      |                                                                                                                                                                                                                                      |
-| `--source-dir` | `-d` | Yes      | One or more directories to glob `**/*.flow-meta.xml` under — replaces the original's implicit glob from `cwd`, matching every other command in this repo taking an explicit source scope rather than assuming the working directory. |
-| `--dry-run`    |      | No       | List what would be deleted without deleting anything. Default `false`. New relative to the original, which had no preview before deleting org-wide flow-version history.                                                             |
+| Flag           | Char | Required | Purpose                                                                                                                                                                                                                                                                                               |
+| -------------- | ---- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--target-org` | `-o` | Yes      |                                                                                                                                                                                                                                                                                                       |
+| `--source-dir` | `-d` | One of\* | One or more directories to glob `**/*.flow-meta.xml` under — replaces the original's implicit glob from `cwd`, matching every other command in this repo taking an explicit source scope rather than assuming the working directory.                                                                  |
+| `--flow-name`  | `-n` | One of\* | Explicit Flow `DeveloperName`(s), repeatable — an alternative to `--source-dir` for scripted or one-off use, matching `flow delete`'s `--flow-name`. Added after the initial release, when it became clear a caller who already knows the flow name shouldn't need a local checkout just to prune it. |
+| `--dry-run`    |      | No       | List what would be deleted without deleting anything. Default `false`. New relative to the original, which had no preview before deleting org-wide flow-version history.                                                                                                                              |
+
+\* Exactly one of `--source-dir`/`--flow-name` — same XOR shape as `flow delete`'s `--manifest`/`--flow-name`.
 
 Resolution:
 
-1. Glob `**/*.flow-meta.xml` under each `--source-dir`; derive Flow developer names from file basenames.
+1. Resolve the flow developer names: glob `**/*.flow-meta.xml` under each `--source-dir` and derive names from file basenames, or `--flow-name` directly.
 2. Tooling API, chunked: `SELECT Id, Definition.DeveloperName FROM Flow WHERE Status = 'Obsolete' AND Definition.DeveloperName IN (...)`.
 3. `--dry-run`: print/return the candidate list, delete nothing.
 4. Otherwise: delete each version (failure-collection, not throw-on-first, same as `flow delete`), print a summary, `process.exitCode = 1` on any failure.
@@ -151,15 +155,16 @@ Parses a `<Package><types><name>...</name><members>...</members></types>...</Pac
 
 **Unit/command** (`simply-flow`, `simply-permissions`), mocked `Connection`:
 
-| Case                                                                                  | What it pins down                                                                               |
-| ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `flow delete --file` with no `Flow` members in the file                               | No-op, `info.nothingToDelete`, no queries issued.                                               |
-| `flow delete`: one deactivation fails, others succeed                                 | Failure recorded in `failures`, remaining flows still processed; `process.exitCode === 1`.      |
-| `flow version prune --dry-run`                                                        | Candidate list returned/printed; no delete call made.                                           |
-| `assignment delete --file` with both `PermissionSet` and `PermissionSetGroup` members | Both queries run, results unioned, deleted in one chunked pass.                                 |
-| `assignment delete`: more than 200 matching assignments                               | Deletes in multiple 200-record chunks.                                                          |
-| `--file` and an explicit name flag both given (any of the three commands)             | Rejected — mutually exclusive input sources.                                                    |
-| Every query's `IN (...)` clause                                                       | Built via `chunkedInQuery`/`escapeSoqlLiteral` — a name containing `'` doesn't break the query. |
+| Case                                                                                     | What it pins down                                                                               |
+| ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `flow delete --file` with no `Flow` members in the file                                  | No-op, `info.nothingToDelete`, no queries issued.                                               |
+| `flow delete`: one deactivation fails, others succeed                                    | Failure recorded in `failures`, remaining flows still processed; `process.exitCode === 1`.      |
+| `flow version prune --dry-run`                                                           | Candidate list returned/printed; no delete call made.                                           |
+| `flow version prune --flow-name`                                                         | Pruned without a `--source-dir` scan; the flag's names are used directly in the query.          |
+| `assignment delete --file` with both `PermissionSet` and `PermissionSetGroup` members    | Both queries run, results unioned, deleted in one chunked pass.                                 |
+| `assignment delete`: more than 200 matching assignments                                  | Deletes in multiple 200-record chunks.                                                          |
+| `--file`/`--source-dir` and an explicit name flag both given (any of the three commands) | Rejected — mutually exclusive input sources.                                                    |
+| Every query's `IN (...)` clause                                                          | Built via `chunkedInQuery`/`escapeSoqlLiteral` — a name containing `'` doesn't break the query. |
 
 **NUT** — none proposed initially, matching most commands in this repo; revisit if a real destructive-deploy scenario needs end-to-end coverage against a scratch org.
 
@@ -201,3 +206,9 @@ A few places where implementing this taught something the design above didn't an
   than the generic `--file` this doc originally proposed. `permissions assignment delete` was left on
   `--file`/`-f` — revisit for the same rename if it turns out inconsistency between the two sibling
   commands is confusing in practice.
+- **`flow version prune` gained a `--flow-name` flag** after implementation, making `--source-dir`
+  optional and adding the same one-of-two XOR shape `flow delete` already has between its manifest/file
+  input and explicit names. Motivation: pruning obsolete versions for a flow you already know the name
+  of shouldn't require a local checkout just to glob a `*.flow-meta.xml` file that only exists to
+  supply the name the command already has another way to get. No new query shape was needed — the
+  resolved `flowNames` list feeds the same `chunkedInQuery` call regardless of which flag supplied it.
