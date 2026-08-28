@@ -1,7 +1,7 @@
 {
   "name": "@simplysf/simply-package",
   "description": "Utilities for working with packages",
-  "version": "2.10.2",
+  "version": "2.10.3",
   "author": "@ClayChipps",
   "homepage": "https://github.com/SimplySF/simply-node",
   "bugs": "https://github.com/SimplySF/simply-node/issues",

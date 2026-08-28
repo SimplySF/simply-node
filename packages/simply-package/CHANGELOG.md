@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.10.3](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-package%402.10.2...%40simplysf%2Fsimply-package%402.10.3) (2026-08-28)
+
+### Bug Fixes
+
+- **simply-package:** match package directory paths across OS separators in dependencies manage ([4b7236e](https://github.com/SimplySF/simply-node/commit/4b7236ea20718c8f9d4fbaecfd35dcb655f1b988))
+
 ## [2.10.2](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-package%402.10.1...%40simplysf%2Fsimply-package%402.10.2) (2026-08-27)
 
 **Note:** Version bump only for package @simplysf/simply-package
