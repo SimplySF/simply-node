@@ -23,7 +23,7 @@ import { DependencyChange } from '../../src/schemas/manage/dependencyChange.js';
 // `SfProject.getPackageDirectories()` normalizes that path to the OS separator. On Windows this
 // produces a backslash-separated path, which must still match the forward-slash path stored in
 // the raw JSON when `applyChanges` looks up the directory to patch.
-function buildFakeProject(rawPath: string, osNormalizedPath: string) {
+function buildFakeProject(rawPath: string, osNormalizedPath: string, initialAliases: Record<string, string> = {}) {
   const contents = {
     packageDirectories: [
       {
@@ -34,7 +34,7 @@ function buildFakeProject(rawPath: string, osNormalizedPath: string) {
         dependencies: [{ package: '04t100000000000AAA' }],
       },
     ],
-    packageAliases: {},
+    packageAliases: initialAliases,
     namespace: '',
     sourceApiVersion: '62.0',
   };
@@ -95,5 +95,36 @@ describe('buildProjectService applyChanges', () => {
     const written = getWritten();
     expect(written).to.not.be.undefined;
     expect(written!.packageDirectories[0].dependencies[0].package).to.equal('MyPackage@1.0.1-1');
+  });
+
+  it('writes packageAliases sorted alphabetically by key', async () => {
+    const { project, getWritten } = buildFakeProject('force-app/main/default', 'force-app/main/default', {
+      ZPackage: '0Ho900000000000AAA',
+      APackage: '0Ho100000000000AAA',
+    });
+    const service = await buildProjectService(project);
+
+    const dependenciesByDirectory = service.getDependenciesByDirectory();
+    const dirPath = [...dependenciesByDirectory.keys()][0];
+
+    const change: DependencyChange = {
+      oldAlias: 'MyPackage@1.0.0-1',
+      oldDependency: dependenciesByDirectory.get(dirPath)![0],
+      newAlias: 'MPackage@1.0.1-1',
+      newSubscriberPackageVersionId: '04t500000000001AAA',
+      newPackage2Id: '0Ho500000000000AAA',
+      isSameAsOld: false,
+    };
+
+    await service.applyChanges(new Map([[dirPath, [change]]]));
+
+    const written = getWritten();
+    expect(written).to.not.be.undefined;
+    expect(Object.keys(written!.packageAliases)).to.deep.equal([
+      'APackage',
+      'MPackage',
+      'MPackage@1.0.1-1',
+      'ZPackage',
+    ]);
   });
 });

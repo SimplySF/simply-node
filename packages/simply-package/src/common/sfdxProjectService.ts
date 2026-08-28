@@ -170,9 +170,11 @@ export async function buildProjectService(project: SfProject): Promise<SfdxProje
       }
     }
 
+    const sortedAliases = Object.fromEntries(Object.entries(updatedAliases).sort(([a], [b]) => a.localeCompare(b)));
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
     projectJson.set('packageDirectories', updatedDirs as any);
-    projectJson.set('packageAliases', updatedAliases);
+    projectJson.set('packageAliases', sortedAliases);
     await projectJson.write();
   }
 
