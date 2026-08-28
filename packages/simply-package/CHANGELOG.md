@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.10.4](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-package%402.10.3...%40simplysf%2Fsimply-package%402.10.4) (2026-08-28)
+
+### Bug Fixes
+
+- **simply-package:** sort package aliases in dependencies manage ([b704293](https://github.com/SimplySF/simply-node/commit/b704293af62dedad46d39e8338ab98944e7135ec))
+
 ## [2.10.3](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-package%402.10.2...%40simplysf%2Fsimply-package%402.10.3) (2026-08-28)
 
 ### Bug Fixes
