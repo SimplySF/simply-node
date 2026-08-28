@@ -228,8 +228,8 @@
     "alias": [],
     "command": "simply:flow:delete",
     "flagAliases": [],
-    "flagChars": ["f", "n", "o"],
-    "flags": ["api-version", "file", "flags-dir", "flow-name", "json", "target-org"],
+    "flagChars": ["n", "o", "x"],
+    "flags": ["api-version", "flags-dir", "flow-name", "json", "manifest", "target-org"],
     "plugin": "@simplysf/simply-flow"
   },
   {
