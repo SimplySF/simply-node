@@ -36,25 +36,25 @@ Every SOQL query in all three commands uses `simply-core`'s existing `chunkedInQ
 ### `sf simply flow delete`
 
 ```sh
-sf simply flow delete --file destructive/pre/destructiveChanges.xml --target-org my-org
+sf simply flow delete --manifest destructive/pre/destructiveChanges.xml --target-org my-org
 sf simply flow delete --flow-name My_Flow --flow-name Another_Flow --target-org my-org
-sf simply flow delete --file destructive/pre/destructiveChanges.xml --target-org my-org --json
+sf simply flow delete --manifest destructive/pre/destructiveChanges.xml --target-org my-org --json
 ```
 
 `requiresProject = false`.
 
-| Flag            | Char | Required | Purpose                                                                                                                                                                                   |
-| --------------- | ---- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--file`        | `-f` | One of\* | Path to a `destructiveChanges.xml`/`package.xml`-shaped file; the `Flow` type's `<members>` are the flows to delete.                                                                      |
-| `--flow-name`   | `-n` | One of\* | Explicit Flow `DeveloperName`(s), repeatable — an alternative to `--file` for scripted or one-off use (also the shape a future VS Code integration would use, with no XML file involved). |
-| `--target-org`  | `-o` | Yes      |                                                                                                                                                                                           |
-| `--api-version` |      | No       |                                                                                                                                                                                           |
+| Flag            | Char | Required | Purpose                                                                                                                                                                                       |
+| --------------- | ---- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--manifest`    | `-x` | One of\* | Path to a `destructiveChanges.xml`/`package.xml`-shaped file; the `Flow` type's `<members>` are the flows to delete.                                                                          |
+| `--flow-name`   | `-n` | One of\* | Explicit Flow `DeveloperName`(s), repeatable — an alternative to `--manifest` for scripted or one-off use (also the shape a future VS Code integration would use, with no XML file involved). |
+| `--target-org`  | `-o` | Yes      |                                                                                                                                                                                               |
+| `--api-version` |      | No       |                                                                                                                                                                                               |
 
-\* Exactly one of `--file`/`--flow-name` — an XOR on "what to operate on," matching every AT4DX read command's `--target-org`/`--source-dir` precedent, not the additive `create`/`set` writer precedent (there's only one input here, not two destinations).
+\* Exactly one of `--manifest`/`--flow-name` — an XOR on "what to operate on," matching every AT4DX read command's `--target-org`/`--source-dir` precedent, not the additive `create`/`set` writer precedent (there's only one input here, not two destinations). `--manifest`/`-x` matches the flag name and short char `sf project deploy start`/`sf project deploy preview` use for the same kind of file, rather than the generic `--file`/`-f` the sibling `permissions assignment delete` command still uses.
 
 Resolution:
 
-1. Resolve the flow developer names: `readPackageManifestMembers(fileContents, 'Flow')` for `--file`, or `--flow-name` directly.
+1. Resolve the flow developer names: `readPackageManifestMembers(fileContents, 'Flow')` for `--manifest`, or `--flow-name` directly.
 2. Empty list → print `info.nothingToDelete`, return `{ deactivated: [], deleted: [], failures: [] }` without querying.
 3. Tooling API, chunked: `SELECT Definition.Id, Definition.DeveloperName FROM Flow WHERE Definition.DeveloperName IN (...)`, distinct by `Definition.Id`.
 4. For each distinct definition, update `FlowDefinition.Metadata.activeVersionNumber = 0`. A failure is recorded in `failures`, not thrown — matching the original's "keep going" behavior, now made visible as structured data instead of a bare `console.error`.
@@ -195,3 +195,9 @@ A few places where implementing this taught something the design above didn't an
   command hand-rolling `Flags.optionalOrg({ char: 'o' })` plus its own null-connection check — not a
   divergence from the design doc's Behavior tables in practice, since `Flags.requiredOrg()` already
   defaults to the `-o` short char.
+- **`flow delete`'s file-input flag was renamed from `--file`/`-f` to `--manifest`/`-x`** after
+  implementation, to match the flag name/short char the Salesforce CLI itself uses for the same kind
+  of `destructiveChanges.xml`/`package.xml` file (`sf project deploy start --manifest`, `-x`), rather
+  than the generic `--file` this doc originally proposed. `permissions assignment delete` was left on
+  `--file`/`-f` — revisit for the same rename if it turns out inconsistency between the two sibling
+  commands is confusing in practice.

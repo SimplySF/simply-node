@@ -51,12 +51,12 @@ describe('simply flow delete', () => {
     process.exitCode = undefined;
   });
 
-  it('is a no-op when the file has no Flow members', async () => {
+  it('is a no-op when the manifest has no Flow members', async () => {
     const filePath = await writeManifest(NO_FLOW_MANIFEST);
     const autoFetchQuery = $$.SANDBOX.stub(Connection.prototype, 'autoFetchQuery');
 
     try {
-      const result = await FlowDelete.run(['--file', filePath, '--target-org', testOrg.username]);
+      const result = await FlowDelete.run(['--manifest', filePath, '--target-org', testOrg.username]);
 
       expect(result).to.deep.equal({ deactivated: [], deleted: [], failures: [] });
       expect(autoFetchQuery.called).to.be.false;
@@ -65,19 +65,19 @@ describe('simply flow delete', () => {
     }
   });
 
-  it('rejects --file combined with --flow-name', async () => {
+  it('rejects --manifest combined with --flow-name', async () => {
     const filePath = await writeManifest(NO_FLOW_MANIFEST);
 
     try {
       await expect(
-        FlowDelete.run(['--file', filePath, '--flow-name', 'My_Flow', '--target-org', testOrg.username]),
+        FlowDelete.run(['--manifest', filePath, '--flow-name', 'My_Flow', '--target-org', testOrg.username]),
       ).rejects.toThrow();
     } finally {
       await fs.rm(filePath, { force: true });
     }
   });
 
-  it('rejects when neither --file nor --flow-name is given', async () => {
+  it('rejects when neither --manifest nor --flow-name is given', async () => {
     await expect(FlowDelete.run(['--target-org', testOrg.username])).rejects.toThrow();
   });
 

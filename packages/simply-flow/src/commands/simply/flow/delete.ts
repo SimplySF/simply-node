@@ -59,7 +59,7 @@ export default class FlowDelete extends SfCommand<FlowDeleteResult> {
   public static readonly flags = {
     ...SfCommand.baseFlags,
     ...targetOrgFlags,
-    file: Flags.string({ summary: messages.getMessage('flags.file.summary'), char: 'f' }),
+    manifest: Flags.string({ summary: messages.getMessage('flags.manifest.summary'), char: 'x' }),
     'flow-name': Flags.string({
       summary: messages.getMessage('flags.flow-name.summary'),
       char: 'n',
@@ -72,12 +72,12 @@ export default class FlowDelete extends SfCommand<FlowDeleteResult> {
     const { flags } = await this.parse(FlowDelete);
 
     const hasFlowNames = Boolean(flags['flow-name']?.length);
-    if ((flags.file && hasFlowNames) || (!flags.file && !hasFlowNames)) {
-      throw messages.createError('error.fileOrFlowNameRequired');
+    if ((flags.manifest && hasFlowNames) || (!flags.manifest && !hasFlowNames)) {
+      throw messages.createError('error.manifestOrFlowNameRequired');
     }
 
-    const flowNames = flags.file
-      ? readPackageManifestMembers(await fs.readFile(flags.file, 'utf-8'), 'Flow')
+    const flowNames = flags.manifest
+      ? readPackageManifestMembers(await fs.readFile(flags.manifest, 'utf-8'), 'Flow')
       : (flags['flow-name'] as string[]);
 
     if (flowNames.length === 0) {
