@@ -116,7 +116,10 @@ export async function buildProjectService(project: SfProject): Promise<SfdxProje
     const updatedAliases = { ...getAliases() };
 
     for (const [dirPath, changes] of changesByDirectory) {
-      const dir = updatedDirs.find((d) => d['path'] === dirPath);
+      // `dirPath` comes from `SfProject.getPackageDirectories()`, which normalizes the path to the
+      // OS separator. The raw JSON on disk always uses forward slashes, so compare both
+      // slash-normalized to avoid a false mismatch (and a silent no-op write) on Windows.
+      const dir = updatedDirs.find((d) => normalizePathSep(d['path'] as string) === normalizePathSep(dirPath));
       if (!dir) continue;
 
       const deps = (dir['dependencies'] ?? []) as Array<Record<string, string>>;
@@ -181,4 +184,9 @@ export async function buildProjectService(project: SfProject): Promise<SfdxProje
     resolveAlias,
     applyChanges,
   };
+}
+
+/** @returns `path` with backslashes converted to forward slashes, for OS-agnostic path comparison. */
+function normalizePathSep(path: string): string {
+  return path.replace(/\\/g, '/');
 }
