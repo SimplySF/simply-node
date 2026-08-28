@@ -57,6 +57,8 @@ describe('DOMAIN_PROCESS_BINDING_RULES', () => {
       'ambiguous-sobject-reference',
       'duplicate-developer-name',
       'missing-sobject-reference',
+      'unsupported-entity-definition-object',
+      'unnecessary-entity-definition-alternate',
     ];
 
     for (const rule of rules) {
@@ -306,6 +308,129 @@ describe('validateDomainProcessBindings', () => {
     const issues = validateDomainProcessBindings([a], noDiagnostics);
 
     expect(issues.filter((issue) => issue.rule === 'duplicate-developer-name')).toEqual([]);
+  });
+
+  it('flags an unsupported-entity-definition-object error when the primary field names an ineligible standard object', () => {
+    const unsupported = record({ order: 1, developerName: 'Unsupported', sobject: 'ServiceResource' });
+
+    const issues = validateDomainProcessBindings([unsupported], noDiagnostics);
+
+    expect(issues).toEqual([
+      expect.objectContaining({
+        severity: 'error',
+        rule: 'unsupported-entity-definition-object',
+        developerName: 'Unsupported',
+        sobject: 'ServiceResource',
+      }),
+    ]);
+  });
+
+  it('does not flag the primary field for a standard object on the allowlist', () => {
+    const account = record({ order: 1, developerName: 'Account', sobject: 'Account' });
+
+    const issues = validateDomainProcessBindings([account], noDiagnostics);
+
+    expect(issues.filter((issue) => issue.rule === 'unsupported-entity-definition-object')).toEqual([]);
+  });
+
+  it('does not flag the primary field for a custom object', () => {
+    const custom = record({ order: 1, developerName: 'Custom', sobject: 'My_Custom_Object__c' });
+
+    const issues = validateDomainProcessBindings([custom], noDiagnostics);
+
+    expect(issues.filter((issue) => issue.rule === 'unsupported-entity-definition-object')).toEqual([]);
+  });
+
+  it('flags an unsupported-entity-definition-object error for an explicitly excluded standard object like Task', () => {
+    const task = record({ order: 1, developerName: 'Task', sobject: 'Task' });
+
+    const issues = validateDomainProcessBindings([task], noDiagnostics);
+
+    expect(issues).toEqual([
+      expect.objectContaining({ severity: 'error', rule: 'unsupported-entity-definition-object', sobject: 'Task' }),
+    ]);
+  });
+
+  it('does not flag the Alternate field for a standard object not on the allowlist', () => {
+    const serviceResource = record({
+      order: 1,
+      developerName: 'ServiceResource',
+      sobject: 'ServiceResource',
+      sobjectField: 'alternate',
+    });
+
+    const issues = validateDomainProcessBindings([serviceResource], noDiagnostics);
+
+    expect(issues).toEqual([]);
+  });
+
+  it('flags an unnecessary-entity-definition-alternate warning when the Alternate field names an eligible standard object', () => {
+    const unnecessary = record({
+      order: 1,
+      developerName: 'Unnecessary',
+      sobject: 'Account',
+      sobjectField: 'alternate',
+    });
+
+    const issues = validateDomainProcessBindings([unnecessary], noDiagnostics);
+
+    expect(issues).toEqual([
+      expect.objectContaining({
+        severity: 'warning',
+        rule: 'unnecessary-entity-definition-alternate',
+        developerName: 'Unnecessary',
+        sobject: 'Account',
+      }),
+    ]);
+  });
+
+  it('flags an unnecessary-entity-definition-alternate warning when the Alternate field names a custom object', () => {
+    const unnecessary = record({
+      order: 1,
+      developerName: 'UnnecessaryCustom',
+      sobject: 'My_Custom_Object__c',
+      sobjectField: 'alternate',
+    });
+
+    const issues = validateDomainProcessBindings([unnecessary], noDiagnostics);
+
+    expect(issues).toEqual([
+      expect.objectContaining({
+        severity: 'warning',
+        rule: 'unnecessary-entity-definition-alternate',
+        developerName: 'UnnecessaryCustom',
+        sobject: 'My_Custom_Object__c',
+      }),
+    ]);
+  });
+
+  it('flags both ambiguous-sobject-reference and unsupported-entity-definition-object for an ambiguous record whose primary value is ineligible', () => {
+    const ambiguousRecord = record({ order: 1, developerName: 'Ambiguous', sobject: 'ServiceResource' });
+    const ambiguous: AmbiguousDomainProcessBindingRecord[] = [
+      {
+        developerName: 'Ambiguous',
+        sobject: 'ServiceResource',
+        alternateSobject: 'ServiceResource_Alt',
+        source: 'test',
+      },
+    ];
+
+    const issues = validateDomainProcessBindings([ambiguousRecord], { malformed: [], ambiguous });
+
+    expect(issues.map((issue) => issue.rule).sort()).toEqual(
+      ['ambiguous-sobject-reference', 'unsupported-entity-definition-object'].sort(),
+    );
+  });
+
+  it('flags only ambiguous-sobject-reference for an ambiguous record whose primary value is eligible', () => {
+    const ambiguousRecord = record({ order: 1, developerName: 'Ambiguous', sobject: 'Account' });
+    const ambiguous: AmbiguousDomainProcessBindingRecord[] = [
+      { developerName: 'Ambiguous', sobject: 'Account', alternateSobject: 'Contact', source: 'test' },
+    ];
+
+    const issues = validateDomainProcessBindings([ambiguousRecord], { malformed: [], ambiguous });
+
+    expect(issues.map((issue) => issue.rule)).toEqual(['ambiguous-sobject-reference']);
   });
 
   it("stamps every issue's severity and scope from DOMAIN_PROCESS_BINDING_RULES", () => {

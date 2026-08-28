@@ -41,6 +41,8 @@ export {
   DOMAIN_PROCESS_BINDING_OBJECT,
   DOMAIN_PROCESS_BINDING_LOCAL_OBJECT_NAME,
   DOMAIN_PROCESS_BINDING_RULES,
+  ENTITY_DEFINITION_STANDARD_OBJECTS,
+  isCustomObjectApiName,
   DomainProcessBindingWriteError,
   type AmbiguousDomainProcessBindingRecord,
   type At4dxDomainProcessBindingCreateResult,

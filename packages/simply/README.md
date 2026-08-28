@@ -347,8 +347,10 @@ DESCRIPTION
   from local Salesforce DX source, and checks it for problems `simply aep at4dx domain-process-binding list` doesn't
   fail on: two active records silently fighting over the same execution slot, a binding with no resolvable SObject, a
   binding whose declared process context doesn't match the field that's actually populated (so it never runs), the same
-  DeveloperName defined more than once, and an ambiguous SObject reference. Exactly one of `--target-org` or
-  `--source-dir` must be specified.
+  DeveloperName defined more than once, an ambiguous SObject reference, RelatedDomainBindingSObject__c set to a standard
+  object that can't actually go through an EntityDefinition relationship, and RelatedDomainBindingSObjectAlternate__c
+  set to an object that didn't need the Alternate field. Exactly one of `--target-org` or `--source-dir` must be
+  specified.
 
   Prints a table of every issue found. When --sobject is specified, scan-wide issues (a duplicate DeveloperName, or a
   binding with no resolvable SObject) print in their own section below the filtered table, since they can't be
@@ -1029,7 +1031,7 @@ EXAMPLES
   $ sf simply flow delete --manifest destructive/pre/destructiveChanges.xml --target-org myOrg --json
 ```
 
-_See code: [@simplysf/simply-flow](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-flow@0.2.0/packages/simply-flow/lib/commands/simply/flow/delete.js)_
+_See code: [@simplysf/simply-flow](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-flow@0.4.0/packages/simply-flow/lib/commands/simply/flow/delete.js)_
 
 ## `sf simply flow version prune`
 
@@ -1071,7 +1073,7 @@ EXAMPLES
   $ sf simply flow version prune --target-org myOrg --flow-name My_Flow --flow-name Another_Flow
 ```
 
-_See code: [@simplysf/simply-flow](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-flow@0.2.0/packages/simply-flow/lib/commands/simply/flow/version/prune.js)_
+_See code: [@simplysf/simply-flow](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-flow@0.4.0/packages/simply-flow/lib/commands/simply/flow/version/prune.js)_
 
 ## `sf simply package dependencies install`
 
@@ -1205,7 +1207,7 @@ FLAG DESCRIPTIONS
     Packages not listed here use --retry-attempts.
 ```
 
-_See code: [@simplysf/simply-package](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-package@2.10.2/packages/simply-package/lib/commands/simply/package/dependencies/install.js)_
+_See code: [@simplysf/simply-package](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-package@2.10.4/packages/simply-package/lib/commands/simply/package/dependencies/install.js)_
 
 ## `sf simply package dependencies manage`
 
@@ -1264,7 +1266,7 @@ FLAG DESCRIPTIONS
     version without interactive prompts. Mutually exclusive with --update-to-latest.
 ```
 
-_See code: [@simplysf/simply-package](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-package@2.10.2/packages/simply-package/lib/commands/simply/package/dependencies/manage.js)_
+_See code: [@simplysf/simply-package](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-package@2.10.4/packages/simply-package/lib/commands/simply/package/dependencies/manage.js)_
 
 ## `sf simply package version cleanup`
 
@@ -1318,7 +1320,7 @@ FLAG DESCRIPTIONS
     does not match this matcher is deleted. Mutually exclusive with --matcher.
 ```
 
-_See code: [@simplysf/simply-package](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-package@2.10.2/packages/simply-package/lib/commands/simply/package/version/cleanup.js)_
+_See code: [@simplysf/simply-package](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-package@2.10.4/packages/simply-package/lib/commands/simply/package/version/cleanup.js)_
 
 ## `sf simply package version get`
 
@@ -1378,7 +1380,7 @@ FLAG DESCRIPTIONS
     "test-package@0.1.0+2", pass "test-package".
 ```
 
-_See code: [@simplysf/simply-package](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-package@2.10.2/packages/simply-package/lib/commands/simply/package/version/get.js)_
+_See code: [@simplysf/simply-package](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-package@2.10.4/packages/simply-package/lib/commands/simply/package/version/get.js)_
 
 ## `sf simply permissions analyze`
 

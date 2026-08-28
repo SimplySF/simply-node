@@ -65,7 +65,7 @@ FLAG DESCRIPTIONS
     Comma-separated list of binding types to include. If not specified, all four are included.
 ```
 
-_See code: [lib/commands/simply/aep/at4dx/binding/list.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.5.1/packages/simply-aep/lib/commands/simply/aep/at4dx/binding/list.js)_
+_See code: [lib/commands/simply/aep/at4dx/binding/list.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.6.1/packages/simply-aep/lib/commands/simply/aep/at4dx/binding/list.js)_
 
 ## `sf simply aep at4dx domain-process-binding create`
 
@@ -146,7 +146,7 @@ EXAMPLES
   $ sf simply aep at4dx domain-process-binding create --source-dir sfdx-source/core --developer-name ServiceResource_Before_Update_Sync --sobject ServiceResource --sobject-alternate --process-context TriggerExecution --trigger-operation Before_Update --type Action --class-to-inject ServiceResourceSyncAction --order 10
 ```
 
-_See code: [lib/commands/simply/aep/at4dx/domain-process-binding/create.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.5.1/packages/simply-aep/lib/commands/simply/aep/at4dx/domain-process-binding/create.js)_
+_See code: [lib/commands/simply/aep/at4dx/domain-process-binding/create.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.6.1/packages/simply-aep/lib/commands/simply/aep/at4dx/domain-process-binding/create.js)_
 
 ## `sf simply aep at4dx domain-process-binding list`
 
@@ -192,7 +192,7 @@ EXAMPLES
   $ sf simply aep at4dx domain-process-binding list --target-org myOrg --active-only --json
 ```
 
-_See code: [lib/commands/simply/aep/at4dx/domain-process-binding/list.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.5.1/packages/simply-aep/lib/commands/simply/aep/at4dx/domain-process-binding/list.js)_
+_See code: [lib/commands/simply/aep/at4dx/domain-process-binding/list.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.6.1/packages/simply-aep/lib/commands/simply/aep/at4dx/domain-process-binding/list.js)_
 
 ## `sf simply aep at4dx domain-process-binding set`
 
@@ -271,7 +271,7 @@ EXAMPLES
   $ sf simply aep at4dx domain-process-binding set --target-org myOrg --developer-name Account_Before_Insert_Assign_Owner --class-to-inject AccountAssignOwnerActionV2
 ```
 
-_See code: [lib/commands/simply/aep/at4dx/domain-process-binding/set.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.5.1/packages/simply-aep/lib/commands/simply/aep/at4dx/domain-process-binding/set.js)_
+_See code: [lib/commands/simply/aep/at4dx/domain-process-binding/set.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.6.1/packages/simply-aep/lib/commands/simply/aep/at4dx/domain-process-binding/set.js)_
 
 ## `sf simply aep at4dx domain-process-binding validate`
 
@@ -304,8 +304,10 @@ DESCRIPTION
   from local Salesforce DX source, and checks it for problems `simply aep at4dx domain-process-binding list` doesn't
   fail on: two active records silently fighting over the same execution slot, a binding with no resolvable SObject, a
   binding whose declared process context doesn't match the field that's actually populated (so it never runs), the same
-  DeveloperName defined more than once, and an ambiguous SObject reference. Exactly one of `--target-org` or
-  `--source-dir` must be specified.
+  DeveloperName defined more than once, an ambiguous SObject reference, RelatedDomainBindingSObject__c set to a standard
+  object that can't actually go through an EntityDefinition relationship, and RelatedDomainBindingSObjectAlternate__c
+  set to an object that didn't need the Alternate field. Exactly one of `--target-org` or `--source-dir` must be
+  specified.
 
   Prints a table of every issue found. When --sobject is specified, scan-wide issues (a duplicate DeveloperName, or a
   binding with no resolvable SObject) print in their own section below the filtered table, since they can't be
@@ -322,4 +324,4 @@ EXAMPLES
   $ sf simply aep at4dx domain-process-binding validate --target-org myOrg --json
 ```
 
-_See code: [lib/commands/simply/aep/at4dx/domain-process-binding/validate.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.5.1/packages/simply-aep/lib/commands/simply/aep/at4dx/domain-process-binding/validate.js)_
+_See code: [lib/commands/simply/aep/at4dx/domain-process-binding/validate.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.6.1/packages/simply-aep/lib/commands/simply/aep/at4dx/domain-process-binding/validate.js)_
