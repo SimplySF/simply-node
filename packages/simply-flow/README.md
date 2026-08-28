@@ -72,11 +72,12 @@ Delete obsolete versions of Flows found in local source.
 
 ```
 USAGE
-  $ sf simply flow version prune -o <value> -d <value>... [--json] [--flags-dir <value>] [--api-version <value>]
-  [--dry-run]
+  $ sf simply flow version prune -o <value> [--json] [--flags-dir <value>] [--api-version <value>] [-d <value>...] [-n
+    <value>...] [--dry-run]
 
 FLAGS
-  -d, --source-dir=<value>...  (required) Directories to scan for *.flow-meta.xml files
+  -d, --source-dir=<value>...  Directories to scan for *.flow-meta.xml files
+  -n, --flow-name=<value>...   Flow DeveloperName(s) to prune obsolete versions for
   -o, --target-org=<value>     (required) Username or alias of the target org. Not required if the `target-org`
                                configuration variable is already set.
       --api-version=<value>    Override the api version used for api requests made by this command
@@ -89,10 +90,11 @@ GLOBAL FLAGS
 DESCRIPTION
   Delete obsolete versions of Flows found in local source.
 
-  Scans one or more source directories for `*.flow-meta.xml` files, then deletes any Tooling API Flow version already
-  `Status = 'Obsolete'` for those flows — keeping an org's Flow version history from accumulating indefinitely. Unlike
-  `simply flow delete`, this never touches an active Flow; it only removes versions the org itself already marked
-  obsolete.
+  Flows can be named either via one or more `--source-dir` directories, scanned for `*.flow-meta.xml` files, or via one
+  or more `--flow-name` flags for scripted or one-off use. Exactly one of the two must be given. The command then
+  deletes any Tooling API Flow version already `Status = 'Obsolete'` for those flows — keeping an org's Flow version
+  history from accumulating indefinitely. Unlike `simply flow delete`, this never touches an active Flow; it only
+  removes versions the org itself already marked obsolete.
 
   Use `--dry-run` to see what would be deleted without deleting anything.
 
@@ -100,6 +102,8 @@ EXAMPLES
   $ sf simply flow version prune --target-org myOrg --source-dir sfdx-source/core
 
   $ sf simply flow version prune --target-org myOrg --source-dir sfdx-source/core --dry-run
+
+  $ sf simply flow version prune --target-org myOrg --flow-name My_Flow --flow-name Another_Flow
 ```
 
 _See code: [lib/commands/simply/flow/version/prune.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-flow@0.2.0/packages/simply-flow/lib/commands/simply/flow/version/prune.js)_

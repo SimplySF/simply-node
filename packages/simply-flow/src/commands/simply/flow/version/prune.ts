@@ -56,8 +56,8 @@ function developerNameFromFlowFile(flowFile: string): string {
 
 /**
  * Deletes obsolete Flow versions (`Status = 'Obsolete'`) for the Flows found under `--source-dir`,
- * to keep an org's Flow version history from accumulating indefinitely. Unlike `flow delete`, this
- * never removes an active Flow — only versions the org itself already marked obsolete.
+ * or for explicitly named Flows via `--flow-name`. Unlike `flow delete`, this never removes an
+ * active Flow — only versions the org itself already marked obsolete.
  */
 export default class FlowVersionPrune extends SfCommand<FlowVersionPruneResult> {
   public static readonly summary = messages.getMessage('summary');
@@ -72,7 +72,11 @@ export default class FlowVersionPrune extends SfCommand<FlowVersionPruneResult> 
       char: 'd',
       exists: true,
       multiple: true,
-      required: true,
+    }),
+    'flow-name': Flags.string({
+      summary: messages.getMessage('flags.flow-name.summary'),
+      char: 'n',
+      multiple: true,
     }),
     'dry-run': Flags.boolean({ summary: messages.getMessage('flags.dry-run.summary'), default: false }),
   };
@@ -81,14 +85,24 @@ export default class FlowVersionPrune extends SfCommand<FlowVersionPruneResult> 
   public async run(): Promise<FlowVersionPruneResult> {
     const { flags } = await this.parse(FlowVersionPrune);
 
-    this.spinner.start(messages.getMessage('info.scanningLocalSource'));
-    const flowFiles = (
-      await Promise.all(
-        flags['source-dir'].map((sourceDir) => glob(`${sourceDir.replaceAll('\\', '/')}/**/*.flow-meta.xml`)),
-      )
-    ).flat();
-    const flowNames = [...new Set(flowFiles.map(developerNameFromFlowFile))];
-    this.spinner.stop();
+    const hasSourceDir = Boolean(flags['source-dir']?.length);
+    const hasFlowNames = Boolean(flags['flow-name']?.length);
+    if ((hasSourceDir && hasFlowNames) || (!hasSourceDir && !hasFlowNames)) {
+      throw messages.createError('error.sourceDirOrFlowNameRequired');
+    }
+
+    let flowNames: string[];
+    if (hasSourceDir) {
+      this.spinner.start(messages.getMessage('info.scanningLocalSource'));
+      const sourceDirs = flags['source-dir'] as string[];
+      const flowFiles = (
+        await Promise.all(sourceDirs.map((sourceDir) => glob(`${sourceDir.replaceAll('\\', '/')}/**/*.flow-meta.xml`)))
+      ).flat();
+      flowNames = [...new Set(flowFiles.map(developerNameFromFlowFile))];
+      this.spinner.stop();
+    } else {
+      flowNames = flags['flow-name'] as string[];
+    }
 
     const connection = requireConnection(flags);
 

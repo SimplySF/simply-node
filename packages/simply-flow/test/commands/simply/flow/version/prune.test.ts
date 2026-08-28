@@ -79,4 +79,34 @@ describe('simply flow version prune', () => {
     expect(result.failures).to.deep.equal([]);
     expect(process.exitCode).to.equal(undefined);
   });
+
+  it('prunes obsolete versions for explicitly named flows via --flow-name, without scanning source', async () => {
+    const autoFetchQuery = $$.SANDBOX.stub(Connection.prototype, 'autoFetchQuery').resolves({
+      records: [{ Id: '301000000000001AAA', Definition: { DeveloperName: 'My_Flow' } }],
+      done: true,
+      totalSize: 1,
+    } as never);
+
+    const result = await FlowVersionPrune.run([
+      '--target-org',
+      testOrg.username,
+      '--flow-name',
+      'My_Flow',
+      '--dry-run',
+    ]);
+
+    expect(result.dryRun).to.be.true;
+    expect(result.candidates).to.deep.equal([{ id: '301000000000001AAA', developerName: 'My_Flow' }]);
+    expect(autoFetchQuery.getCall(0).args[0]).to.include("Definition.DeveloperName IN ('My_Flow')");
+  });
+
+  it('rejects --source-dir combined with --flow-name', async () => {
+    await expect(
+      FlowVersionPrune.run(['--target-org', testOrg.username, '--source-dir', tmpDir, '--flow-name', 'My_Flow']),
+    ).rejects.toThrow();
+  });
+
+  it('rejects when neither --source-dir nor --flow-name is given', async () => {
+    await expect(FlowVersionPrune.run(['--target-org', testOrg.username])).rejects.toThrow();
+  });
 });
