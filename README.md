@@ -8,7 +8,7 @@ Simply is a collection of [Salesforce CLI](https://developer.salesforce.com/tool
 
 ## Packages
 
-This repository is a monorepo. Thirteen packages are published independently to npm as CLI plugins, plus three internal libraries used by them:
+This repository is a monorepo. Thirteen packages are published independently to npm as CLI plugins, plus four internal libraries used by them:
 
 | Package                                                       | Description                                                               |
 | ------------------------------------------------------------- | ------------------------------------------------------------------------- |
@@ -28,11 +28,12 @@ This repository is a monorepo. Thirteen packages are published independently to 
 
 Internal libraries — consumed by the plugins above, not Salesforce CLI plugins themselves:
 
-| Package                                                     | Description                                                   |
-| ----------------------------------------------------------- | ------------------------------------------------------------- |
-| [`@simplysf/simply-core`](packages/simply-core)             | Querying, bulk export, CSV, and `sfdx-project.json` utilities |
-| [`@simplysf/simply-plugin-kit`](packages/simply-plugin-kit) | Shared oclif command building blocks                          |
-| [`@simplysf/simply-report`](packages/simply-report)         | Shared HTML report scaffolding                                |
+| Package                                                     | Description                                                                                     |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| [`@simplysf/simply-aep-core`](packages/simply-aep-core)     | Apex Enterprise Patterns (fflib, force-di, AT4DX) scan and resolution logic behind `simply-aep` |
+| [`@simplysf/simply-core`](packages/simply-core)             | Querying, bulk export, CSV, and `sfdx-project.json` utilities                                   |
+| [`@simplysf/simply-plugin-kit`](packages/simply-plugin-kit) | Shared oclif command building blocks                                                            |
+| [`@simplysf/simply-report`](packages/simply-report)         | Shared HTML report scaffolding                                                                  |
 
 See each package's README for its full command reference.
 
