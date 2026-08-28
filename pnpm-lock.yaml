@@ -119,7 +119,7 @@ importers:
         specifier: workspace:^0.3.6
         version: link:../simply-document
       '@simplysf/simply-flow':
-        specifier: workspace:^0.2.0
+        specifier: workspace:^0.3.0
         version: link:../simply-flow
       '@simplysf/simply-package':
         specifier: workspace:^2.10.2
