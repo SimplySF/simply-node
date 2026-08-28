@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.3.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-flow%400.2.0...%40simplysf%2Fsimply-flow%400.3.0) (2026-08-28)
+
+### Features
+
+- **simply-flow:** rename flow delete's --file flag to --manifest ([b967311](https://github.com/SimplySF/simply-node/commit/b9673110a504c95d822b65503aab1b0cbecfa180))
+
 # 0.2.0 (2026-08-27)
 
 ### Bug Fixes
