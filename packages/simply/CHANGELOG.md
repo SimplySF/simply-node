@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.4.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply%403.3.0...%40simplysf%2Fsimply%403.4.0) (2026-08-28)
+
+### Features
+
+- **simply-flow:** allow pruning by explicit flow name ([54ab2bd](https://github.com/SimplySF/simply-node/commit/54ab2bd1a201f4e04522fe6e0d9a5174e894cd20))
+
 # [3.3.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply%403.2.1...%40simplysf%2Fsimply%403.3.0) (2026-08-28)
 
 ### Features
