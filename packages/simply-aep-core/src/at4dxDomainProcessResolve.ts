@@ -16,6 +16,8 @@
 
 import {
   DOMAIN_PROCESS_BINDING_RULES,
+  ENTITY_DEFINITION_STANDARD_OBJECTS,
+  isCustomObjectApiName,
   type AmbiguousDomainProcessBindingRecord,
   type DomainProcessBindingIssue,
   type DomainProcessBindingRow,
@@ -102,11 +104,56 @@ export function resolveDomainProcessBindings(records: RawDomainProcessBindingRec
 }
 
 /**
+ * Checks one resolved row against `ENTITY_DEFINITION_STANDARD_OBJECTS`, in whichever direction its
+ * `sobjectField` implicates: `'primary'` (`RelatedDomainBindingSObject__c`) must be eligible,
+ * `'alternate'` (`RelatedDomainBindingSObjectAlternate__c`) must *not* be — otherwise the Alternate
+ * field wasn't needed. See docs/design/0014-domain-process-binding-entity-definition-eligibility.md.
+ *
+ * @param row - A resolved row from `resolveDomainProcessBindings`.
+ * @returns The issue found, or `undefined` when the field choice matches the object's eligibility.
+ */
+function buildEntityDefinitionIssue(row: DomainProcessBindingRow): DomainProcessBindingIssue | undefined {
+  const isEligible = isCustomObjectApiName(row.sobject) || ENTITY_DEFINITION_STANDARD_OBJECTS.has(row.sobject);
+
+  if (row.sobjectField === 'primary' && !isEligible) {
+    const info = DOMAIN_PROCESS_BINDING_RULES['unsupported-entity-definition-object'];
+    return {
+      severity: info.severity,
+      rule: info.rule,
+      scope: info.scope,
+      message: `${row.developerName}: RelatedDomainBindingSObject__c is set to ${row.sobject}, a standard object not known to support EntityDefinition metadata relationships — use --sobject-alternate (RelatedDomainBindingSObjectAlternate__c) instead.`,
+      developerName: row.developerName,
+      sobject: row.sobject,
+      source: row.source,
+      filePath: row.filePath,
+    };
+  }
+
+  if (row.sobjectField === 'alternate' && isEligible) {
+    const info = DOMAIN_PROCESS_BINDING_RULES['unnecessary-entity-definition-alternate'];
+    return {
+      severity: info.severity,
+      rule: info.rule,
+      scope: info.scope,
+      message: `${row.developerName}: RelatedDomainBindingSObjectAlternate__c is set to ${row.sobject}, which supports EntityDefinition metadata relationships — use RelatedDomainBindingSObject__c instead (drop --sobject-alternate).`,
+      developerName: row.developerName,
+      sobject: row.sobject,
+      source: row.source,
+      filePath: row.filePath,
+    };
+  }
+
+  return undefined;
+}
+
+/**
  * Validate a scan's `DomainProcessBinding__mdt` records for wiring problems `resolveDomainProcessBindings`/
  * `list` don't fail on: order collisions (reused from `resolveDomainProcessBindings`), records with no
  * resolvable SObject, bindings whose declared `processContext` doesn't match the field that's actually
  * populated (dead — never matches any real execution), duplicate `DeveloperName`s across everything
- * scanned, and an ambiguous SObject reference (both fields set to different values).
+ * scanned, an ambiguous SObject reference (both fields set to different values), the primary field set to
+ * a standard object that can't actually go through `EntityDefinition`, and the Alternate field set to an
+ * object that didn't need it.
  *
  * Every issue is stamped with the `scope` its rule declares in `DOMAIN_PROCESS_BINDING_RULES`
  * (`'record'` or `'scan'`) — see docs/design/0011-domain-process-binding-issue-scoping.md. This
@@ -114,7 +161,9 @@ export function resolveDomainProcessBindings(records: RawDomainProcessBindingRec
  * calls `filterDomainProcessBindingIssues` on the returned issues afterward, rather than filtering
  * `records` first, which would silently break `duplicate-developer-name`.
  *
- * See docs/design/0010-at4dx-domain-process-binding-validate.md for the full rationale behind each rule.
+ * See docs/design/0010-at4dx-domain-process-binding-validate.md for the full rationale behind the first
+ * five rules, and docs/design/0014-domain-process-binding-entity-definition-eligibility.md for the
+ * EntityDefinition-eligibility pair.
  *
  * @param scanOrRecords - Either a scan result envelope (`{ records, malformed, ambiguous }`, as returned by `scanOrgDomainProcessBindings`/`scanLocalDomainProcessBindings`), or the raw binding records alone.
  * @param diagnostics - The `malformed`/`ambiguous` records the same scan reported alongside `records`. Omitted when the first argument is already a scan envelope.
@@ -180,6 +229,11 @@ export function validateDomainProcessBindings(
         source: row.source,
         filePath: row.filePath,
       });
+    }
+
+    const entityDefinitionIssue = buildEntityDefinitionIssue(row);
+    if (entityDefinitionIssue) {
+      issues.push(entityDefinitionIssue);
     }
   }
 

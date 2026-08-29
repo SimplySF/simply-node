@@ -153,7 +153,9 @@ export type DomainProcessBindingIssueRule =
   | 'missing-sobject-reference'
   | 'missing-context-field'
   | 'duplicate-developer-name'
-  | 'ambiguous-sobject-reference';
+  | 'ambiguous-sobject-reference'
+  | 'unsupported-entity-definition-object'
+  | 'unnecessary-entity-definition-alternate';
 
 /**
  * Whether a rule's answer can be computed from one record alone (`record`) or requires seeing every
@@ -217,7 +219,75 @@ export const DOMAIN_PROCESS_BINDING_RULES: Readonly<
     summary:
       'Neither RelatedDomainBindingSObject__c nor RelatedDomainBindingSObjectAlternate__c is set — this binding has no SObject to bind against.',
   },
+  'unsupported-entity-definition-object': {
+    rule: 'unsupported-entity-definition-object',
+    severity: 'error',
+    scope: 'record',
+    title: 'Unsupported EntityDefinition object',
+    summary:
+      'RelatedDomainBindingSObject__c is set to a standard object not known to support EntityDefinition metadata relationships — Setup/deploy will reject it; use RelatedDomainBindingSObjectAlternate__c instead.',
+  },
+  'unnecessary-entity-definition-alternate': {
+    rule: 'unnecessary-entity-definition-alternate',
+    severity: 'warning',
+    scope: 'record',
+    title: 'Unnecessary EntityDefinition alternate',
+    summary:
+      'RelatedDomainBindingSObjectAlternate__c is set to an object that supports EntityDefinition metadata relationships — it did not need the Alternate field; use RelatedDomainBindingSObject__c instead.',
+  },
 };
+
+/**
+ * Standard objects known to satisfy EntityDefinition's Metadata Relationship eligibility rule, per
+ * Salesforce's Custom Metadata Types Implementation Guide ("Custom Metadata Relationships"): supports
+ * custom fields, supports Apex triggers, supports custom layouts, isn't an activity object (`Task`/
+ * `Event`), isn't `User`, isn't a Trialforce object. Salesforce doesn't publish a single canonical,
+ * current list of which standard objects satisfy that rule, and it isn't fixed across releases, so this
+ * is a best-effort baseline, not an authoritative table — extend it as a real binding confirms an object
+ * works, or as `unsupported-entity-definition-object`/`unnecessary-entity-definition-alternate`
+ * false-positives on one that does. See docs/design/0014-domain-process-binding-entity-definition-eligibility.md.
+ *
+ * Custom objects are never checked against this list — see `isCustomObjectApiName` — since a custom
+ * object always satisfies the rule.
+ */
+export const ENTITY_DEFINITION_STANDARD_OBJECTS: ReadonlySet<string> = new Set([
+  'Account',
+  'Asset',
+  'Campaign',
+  'CampaignMember',
+  'Case',
+  'Contact',
+  'Contract',
+  'ContractLineItem',
+  'Entitlement',
+  'Lead',
+  'Opportunity',
+  'OpportunityContactRole',
+  'OpportunityLineItem',
+  'Order',
+  'OrderItem',
+  'Pricebook2',
+  'PricebookEntry',
+  'Product2',
+  'Quote',
+  'QuoteLineItem',
+  'ServiceContract',
+  'Solution',
+  'WorkOrder',
+  'WorkOrderLineItem',
+  'WorkType',
+]);
+
+/**
+ * True when `apiName` is a custom (optionally namespaced) object. Salesforce reserves `__` in a standard
+ * object's API name for exactly this suffix (`__c`, a namespace prefix, a platform event's `__e`, a
+ * big/external object's `__b`/`__x`), so any object whose API name contains it always satisfies
+ * EntityDefinition's Metadata Relationship eligibility rule on its own, without consulting
+ * `ENTITY_DEFINITION_STANDARD_OBJECTS`.
+ */
+export function isCustomObjectApiName(apiName: string): boolean {
+  return apiName.includes('__');
+}
 
 /** One problem `validateDomainProcessBindings` found with a scanned `DomainProcessBinding__mdt` record. */
 export type DomainProcessBindingIssue = {

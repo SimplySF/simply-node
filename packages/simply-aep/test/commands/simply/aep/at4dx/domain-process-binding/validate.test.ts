@@ -103,9 +103,9 @@ describe('simply aep at4dx domain-process-binding validate', () => {
           records: [
             {
               DeveloperName: 'Account_Action',
-              RelatedDomainBindingSObject__c: null,
-              RelatedDomainBindingSObject__r: null,
-              RelatedDomainBindingSObjectAlternate__c: 'Account',
+              RelatedDomainBindingSObject__c: '01I000000000000',
+              RelatedDomainBindingSObject__r: { QualifiedApiName: 'Account' },
+              RelatedDomainBindingSObjectAlternate__c: null,
               ProcessContext__c: 'TriggerExecution',
               TriggerOperation__c: 'Before_Insert',
               DomainMethodToken__c: null,
@@ -175,9 +175,9 @@ describe('simply aep at4dx domain-process-binding validate', () => {
           records: [
             {
               DeveloperName: 'Account_Action_Two',
-              RelatedDomainBindingSObject__c: null,
-              RelatedDomainBindingSObject__r: null,
-              RelatedDomainBindingSObjectAlternate__c: 'Account',
+              RelatedDomainBindingSObject__c: '01I000000000000',
+              RelatedDomainBindingSObject__r: { QualifiedApiName: 'Account' },
+              RelatedDomainBindingSObjectAlternate__c: null,
               ProcessContext__c: 'TriggerExecution',
               TriggerOperation__c: 'Before_Insert',
               DomainMethodToken__c: null,
@@ -192,9 +192,9 @@ describe('simply aep at4dx domain-process-binding validate', () => {
             },
             {
               DeveloperName: 'Account_Action_One',
-              RelatedDomainBindingSObject__c: null,
-              RelatedDomainBindingSObject__r: null,
-              RelatedDomainBindingSObjectAlternate__c: 'Account',
+              RelatedDomainBindingSObject__c: '01I000000000000',
+              RelatedDomainBindingSObject__r: { QualifiedApiName: 'Account' },
+              RelatedDomainBindingSObjectAlternate__c: null,
               ProcessContext__c: 'TriggerExecution',
               TriggerOperation__c: 'Before_Insert',
               DomainMethodToken__c: null,

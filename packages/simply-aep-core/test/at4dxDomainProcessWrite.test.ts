@@ -208,7 +208,9 @@ describe('setDomainProcessBinding', () => {
   });
 
   it('moves an alternate-field binding to the primary field when sobjectAlternate is explicitly set to false', async () => {
-    await createDomainProcessBinding(baseCreateInput({ sobject: 'ServiceResource', sobjectAlternate: true }), {
+    // Account (unlike ServiceResource) is EntityDefinition-eligible, so moving it to the primary field is
+    // a valid end state per docs/design/0014-domain-process-binding-entity-definition-eligibility.md.
+    await createDomainProcessBinding(baseCreateInput({ sobjectAlternate: true }), {
       sourceDir: tmpDir,
     });
 
