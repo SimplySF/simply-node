@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.6.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-aep-core%400.5.0...%40simplysf%2Fsimply-aep-core%400.6.0) (2026-08-29)
+
+### Features
+
+- **simply-aep:** validate EntityDefinition eligibility for domain-process-binding SObject fields ([372dec1](https://github.com/SimplySF/simply-node/commit/372dec164464e5c76cff8a1df75c250e2a96362f))
+
 # [0.5.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-aep-core%400.4.0...%40simplysf%2Fsimply-aep-core%400.5.0) (2026-08-27)
 
 ### Features
