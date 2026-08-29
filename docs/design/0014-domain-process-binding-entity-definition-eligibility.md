@@ -1,6 +1,6 @@
 # 0014 — `domain-process-binding validate`: EntityDefinition field-choice checks
 
-**Status:** Draft
+**Status:** Implemented (PR #140)
 **Package:** `packages/simply-aep-core`, `packages/simply-aep`
 **Date:** 2026-08-28
 

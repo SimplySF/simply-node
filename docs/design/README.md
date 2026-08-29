@@ -49,7 +49,7 @@ refactors that keep the public surface identical (though a short doc is welcome 
 | [0011](0011-domain-process-binding-issue-scoping.md)                 | Scoped domain-process-binding validation                                     | Implemented           |
 | [0012](0012-at4dx-domain-process-binding-create-set.md)              | `simply aep at4dx domain-process-binding create`/`set`                       | Implemented           |
 | [0013](0013-flow-and-permission-set-assignment-cleanup.md)           | `simply flow delete`/`version prune`, `simply permissions assignment delete` | Implemented           |
-| [0014](0014-domain-process-binding-entity-definition-eligibility.md) | `domain-process-binding validate`: EntityDefinition field-choice checks      | Draft                 |
+| [0014](0014-domain-process-binding-entity-definition-eligibility.md) | `domain-process-binding validate`: EntityDefinition field-choice checks      | Implemented           |
 
 ## Template
 
