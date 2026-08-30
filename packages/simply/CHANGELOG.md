@@ -3,6 +3,19 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply%403.5.0...%40simplysf%2Fsimply%404.0.0) (2026-08-30)
+
+### Features
+
+- **simply-aep:** add binding validate/create/update for AT4DX Application Factory bindings ([5f1202e](https://github.com/SimplySF/simply-node/commit/5f1202e7e941555f28cb8f4e81508eaf66f873fd))
+
+### BREAKING CHANGES
+
+- **simply-aep:** scanLocalBindings now returns
+  { records, malformed, ambiguous } instead of a bare RawBindingRecord[].
+
+  See docs/design/0015-at4dx-binding-validate-create-set.md.
+
 # [3.5.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply%403.4.2...%40simplysf%2Fsimply%403.5.0) (2026-08-29)
 
 ### Features
