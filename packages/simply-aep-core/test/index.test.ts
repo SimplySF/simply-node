@@ -61,6 +61,16 @@ it('exports the expected set of runtime values', () => {
       'deployMetadataFile',
       'createDomainProcessBinding',
       'setDomainProcessBinding',
+      'FIELD_SET_INCLUSION_OBJECT',
+      'FIELD_SET_INCLUSION_LOCAL_OBJECT_NAME',
+      'FIELD_SET_INCLUSION_RULES',
+      'FieldSetInclusionWriteError',
+      'buildFieldSetInclusionXml',
+      'scanLocalFieldSetInclusions',
+      'scanOrgFieldSetInclusions',
+      'validateFieldSetInclusions',
+      'createFieldSetInclusion',
+      'updateFieldSetInclusion',
     ].sort(),
   );
 });
