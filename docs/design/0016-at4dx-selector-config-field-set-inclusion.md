@@ -1,6 +1,6 @@
 # 0016 — `simply aep at4dx field-set-inclusion list`/`validate`/`create`/`update`
 
-**Status:** Draft
+**Status:** Implemented
 **Package:** `packages/simply-aep-core`, `packages/simply-aep`
 **Date:** 2026-08-29
 
@@ -149,25 +149,31 @@ Mirrors [0010](0010-at4dx-domain-process-binding-validate.md)'s and
 
 1. **`at4dxFieldSetInclusionTypes.ts`** — `RawFieldSetInclusionRecord`, `MalformedFieldSetInclusionRecord`,
    `AmbiguousFieldSetInclusionRecord`, issue/rule types, `FIELD_SET_INCLUSION_RULES`, write input/target/
-   result types, `FieldSetInclusionWriteError`. Imports `EntityDefinitionSObjectField` (renamed from
-   `DomainProcessBindingSObjectField` when `entityDefinitionEligibility.ts` was extracted in
-   [0015](0015-at4dx-binding-validate-create-set.md)) rather than redefining the primary/alternate
-   concept a third time.
+   result types, `FieldSetInclusionWriteError`. Defines its own `FieldSetInclusionSObjectField` (`'primary'
+| 'alternate'`) rather than importing a shared one — no such shared type was actually extracted when
+   `entityDefinitionEligibility.ts` was pulled out in [0015](0015-at4dx-binding-validate-create-set.md);
+   that doc only moved `ENTITY_DEFINITION_STANDARD_OBJECTS`/`isCustomObjectApiName`, and
+   `DomainProcessBindingSObjectField`/`BindingKeyField` each still live on their own family's types file.
+   Corrected here rather than doing the (out-of-scope) three-way extraction this doc originally assumed
+   had already happened.
 2. **`at4dxFieldSetInclusionOrgScan.ts`** — SOQL including `BindingSObject__r.QualifiedApiName`;
    malformed/ambiguous tracking from the start (no retrofit needed, unlike 0015's older family).
 3. **`at4dxFieldSetInclusionLocalScan.ts`** — parses `SelectorConfig_FieldSetInclusion.<name>.md-meta.xml`
    via the existing `customMetadataXml.ts` helpers.
-4. **`at4dxFieldSetInclusionResolve.ts`** — `listFieldSetInclusions` (or just export scan results
-   directly, since there's no resolution step — decide while implementing whether a pass-through
-   function pulls its weight) and `validateFieldSetInclusions`.
+4. **`at4dxFieldSetInclusionResolve.ts`** — `validateFieldSetInclusions` only. No `listFieldSetInclusions`
+   pass-through was added: `list`'s command calls `scanOrgFieldSetInclusions`/`scanLocalFieldSetInclusions`
+   directly and prints `records` as-is, since there's no resolution step for a pass-through to wrap.
 5. **`at4dxFieldSetInclusionBuildXml.ts`**, **`at4dxFieldSetInclusionWrite.ts`** — `createFieldSetInclusion`/
    `updateFieldSetInclusion`, mirroring `at4dxDomainProcessWrite.ts`'s structure.
 6. **`packages/simply-aep/src/commands/simply/aep/at4dx/field-set-inclusion/{list,validate,create,update}.ts`**.
 7. **`packages/simply-aep/messages/simply.aep.at4dx.field-set-inclusion.{list,validate,create,update}.md`**.
 8. **`src/index.ts`** barrel — export everything new; update `test/index.test.ts`.
-9. **Tests**: `test/at4dxFieldSetInclusionOrgScan.test.ts`/`...LocalScan.test.ts`,
+9. **Tests**: `test/at4dxFieldSetInclusionLocalScan.test.ts`, `test/at4dxFieldSetInclusionBuildXml.test.ts`,
    `test/at4dxFieldSetInclusionResolve.test.ts` (one case per rule), `test/at4dxFieldSetInclusionWrite.test.ts`
-   (mirroring `at4dxDomainProcessWrite.test.ts`), and the four command test files under
+   (mirroring `at4dxDomainProcessWrite.test.ts`, including its org-connected `create`/`update` cases — org
+   scanning is exercised there via a mocked connection rather than in a separate org-scan test file,
+   matching the convention `at4dxDomainProcessWrite.test.ts`/`at4dxWrite.test.ts` already established for
+   the other two binding families), and the four command test files under
    `packages/simply-aep/test/commands/simply/aep/at4dx/field-set-inclusion/`.
 10. **Housekeeping**, per `CLAUDE.md`: `pnpm run readme`/`pnpm run build`/`pnpm --filter site run sync`,
     same caution about the `oclif readme` duplicate-block bug noted in 0015.

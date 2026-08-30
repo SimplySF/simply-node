@@ -522,6 +522,203 @@ EXAMPLES
 
 _See code: [@simplysf/simply-aep](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.7.0/packages/simply-aep/lib/commands/simply/aep/at4dx/domain-process-binding/validate.js)_
 
+## `sf simply aep at4dx field-set-inclusion create`
+
+Create a new AT4DX Selector field set inclusion (SelectorConfig_FieldSetInclusion__mdt) in local source and/or a connected org.
+
+```
+USAGE
+  $ sf simply aep at4dx field-set-inclusion create -n <value> -s <value> -f <value> [--json] [--flags-dir <value>] [-d <value>] [-o <value>]
+    [--api-version <value>] [--wait <value>] [--label <value>] [--sobject-alternate] [--active] [--force]
+
+FLAGS
+  -d, --source-dir=<value>      The package directory to create the field set inclusion's .md-meta.xml under. Created if
+                                the customMetadata folder doesn't exist yet.
+  -f, --fieldset-name=<value>   (required) FieldsetName__c — the field set to add to the selector's queried field list.
+                                Unique org-wide across every SObject, not per-SObject.
+  -n, --developer-name=<value>  (required) The record's DeveloperName. Must start with a letter, contain only letters,
+                                numbers, and single underscores, not end with an underscore, and be 40 characters or
+                                fewer.
+  -o, --target-org=<value>      Deploy the generated field set inclusion to this org after writing it.
+  -s, --sobject=<value>         (required) The SObject API name to bind the field set to (BindingSObject__c, or
+                                BindingSObjectAlternate__c with --sobject-alternate).
+      --[no-]active             IsActive__c. Defaults to true, matching the Custom Metadata Type's own default. Pass
+                                --no-active to create it inactive.
+      --api-version=<value>     Override the api version used for api requests made by this command
+      --force                   Write (and deploy) even if validation finds an error-severity issue. Validation still
+                                runs and its issues are still printed and returned.
+      --label=<value>           The record's label. Defaults to --developer-name. Must be 40 characters or fewer.
+      --[no-]sobject-alternate  Write --sobject to BindingSObjectAlternate__c instead of BindingSObject__c. Use this for
+                                a SObject that can't be referenced through an EntityDefinition field at all (for example
+                                ServiceResource and other Setup objects).
+      --wait=<value>            [default: 33] Deploy poll timeout, in minutes. Only meaningful with --target-org.
+
+GLOBAL FLAGS
+  --flags-dir=<value>  Import flag values from a directory.
+  --json               Format output as json.
+
+DESCRIPTION
+  Create a new AT4DX Selector field set inclusion (SelectorConfig_FieldSetInclusion__mdt) in local source and/or a
+  connected org.
+
+  Generates a `SelectorConfig_FieldSetInclusion.<DeveloperName>.md-meta.xml` file from the given flags and writes it
+  under --source-dir, deploys it to --target-org, or both. Validates the resulting record — alongside everything else
+  already in scope — with the same rules `simply aep at4dx field-set-inclusion validate` uses, and refuses to write if
+  that introduces an error-severity issue unless --force is passed. At least one of --source-dir/--target-org is
+  required; both may be given at once (write to source and deploy it live in the same run). Given --target-org alone,
+  the file is written to a temporary directory, deployed, and discarded — no working-tree footprint.
+
+  --sobject writes BindingSObject__c by default (pass --sobject-alternate to write BindingSObjectAlternate__c instead,
+  for a SObject — such as ServiceResource and other Setup objects — that can't be referenced through an EntityDefinition
+  field at all).
+
+EXAMPLES
+  $ sf simply aep at4dx field-set-inclusion create --source-dir sfdx-source/core --developer-name Account_Contact_Fields --sobject Account --fieldset-name ContactRelatedFields
+
+  $ sf simply aep at4dx field-set-inclusion create --target-org myOrg --developer-name ServiceResource_Skills --sobject ServiceResource --sobject-alternate --fieldset-name SkillFields
+```
+
+_See code: [@simplysf/simply-aep](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.7.0/packages/simply-aep/lib/commands/simply/aep/at4dx/field-set-inclusion/create.js)_
+
+## `sf simply aep at4dx field-set-inclusion list`
+
+List the AT4DX Selector field set inclusions configured in an org or local source.
+
+```
+USAGE
+  $ sf simply aep at4dx field-set-inclusion list [--json] [--flags-dir <value>] [-o <value>] [--api-version <value>] [-d
+  <value>...]
+
+FLAGS
+  -d, --source-dir=<value>...  One or more paths to directories containing Salesforce DX source. Use this for
+                               local-source discovery.
+  -o, --target-org=<value>     Username or alias of the org to read field set inclusions from. Use this for live-org
+                               discovery.
+      --api-version=<value>    Override the api version used for api requests made by this command
+
+GLOBAL FLAGS
+  --flags-dir=<value>  Import flag values from a directory.
+  --json               Format output as json.
+
+DESCRIPTION
+  List the AT4DX Selector field set inclusions configured in an org or local source.
+
+  Reads `SelectorConfig_FieldSetInclusion__mdt` — either from a live org or from local Salesforce DX source — and lists
+  every record found. Unlike `simply aep at4dx binding list`, there's no priority/winner concept: every `IsActive__c:
+  true` record for a selector's SObject contributes its field set simultaneously, so this is a flat table, not a
+  resolved one. Exactly one of `--target-org` or `--source-dir` must be specified.
+
+EXAMPLES
+  $ sf simply aep at4dx field-set-inclusion list --target-org myOrg
+
+  $ sf simply aep at4dx field-set-inclusion list --source-dir sfdx-source/core --source-dir sfdx-source/app
+
+  $ sf simply aep at4dx field-set-inclusion list --target-org myOrg --json
+```
+
+_See code: [@simplysf/simply-aep](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.7.0/packages/simply-aep/lib/commands/simply/aep/at4dx/field-set-inclusion/list.js)_
+
+## `sf simply aep at4dx field-set-inclusion update`
+
+Update an existing AT4DX Selector field set inclusion (SelectorConfig_FieldSetInclusion__mdt) in local source and/or a connected org.
+
+```
+USAGE
+  $ sf simply aep at4dx field-set-inclusion update -n <value> [--json] [--flags-dir <value>] [-d <value>...] [-o <value>] [--api-version <value>]
+    [--wait <value>] [--label <value>] [-s <value>] [--sobject-alternate] [-f <value>] [--active] [--force]
+
+FLAGS
+  -d, --source-dir=<value>...   One or more paths to directories containing Salesforce DX source, searched for the
+                                record to update.
+  -f, --fieldset-name=<value>   FieldsetName__c — the field set to add to the selector's queried field list. Changing it
+                                changes which field set is included. If not given, the existing value is kept.
+  -n, --developer-name=<value>  (required) The DeveloperName of the record to update.
+  -o, --target-org=<value>      Locate (when --source-dir isn't given) and/or deploy the record to this org.
+  -s, --sobject=<value>         The SObject API name to bind the field set to. If not given, the existing value is kept.
+      --[no-]active             IsActive__c. If not given, the existing value is kept. Pass --no-active to deactivate.
+      --api-version=<value>     Override the api version used for api requests made by this command
+      --force                   Write (and deploy) even if validation finds an error-severity issue. Validation still
+                                runs and its issues are still printed and returned.
+      --label=<value>           The record's label. If not given, the existing label is kept.
+      --[no-]sobject-alternate  Write --sobject to BindingSObjectAlternate__c instead of BindingSObject__c, for a
+                                SObject that can't be referenced through an EntityDefinition field at all (for example
+                                ServiceResource and other Setup objects). If not given, the record keeps whichever field
+                                it already uses — this flag only needs to be passed to change it.
+      --wait=<value>            [default: 33] Deploy poll timeout, in minutes. Only meaningful with --target-org.
+
+GLOBAL FLAGS
+  --flags-dir=<value>  Import flag values from a directory.
+  --json               Format output as json.
+
+DESCRIPTION
+  Update an existing AT4DX Selector field set inclusion (SelectorConfig_FieldSetInclusion__mdt) in local source and/or a
+  connected org.
+
+  Finds the field set inclusion named --developer-name in local source and/or a connected org, applies only the fields
+  given as flags — everything else, including which SObject reference field it uses, is preserved from the found record
+  — and rewrites its `.md-meta.xml` file. Validates the resulting record — alongside everything else already in scope —
+  with the same rules `simply aep at4dx field-set-inclusion validate` uses, and refuses to write if that introduces an
+  error-severity issue unless --force is passed.
+
+  When --source-dir is given, the record is located there (searched across every directory given, same as
+  `list`/`validate`) and that exact file is rewritten; the found file is also deployed if --target-org is given. When
+  only --target-org is given, the record is located and updated directly in the org via a temporary file, deployed, then
+  discarded — no working-tree footprint.
+
+  --developer-name identifies the record to update and can't itself be changed by this command.
+
+EXAMPLES
+  $ sf simply aep at4dx field-set-inclusion update --source-dir sfdx-source/core --source-dir sfdx-source/app --developer-name Account_Contact_Fields --no-active
+
+  $ sf simply aep at4dx field-set-inclusion update --target-org myOrg --developer-name Account_Contact_Fields --fieldset-name ContactRelatedFieldsV2
+```
+
+_See code: [@simplysf/simply-aep](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.7.0/packages/simply-aep/lib/commands/simply/aep/at4dx/field-set-inclusion/update.js)_
+
+## `sf simply aep at4dx field-set-inclusion validate`
+
+Validate the AT4DX Selector field set inclusions configured in an org or local source, failing when a wiring problem is found.
+
+```
+USAGE
+  $ sf simply aep at4dx field-set-inclusion validate [--json] [--flags-dir <value>] [-o <value>] [--api-version <value>]
+  [-d <value>...]
+
+FLAGS
+  -d, --source-dir=<value>...  One or more paths to directories containing Salesforce DX source. Use this for
+                               local-source discovery.
+  -o, --target-org=<value>     Username or alias of the org to read field set inclusions from. Use this for live-org
+                               discovery.
+      --api-version=<value>    Override the api version used for api requests made by this command
+
+GLOBAL FLAGS
+  --flags-dir=<value>  Import flag values from a directory.
+  --json               Format output as json.
+
+DESCRIPTION
+  Validate the AT4DX Selector field set inclusions configured in an org or local source, failing when a wiring problem
+  is found.
+
+  Reads `SelectorConfig_FieldSetInclusion__mdt` — either from a live org or from local Salesforce DX source — and checks
+  them for problems `simply aep at4dx field-set-inclusion list` doesn't fail on: a record with no resolvable SObject, an
+  ambiguous SObject reference, a SObject reference naming a standard object that can't actually go through an
+  EntityDefinition metadata relationship, two records sharing a FieldsetName__c value (unique org-wide, not
+  per-SObject), and the same DeveloperName defined more than once. Exactly one of `--target-org` or `--source-dir` must
+  be specified.
+
+  Prints a table of every issue found. Exits non-zero when any issue is an error (a warning alone doesn't fail the
+  command) — use this in CI to gate on AT4DX field set inclusion wiring problems before they reach an org.
+
+EXAMPLES
+  $ sf simply aep at4dx field-set-inclusion validate --target-org myOrg
+
+  $ sf simply aep at4dx field-set-inclusion validate --source-dir sfdx-source/core --source-dir sfdx-source/app
+
+  $ sf simply aep at4dx field-set-inclusion validate --target-org myOrg --json
+```
+
+_See code: [@simplysf/simply-aep](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.7.0/packages/simply-aep/lib/commands/simply/aep/at4dx/field-set-inclusion/validate.js)_
+
 ## `sf simply apex execute`
 
 Execute anonymous Apex code.

@@ -1,6 +1,6 @@
 # 0015 — `simply aep at4dx binding validate`/`create`/`update`
 
-**Status:** Draft
+**Status:** Implemented
 **Package:** `packages/simply-aep-core`, `packages/simply-aep`
 **Date:** 2026-08-29
 

@@ -143,6 +143,66 @@
   },
   {
     "alias": [],
+    "command": "simply:aep:at4dx:field-set-inclusion:create",
+    "flagAliases": [],
+    "flagChars": ["d", "f", "n", "o", "s"],
+    "flags": [
+      "active",
+      "api-version",
+      "developer-name",
+      "fieldset-name",
+      "flags-dir",
+      "force",
+      "json",
+      "label",
+      "sobject",
+      "sobject-alternate",
+      "source-dir",
+      "target-org",
+      "wait"
+    ],
+    "plugin": "@simplysf/simply-aep"
+  },
+  {
+    "alias": [],
+    "command": "simply:aep:at4dx:field-set-inclusion:list",
+    "flagAliases": [],
+    "flagChars": ["d", "o"],
+    "flags": ["api-version", "flags-dir", "json", "source-dir", "target-org"],
+    "plugin": "@simplysf/simply-aep"
+  },
+  {
+    "alias": [],
+    "command": "simply:aep:at4dx:field-set-inclusion:update",
+    "flagAliases": [],
+    "flagChars": ["d", "f", "n", "o", "s"],
+    "flags": [
+      "active",
+      "api-version",
+      "developer-name",
+      "fieldset-name",
+      "flags-dir",
+      "force",
+      "json",
+      "label",
+      "sobject",
+      "sobject-alternate",
+      "source-dir",
+      "target-org",
+      "wait"
+    ],
+    "plugin": "@simplysf/simply-aep"
+  },
+  {
+    "alias": [],
+    "command": "simply:aep:at4dx:field-set-inclusion:validate",
+    "flagAliases": [],
+    "flagChars": ["d", "o"],
+    "flags": ["api-version", "flags-dir", "json", "source-dir", "target-org"],
+    "plugin": "@simplysf/simply-aep"
+  },
+  {
+    "alias": [],
     "command": "simply:apex:execute",
     "flagAliases": [],
     "flagChars": ["f", "o"],
