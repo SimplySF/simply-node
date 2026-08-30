@@ -1,7 +1,7 @@
 {
   "name": "@simplysf/simply-document",
   "description": "Utilities for generating project documentation",
-  "version": "0.3.6",
+  "version": "0.3.7",
   "author": "@ClayChipps",
   "homepage": "https://github.com/SimplySF/simply-node",
   "bugs": "https://github.com/SimplySF/simply-node/issues",
