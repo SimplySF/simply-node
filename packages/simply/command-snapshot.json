@@ -1,10 +1,66 @@
 [
   {
     "alias": [],
+    "command": "simply:aep:at4dx:binding:create",
+    "flagAliases": [],
+    "flagChars": ["c", "d", "n", "o", "s", "t"],
+    "flags": [
+      "api-version",
+      "binding-interface",
+      "developer-name",
+      "flags-dir",
+      "force",
+      "json",
+      "label",
+      "priority",
+      "sobject",
+      "sobject-alternate",
+      "source-dir",
+      "target-org",
+      "to",
+      "type",
+      "wait"
+    ],
+    "plugin": "@simplysf/simply-aep"
+  },
+  {
+    "alias": [],
     "command": "simply:aep:at4dx:binding:list",
     "flagAliases": [],
     "flagChars": ["d", "o", "t"],
     "flags": ["api-version", "effective-only", "flags-dir", "json", "source-dir", "target-org", "type"],
+    "plugin": "@simplysf/simply-aep"
+  },
+  {
+    "alias": [],
+    "command": "simply:aep:at4dx:binding:update",
+    "flagAliases": [],
+    "flagChars": ["c", "d", "n", "o", "s", "t"],
+    "flags": [
+      "api-version",
+      "binding-interface",
+      "developer-name",
+      "flags-dir",
+      "force",
+      "json",
+      "label",
+      "priority",
+      "sobject",
+      "sobject-alternate",
+      "source-dir",
+      "target-org",
+      "to",
+      "type",
+      "wait"
+    ],
+    "plugin": "@simplysf/simply-aep"
+  },
+  {
+    "alias": [],
+    "command": "simply:aep:at4dx:binding:validate",
+    "flagAliases": [],
+    "flagChars": ["d", "o", "t"],
+    "flags": ["api-version", "flags-dir", "json", "source-dir", "target-org", "type"],
     "plugin": "@simplysf/simply-aep"
   },
   {

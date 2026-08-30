@@ -80,15 +80,15 @@ already CMDT-agnostic).
 
 ### New rules (`validateBindings`)
 
-| Rule                                      | Severity  | Scope    | Applies to                | Detects                                                                                                                                                                                                       |
-| ----------------------------------------- | --------- | -------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `missing-sobject-reference`               | `error`   | `scan`   | Selector, Domain          | Neither `BindingSObject__c` nor `BindingSObjectAlternate__c` set — no SObject to bind against.                                                                                                                |
-| `ambiguous-sobject-reference`             | `error`   | `record` | Selector, Domain          | Both set to different values. `error`, not `warning` — Section "Alternatives considered" explains why this differs from `DomainProcessBinding__mdt`'s severity for the textually-identical situation.         |
-| `unsupported-entity-definition-object`    | `error`   | `record` | Selector, Domain          | `BindingSObject__c` set to a standard object not on `ENTITY_DEFINITION_STANDARD_OBJECTS` — reused verbatim from [0014](0014-domain-process-binding-entity-definition-eligibility.md).                         |
-| `unnecessary-entity-definition-alternate` | `warning` | `record` | Selector, Domain          | `BindingSObjectAlternate__c` set to an eligible object — same reuse.                                                                                                                                          |
-| `duplicate-to`                            | `error`   | `scan`   | Service, Selector, Domain | Two records (of the same binding type) share a `To__c` value — the field is platform-unique on all three; both can't deploy.                                                                                  |
-| `duplicate-domain-sobject`                | `error`   | `record` | Domain only               | Two Domain records resolve to the same SObject (via either field) — platform-unique on Domain only. Promotes `list`'s existing `ambiguous: true` display flag to a real validation failure for this one type. |
-| `duplicate-developer-name`                | `error`   | `scan`   | Service, Selector, Domain | Same `DeveloperName` defined more than once.                                                                                                                                                                  |
+| Rule                                      | Severity  | Scope    | Applies to                | Detects                                                                                                                                                                                                                                                                                                                                                                |
+| ----------------------------------------- | --------- | -------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `missing-sobject-reference`               | `error`   | `scan`   | Service, Selector, Domain | Selector/Domain: neither `BindingSObject__c` nor `BindingSObjectAlternate__c` set. Service: `BindingInterface__c` not set (a blank interface reference is just as much "no key to bind against" as a blank SObject reference is — extended to Service during implementation, since the rule's underlying scanner change already tracks it uniformly across all three). |
+| `ambiguous-sobject-reference`             | `error`   | `record` | Selector, Domain          | Both set to different values. `error`, not `warning` — Section "Alternatives considered" explains why this differs from `DomainProcessBinding__mdt`'s severity for the textually-identical situation.                                                                                                                                                                  |
+| `unsupported-entity-definition-object`    | `error`   | `record` | Selector, Domain          | `BindingSObject__c` set to a standard object not on `ENTITY_DEFINITION_STANDARD_OBJECTS` — reused verbatim from [0014](0014-domain-process-binding-entity-definition-eligibility.md).                                                                                                                                                                                  |
+| `unnecessary-entity-definition-alternate` | `warning` | `record` | Selector, Domain          | `BindingSObjectAlternate__c` set to an eligible object — same reuse.                                                                                                                                                                                                                                                                                                   |
+| `duplicate-to`                            | `error`   | `scan`   | Service, Selector, Domain | Two records (of the same binding type) share a `To__c` value — the field is platform-unique on all three; both can't deploy.                                                                                                                                                                                                                                           |
+| `duplicate-domain-sobject`                | `error`   | `record` | Domain only               | Two Domain records resolve to the same SObject (via either field) — platform-unique on Domain only. Promotes `list`'s existing `ambiguous: true` display flag to a real validation failure for this one type.                                                                                                                                                          |
+| `duplicate-developer-name`                | `error`   | `scan`   | Service, Selector, Domain | Same `DeveloperName` defined more than once.                                                                                                                                                                                                                                                                                                                           |
 
 No `order-collision`/`missing-context-field` analogs: `OrderOfExecution__c`/`ProcessContext__c` don't
 exist on these three objects — Service/Selector resolve by `Priority__c` (a tie is AT4DX's own map's
@@ -136,6 +136,18 @@ convention (the same shape of breakage 0010 already took once). `binding list`'s
 destructure `{ records }` and keeps ignoring `malformed`/`ambiguous`, unchanged behavior. Malformed/
 ambiguous detection only applies to Service/Selector/Domain — Service has no SObject field so it's never
 `ambiguous`; `UnitOfWork` keeps today's silent-drop behavior (out of scope, see Problem).
+
+`RawBindingRecord` also gains `label: string` and `filePath?: string` — not shown in the snippet above
+because they weren't obviously needed until implementing `updateBinding`: without a scanned `label`,
+`updateBinding` would have no way to preserve an existing record's label when `--label` isn't passed
+(exactly the gap `RawDomainProcessBindingRecord.label` already exists to close for
+`setDomainProcessBinding`, which this doc initially missed porting over). `filePath` mirrors
+`RawDomainProcessBindingRecord.filePath`, letting `updateBinding` rewrite the exact file it found instead
+of re-deriving the path. `RawBindingRecord` also gains `keyField?: 'primary' | 'alternate'` (named
+`BindingKeyField`, mirroring `DomainProcessBindingSObjectField`) — the doc's Problem/Decision sections
+discuss the primary/alternate split conceptually but the type snippet omitted the field that actually
+tracks it per record; without it, `unsupported-entity-definition-object`/`unnecessary-entity-definition-alternate`
+have no way to know which field a Selector/Domain record's `key` came from.
 
 ### Command behavior
 

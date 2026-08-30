@@ -16,6 +16,12 @@
 
 import type { Connection } from '@salesforce/core';
 import type { Duration } from '@salesforce/kit';
+import { ENTITY_DEFINITION_STANDARD_OBJECTS, isCustomObjectApiName } from './entityDefinitionEligibility.js';
+
+// Re-exported for backward compatibility within this package — these moved to
+// entityDefinitionEligibility.ts once a second CMDT needed them; see
+// docs/design/0015-at4dx-binding-validate-create-set.md.
+export { ENTITY_DEFINITION_STANDARD_OBJECTS, isCustomObjectApiName };
 
 /** Whether a `DomainProcessBinding__mdt` record contributes a criteria filter or an action. */
 export type DomainProcessType = 'Action' | 'Criteria';
@@ -236,58 +242,6 @@ export const DOMAIN_PROCESS_BINDING_RULES: Readonly<
       'RelatedDomainBindingSObjectAlternate__c is set to an object that supports EntityDefinition metadata relationships — it did not need the Alternate field; use RelatedDomainBindingSObject__c instead.',
   },
 };
-
-/**
- * Standard objects known to satisfy EntityDefinition's Metadata Relationship eligibility rule, per
- * Salesforce's Custom Metadata Types Implementation Guide ("Custom Metadata Relationships"): supports
- * custom fields, supports Apex triggers, supports custom layouts, isn't an activity object (`Task`/
- * `Event`), isn't `User`, isn't a Trialforce object. Salesforce doesn't publish a single canonical,
- * current list of which standard objects satisfy that rule, and it isn't fixed across releases, so this
- * is a best-effort baseline, not an authoritative table — extend it as a real binding confirms an object
- * works, or as `unsupported-entity-definition-object`/`unnecessary-entity-definition-alternate`
- * false-positives on one that does. See docs/design/0014-domain-process-binding-entity-definition-eligibility.md.
- *
- * Custom objects are never checked against this list — see `isCustomObjectApiName` — since a custom
- * object always satisfies the rule.
- */
-export const ENTITY_DEFINITION_STANDARD_OBJECTS: ReadonlySet<string> = new Set([
-  'Account',
-  'Asset',
-  'Campaign',
-  'CampaignMember',
-  'Case',
-  'Contact',
-  'Contract',
-  'ContractLineItem',
-  'Entitlement',
-  'Lead',
-  'Opportunity',
-  'OpportunityContactRole',
-  'OpportunityLineItem',
-  'Order',
-  'OrderItem',
-  'Pricebook2',
-  'PricebookEntry',
-  'Product2',
-  'Quote',
-  'QuoteLineItem',
-  'ServiceContract',
-  'Solution',
-  'WorkOrder',
-  'WorkOrderLineItem',
-  'WorkType',
-]);
-
-/**
- * True when `apiName` is a custom (optionally namespaced) object. Salesforce reserves `__` in a standard
- * object's API name for exactly this suffix (`__c`, a namespace prefix, a platform event's `__e`, a
- * big/external object's `__b`/`__x`), so any object whose API name contains it always satisfies
- * EntityDefinition's Metadata Relationship eligibility rule on its own, without consulting
- * `ENTITY_DEFINITION_STANDARD_OBJECTS`.
- */
-export function isCustomObjectApiName(apiName: string): boolean {
-  return apiName.includes('__');
-}
 
 /** One problem `validateDomainProcessBindings` found with a scanned `DomainProcessBinding__mdt` record. */
 export type DomainProcessBindingIssue = {

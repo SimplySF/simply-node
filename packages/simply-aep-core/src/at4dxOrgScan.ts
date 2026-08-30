@@ -17,13 +17,16 @@
 import {
   AT4DX_BINDING_OBJECTS,
   type AepConnection,
+  type AmbiguousBindingRecord,
   type BindingType,
+  type MalformedBindingRecord,
   type RawBindingRecord,
 } from './at4dxBindingTypes.js';
 
 /** The shape of a single query result record, across all four binding objects. Unused columns for a given type are simply absent. */
 type OrgBindingRecord = {
   DeveloperName: string;
+  Label: string;
   To__c?: string | null;
   Priority__c?: number | null;
   BindingInterface__c?: string | null;
@@ -41,10 +44,10 @@ type OrgBindingRecord = {
  * holds an EntityDefinition reference, not a usable API name.
  */
 const SOQL_BY_TYPE: Record<BindingType, string> = {
-  Service: `SELECT DeveloperName, To__c, BindingInterface__c, Priority__c FROM ${AT4DX_BINDING_OBJECTS.Service}`,
-  Selector: `SELECT DeveloperName, To__c, BindingSObject__c, BindingSObject__r.QualifiedApiName, BindingSObjectAlternate__c, Priority__c FROM ${AT4DX_BINDING_OBJECTS.Selector}`,
-  Domain: `SELECT DeveloperName, To__c, BindingSObject__c, BindingSObject__r.QualifiedApiName, BindingSObjectAlternate__c FROM ${AT4DX_BINDING_OBJECTS.Domain}`,
-  UnitOfWork: `SELECT DeveloperName, BindingSequence__c, BindingSObject__c, BindingSObject__r.QualifiedApiName, BindingSObjectAlternate__c FROM ${AT4DX_BINDING_OBJECTS.UnitOfWork}`,
+  Service: `SELECT DeveloperName, Label, To__c, BindingInterface__c, Priority__c FROM ${AT4DX_BINDING_OBJECTS.Service}`,
+  Selector: `SELECT DeveloperName, Label, To__c, BindingSObject__c, BindingSObject__r.QualifiedApiName, BindingSObjectAlternate__c, Priority__c FROM ${AT4DX_BINDING_OBJECTS.Selector}`,
+  Domain: `SELECT DeveloperName, Label, To__c, BindingSObject__c, BindingSObject__r.QualifiedApiName, BindingSObjectAlternate__c FROM ${AT4DX_BINDING_OBJECTS.Domain}`,
+  UnitOfWork: `SELECT DeveloperName, Label, BindingSequence__c, BindingSObject__c, BindingSObject__r.QualifiedApiName, BindingSObjectAlternate__c FROM ${AT4DX_BINDING_OBJECTS.UnitOfWork}`,
 };
 
 /** @returns The SObject key for a Selector/Domain/UnitOfWork record, preferring `BindingSObject__c`'s resolved API name and falling back to `BindingSObjectAlternate__c`, matching AT4DX's own fallback order. */
@@ -55,17 +58,33 @@ function resolveSObjectKey(record: OrgBindingRecord): string | undefined {
   return record.BindingSObjectAlternate__c ?? undefined;
 }
 
-/** @returns The normalized binding record, or `undefined` if the record has no resolvable key (and so can't be bound to anything). */
-function toRawRecord(bindingType: BindingType, record: OrgBindingRecord, source: string): RawBindingRecord | undefined {
-  const key = bindingType === 'Service' ? (record.BindingInterface__c ?? undefined) : resolveSObjectKey(record);
-  if (!key) {
-    return undefined;
+/** @returns An `AmbiguousBindingRecord` if both SObject reference fields are set to different values, else `undefined`. */
+function ambiguousKey(
+  bindingType: BindingType,
+  record: OrgBindingRecord,
+  key: string,
+  source: string,
+): AmbiguousBindingRecord | undefined {
+  const alternate = record.BindingSObjectAlternate__c;
+  if (record.BindingSObject__c && alternate && alternate !== key) {
+    return { bindingType, developerName: record.DeveloperName, key, alternateKey: alternate, source };
   }
+  return undefined;
+}
 
+/** @returns The normalized binding record for an already-resolved `key`. */
+function toRawRecord(
+  bindingType: BindingType,
+  record: OrgBindingRecord,
+  key: string,
+  source: string,
+): RawBindingRecord {
   return {
     bindingType,
     developerName: record.DeveloperName,
+    label: record.Label,
     key,
+    keyField: bindingType === 'Service' ? undefined : record.BindingSObject__c ? 'primary' : 'alternate',
     to: record.To__c ?? undefined,
     priority: record.Priority__c ?? undefined,
     sequence: record.BindingSequence__c ?? undefined,
@@ -75,6 +94,10 @@ function toRawRecord(bindingType: BindingType, record: OrgBindingRecord, source:
 
 export type OrgScanResult = {
   records: RawBindingRecord[];
+  /** Records with no resolvable key. Excluded from `records`, see `MalformedBindingRecord`. */
+  malformed: MalformedBindingRecord[];
+  /** Selector/Domain/UnitOfWork records with both SObject reference fields set to different values. Still included in `records`, see `AmbiguousBindingRecord`. */
+  ambiguous: AmbiguousBindingRecord[];
   /** Binding types whose query failed with `INVALID_TYPE` — the Custom Metadata Type doesn't exist in this org. */
   missingTypes: BindingType[];
 };
@@ -91,28 +114,61 @@ export type OrgScanResult = {
  *
  * @param connection - The org connection to query against.
  * @param types - Which binding types to query for.
- * @returns The discovered bindings and which requested types don't exist in this org.
+ * @returns The discovered bindings, diagnostics, and which requested types don't exist in this org.
  */
 export async function scanOrgBindings(connection: AepConnection, types: BindingType[]): Promise<OrgScanResult> {
   const source = connection.getUsername() ?? 'org';
   const missingTypes: BindingType[] = [];
 
   const perType = await Promise.all(
-    types.map(async (bindingType): Promise<RawBindingRecord[]> => {
+    types.map(async (bindingType) => {
+      const records: RawBindingRecord[] = [];
+      const malformed: MalformedBindingRecord[] = [];
+      const ambiguous: AmbiguousBindingRecord[] = [];
+
       try {
         const result = await connection.autoFetchQuery(SOQL_BY_TYPE[bindingType]);
-        return (result.records as unknown as OrgBindingRecord[])
-          .map((record) => toRawRecord(bindingType, record, source))
-          .filter((record): record is RawBindingRecord => record !== undefined);
+        for (const record of result.records as unknown as OrgBindingRecord[]) {
+          const key = bindingType === 'Service' ? (record.BindingInterface__c ?? undefined) : resolveSObjectKey(record);
+
+          // UnitOfWork keeps the pre-0015 silent-drop behavior: no malformed/ambiguous tracking, out
+          // of scope for validateBindings (see docs/design/0015-at4dx-binding-validate-create-set.md).
+          if (bindingType === 'UnitOfWork') {
+            if (key) {
+              records.push(toRawRecord(bindingType, record, key, source));
+            }
+            continue;
+          }
+
+          if (!key) {
+            malformed.push({ bindingType, developerName: record.DeveloperName, source });
+            continue;
+          }
+
+          const ambiguousRecord =
+            bindingType === 'Service' ? undefined : ambiguousKey(bindingType, record, key, source);
+          if (ambiguousRecord) {
+            ambiguous.push(ambiguousRecord);
+          }
+
+          records.push(toRawRecord(bindingType, record, key, source));
+        }
       } catch (error) {
         if ((error as Error).name === 'INVALID_TYPE') {
           missingTypes.push(bindingType);
-          return [];
+        } else {
+          throw error;
         }
-        throw error;
       }
+
+      return { records, malformed, ambiguous };
     }),
   );
 
-  return { records: perType.flat(), missingTypes };
+  return {
+    records: perType.flatMap((result) => result.records),
+    malformed: perType.flatMap((result) => result.malformed),
+    ambiguous: perType.flatMap((result) => result.ambiguous),
+    missingTypes,
+  };
 }
