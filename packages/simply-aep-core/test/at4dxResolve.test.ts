@@ -23,6 +23,7 @@ function record(
 ): RawBindingRecord {
   return {
     developerName: overrides.key,
+    label: overrides.key,
     source: 'test',
     ...overrides,
   };
