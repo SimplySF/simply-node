@@ -3,6 +3,23 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.7.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-aep-core%400.6.0...%40simplysf%2Fsimply-aep-core%400.7.0) (2026-08-30)
+
+### Bug Fixes
+
+- **simply-aep-core:** supply required label field in at4dxResolve test factory ([d41deb2](https://github.com/SimplySF/simply-node/commit/d41deb2aed9fec1b29b3f9ee0b57847f9ab5cfbb))
+
+### Features
+
+- **simply-aep:** add binding validate/create/update for AT4DX Application Factory bindings ([5f1202e](https://github.com/SimplySF/simply-node/commit/5f1202e7e941555f28cb8f4e81508eaf66f873fd))
+
+### BREAKING CHANGES
+
+- **simply-aep:** scanLocalBindings now returns
+  { records, malformed, ambiguous } instead of a bare RawBindingRecord[].
+
+  See docs/design/0015-at4dx-binding-validate-create-set.md.
+
 # [0.6.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-aep-core%400.5.0...%40simplysf%2Fsimply-aep-core%400.6.0) (2026-08-29)
 
 ### Features
