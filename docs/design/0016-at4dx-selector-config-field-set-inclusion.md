@@ -1,4 +1,4 @@
-# 0016 — `simply aep at4dx field-set-inclusion list`/`validate`/`create`/`set`
+# 0016 — `simply aep at4dx field-set-inclusion list`/`validate`/`create`/`update`
 
 **Status:** Draft
 **Package:** `packages/simply-aep-core`, `packages/simply-aep`
@@ -26,11 +26,11 @@ apply here too — same pair [0015](0015-at4dx-binding-validate-create-set.md) d
 Application Factory bindings.
 
 There's no `list` to see what's configured, no `validate` to catch a wiring problem before deploy, and no
-`create`/`set` to author a record without hand-writing `.md-meta.xml`.
+`create`/`update` to author a record without hand-writing `.md-meta.xml`.
 
 ## Decision
 
-Add a new command family, `simply aep at4dx field-set-inclusion {list,validate,create,set}`, structured
+Add a new command family, `simply aep at4dx field-set-inclusion {list,validate,create,update}`, structured
 after `domain-process-binding`'s file-for-file (the more-refined, more-recent precedent — reuse its
 shape over the older `at4dxBindingTypes.ts`/`at4dxResolve.ts` shape 0007 established, since
 `DomainProcessBinding__mdt`'s scanners already do the malformed/ambiguous tracking this new family needs
@@ -41,7 +41,13 @@ Not a `--type` value on `binding`/`domain-process-binding`: `SelectorConfig_Fiel
 shares no fields with either existing family (no `To__c`/`Priority__c`/`ProcessContext__c` — instead
 `FieldsetName__c`/`IsActive__c`), so cramming it into either would mean a large fraction of that
 command's flags are meaningless for this type. A dedicated command family keeps every flag on
-`field-set-inclusion create`/`set` actually applicable.
+`field-set-inclusion create`/`update` actually applicable.
+
+Uses `update` rather than `set`, matching [0015](0015-at4dx-binding-validate-create-set.md)'s verb
+choice for the same reason (the more conventional SF CLI verb for "edit an existing record") — this and
+0015 are both new, unreleased command families landing in the same round of work, so keeping their verbs
+consistent with each other matters more here than matching `domain-process-binding`'s still-`set` verb,
+which stays as-is for now and is reconciled separately.
 
 **No priority/winner resolution**, unlike `binding list`/`resolve` and `DomainProcessBinding`'s
 order-based resolution: every active `IsActive__c: true` record for a selector's SObject just adds its
@@ -61,29 +67,29 @@ sf simply aep at4dx field-set-inclusion list --target-org my-org
 sf simply aep at4dx field-set-inclusion validate --source-dir sfdx-source/core
 sf simply aep at4dx field-set-inclusion create --source-dir sfdx-source/core \
   --developer-name Account_Contact_Fields --sobject Account --fieldset-name ContactRelatedFields
-sf simply aep at4dx field-set-inclusion set --target-org my-org \
+sf simply aep at4dx field-set-inclusion update --target-org my-org \
   --developer-name Account_Contact_Fields --no-active
 ```
 
 `requiresProject = false` for all four, matching every other AT4DX command. `list`/`validate`: exactly
 one of `--target-org`/`--source-dir`. `create`: at least one, both allowed (dual write+deploy, matching
-0012). `set`: at least one (search scope), matching `domain-process-binding set`.
+0012). `update`: at least one (search scope), matching `domain-process-binding set`'s search-scope shape.
 
 ### Flags
 
-| Flag                  | Char | Commands                                                                                                                             | Notes                                                                                                                            |
-| --------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
-| `--target-org`        | `-o` | all                                                                                                                                  |                                                                                                                                  |
-| `--source-dir`        | `-d` | `list`/`validate` (repeatable), `create` (single), `set` (repeatable search scope)                                                   | Same split `domain-process-binding` already has between `list`/`validate`'s repeatable filter and `create`'s single destination. |
-| `--developer-name`    | `-n` | `create` (required), `set` (required)                                                                                                | Same DeveloperName rules as every other write command in this package.                                                           |
-| `--sobject`           | `-s` | `create` (required unless `--sobject-alternate` target given some other way — actually always required, see below), `set` (optional) |                                                                                                                                  |
-| `--sobject-alternate` |      | `create`, `set`                                                                                                                      | `--[no-]sobject-alternate`, tri-state, same convention as 0012/0015.                                                             |
-| `--fieldset-name`     | `-f` | `create` (required), `set` (optional)                                                                                                | `FieldsetName__c`. Not renamed on `set` — changing it changes which field set is included, which is exactly what `set` is for.   |
-| `--active`            |      | `create`, `set`                                                                                                                      | `--[no-]active`, defaults to `true` on `create` (matching `IsActive__c`'s CMDT default); unset means "don't change" on `set`.    |
-| `--label`             |      | `create`, `set`                                                                                                                      | Defaults to `--developer-name` on `create`.                                                                                      |
-| `--force`             |      | `create`, `set`                                                                                                                      | Bypass an error-severity issue.                                                                                                  |
-| `--wait`              |      | `create`, `set`                                                                                                                      | Deploy poll timeout, only meaningful with `--target-org`.                                                                        |
-| `--api-version`       |      | all                                                                                                                                  | Standard.                                                                                                                        |
+| Flag                  | Char | Commands                                                                                                                                | Notes                                                                                                                                                  |
+| --------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--target-org`        | `-o` | all                                                                                                                                     |                                                                                                                                                        |
+| `--source-dir`        | `-d` | `list`/`validate` (repeatable), `create` (single), `update` (repeatable search scope)                                                   | Same split `domain-process-binding` already has between `list`/`validate`'s repeatable filter and `create`'s single destination.                       |
+| `--developer-name`    | `-n` | `create` (required), `update` (required)                                                                                                | Same DeveloperName rules as every other write command in this package.                                                                                 |
+| `--sobject`           | `-s` | `create` (required unless `--sobject-alternate` target given some other way — actually always required, see below), `update` (optional) |                                                                                                                                                        |
+| `--sobject-alternate` |      | `create`, `update`                                                                                                                      | `--[no-]sobject-alternate`, tri-state, same convention as 0012/0015.                                                                                   |
+| `--fieldset-name`     | `-f` | `create` (required), `update` (optional)                                                                                                | `FieldsetName__c`. Not renamed to something else on `update` — changing it changes which field set is included, which is exactly what `update` is for. |
+| `--active`            |      | `create`, `update`                                                                                                                      | `--[no-]active`, defaults to `true` on `create` (matching `IsActive__c`'s CMDT default); unset means "don't change" on `update`.                       |
+| `--label`             |      | `create`, `update`                                                                                                                      | Defaults to `--developer-name` on `create`.                                                                                                            |
+| `--force`             |      | `create`, `update`                                                                                                                      | Bypass an error-severity issue.                                                                                                                        |
+| `--wait`              |      | `create`, `update`                                                                                                                      | Deploy poll timeout, only meaningful with `--target-org`.                                                                                              |
+| `--api-version`       |      | all                                                                                                                                     | Standard.                                                                                                                                              |
 
 Unlike Selector/Domain bindings, `--sobject` has no "reject for this type" carve-out — every
 FieldSetInclusion record needs a target SObject, so it's simply required on `create`.
@@ -117,7 +123,7 @@ with the rest of this package's AT4DX commands.
 
 ## Alternatives considered
 
-**Folding this into `binding create`/`set` as a fifth `--type` value**, considered and rejected in
+**Folding this into `binding create`/`update` as a fifth `--type` value**, considered and rejected in
 [0015](0015-at4dx-binding-validate-create-set.md)'s own review — repeated here since it's this doc's
 central decision, not that one's: the field shapes don't overlap at all (see Problem), so a shared
 command would mean most flags are conditionally invalid depending on `--type`, worse than one dedicated
@@ -155,9 +161,9 @@ Mirrors [0010](0010-at4dx-domain-process-binding-validate.md)'s and
    directly, since there's no resolution step — decide while implementing whether a pass-through
    function pulls its weight) and `validateFieldSetInclusions`.
 5. **`at4dxFieldSetInclusionBuildXml.ts`**, **`at4dxFieldSetInclusionWrite.ts`** — `createFieldSetInclusion`/
-   `setFieldSetInclusion`, mirroring `at4dxDomainProcessWrite.ts`'s structure.
-6. **`packages/simply-aep/src/commands/simply/aep/at4dx/field-set-inclusion/{list,validate,create,set}.ts`**.
-7. **`packages/simply-aep/messages/simply.aep.at4dx.field-set-inclusion.{list,validate,create,set}.md`**.
+   `updateFieldSetInclusion`, mirroring `at4dxDomainProcessWrite.ts`'s structure.
+6. **`packages/simply-aep/src/commands/simply/aep/at4dx/field-set-inclusion/{list,validate,create,update}.ts`**.
+7. **`packages/simply-aep/messages/simply.aep.at4dx.field-set-inclusion.{list,validate,create,update}.md`**.
 8. **`src/index.ts`** barrel — export everything new; update `test/index.test.ts`.
 9. **Tests**: `test/at4dxFieldSetInclusionOrgScan.test.ts`/`...LocalScan.test.ts`,
    `test/at4dxFieldSetInclusionResolve.test.ts` (one case per rule), `test/at4dxFieldSetInclusionWrite.test.ts`
@@ -180,11 +186,12 @@ Mirrors [0010](0010-at4dx-domain-process-binding-validate.md)'s and
 | Two records, same `FieldsetName__c`, same SObject              | Still `duplicate-fieldset-name` — same rule, not a separate "same SObject" variant.       |
 | Same `DeveloperName` across two `source` values                | `duplicate-developer-name`, `error`.                                                      |
 | Well-formed input                                              | Empty `issues`.                                                                           |
-| `createFieldSetInclusion`/`setFieldSetInclusion` happy path    | Correct XML fields; `IsActive__c` defaults to `true` when omitted on `create`.            |
-| `setFieldSetInclusion` changing `--fieldset-name` alone        | Only that field changes; SObject reference untouched.                                     |
-| Force-bypass, org+source dual-write, developer-name collisions | Mirrors `at4dxDomainProcessWrite.test.ts`.                                                |
+| `createFieldSetInclusion`/`updateFieldSetInclusion` happy path | Correct XML fields; `IsActive__c` defaults to `true` when omitted on `create`.            |
+| `updateFieldSetInclusion` changing `--fieldset-name` alone     | Only that field changes; SObject reference untouched.                                     |
+| Force-bypass, org+source dual-write, developer-name collisions | Mirrors `at4dxDomainProcessWrite.test.ts`'s existing `set` cases.                         |
 
-**Command** (`simply-aep`): mirrors `domain-process-binding/{list,validate,create,set}.test.ts`.
+**Command** (`simply-aep`): mirrors `domain-process-binding/{list,validate,create,set}.test.ts` in
+structure, under `field-set-inclusion/{list,validate,create,update}.test.ts` (verb renamed).
 
 **NUT**: none, matching every existing AT4DX command.
 

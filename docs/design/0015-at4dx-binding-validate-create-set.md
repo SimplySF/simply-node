@@ -1,4 +1,4 @@
-# 0015 — `simply aep at4dx binding validate`/`create`/`set`
+# 0015 — `simply aep at4dx binding validate`/`create`/`update`
 
 **Status:** Draft
 **Package:** `packages/simply-aep-core`, `packages/simply-aep`
@@ -41,17 +41,20 @@ ever actually deploy** — `binding list`'s existing `ambiguous` flag (`at4dxRes
 [0007](0007-at4dx-binding-list.md)) is display-only and doesn't fail anything; nothing today catches this
 before a deploy attempt fails on it.
 
-`UnitOfWork` is out of scope for `validate`/`create`/`set`: it has no `To__c` field at all (`sequence`
-instead), so it doesn't share create/set's field shape with the other three, and — since every record
+`UnitOfWork` is out of scope for `validate`/`create`/`update`: it has no `To__c` field at all (`sequence`
+instead), so it doesn't share create/update's field shape with the other three, and — since every record
 already contributes to one ordered list with no possible wiring conflict — there's nothing for a
 `validate` rule to catch on it either. `binding list` keeps covering all four types, unchanged.
 
 ## Decision
 
-Add `binding validate`, `binding create`, `binding set` to `packages/simply-aep`, alongside the existing
-`binding list` — same package, same `--type` flag (a required, narrower `service|selector|domain` for
-`create`/`set`; the existing four-value flag, unchanged, for `validate`/`list`), same
-`--source-dir`/`--target-org` shape domain-process-binding already established.
+Add `binding validate`, `binding create`, `binding update` to `packages/simply-aep`, alongside the
+existing `binding list` — `update` rather than `set` (unlike `domain-process-binding create`/`set`),
+since `update` is the more conventional SF CLI verb for "edit an existing record"; `domain-process-binding`
+keeps `set` for now, to be reconciled in a later doc rather than as a side effect of this one. Same
+package, same `--type` flag (a required, narrower `service|selector|domain` for `create`/`update`; the
+existing four-value flag, unchanged, for `validate`/`list`), same `--source-dir`/`--target-org` shape
+domain-process-binding already established.
 
 Detection logic lives in `packages/simply-aep-core` as a new `validateBindings` function alongside the
 existing `resolveBindings`, following the exact shape `validateDomainProcessBindings` already
@@ -68,7 +71,7 @@ Getting `missing-sobject-reference`/`ambiguous-sobject-reference` requires the s
 dropping/ignoring what they currently do — the same shape of change 0010 made to the DomainProcessBinding
 scanners, applied here to `at4dxOrgScan.ts`/`at4dxLocalScan.ts`.
 
-`createBinding`/`setBinding` follow `createDomainProcessBinding`/`setDomainProcessBinding`'s shape
+`createBinding`/`updateBinding` follow `createDomainProcessBinding`/`setDomainProcessBinding`'s shape
 exactly (0012): validate-before-write, `force` to bypass an error-severity issue, write to `--source-dir`
 and/or deploy to `--target-org`, reusing `deployMetadataFile` and `customMetadataXml.ts` unmodified (both
 already CMDT-agnostic).
@@ -141,9 +144,9 @@ ambiguous detection only applies to Service/Selector/Domain — Service has no S
 `process.exitCode = 1` on any `error`. `--type` accepts the existing four values but only Service/
 Selector/Domain contribute rules (UnitOfWork records pass through unvalidated, matching Problem).
 
-`sf simply aep at4dx binding create`/`binding set` — same shape as
-`domain-process-binding create`/`set`: `--type` is **required** and restricted to
-`service|selector|domain`. Flags:
+`sf simply aep at4dx binding create`/`binding update` — same overall shape as
+`domain-process-binding create`/`set` (verb renamed, see Decision): `--type` is **required** and
+restricted to `service|selector|domain`. Flags:
 
 | Flag                                       | Char        | Required                              | Applies to        | Notes                                                                                                  |
 | ------------------------------------------ | ----------- | ------------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------ |
@@ -158,7 +161,7 @@ Selector/Domain contribute rules (UnitOfWork records pass through unvalidated, m
 | `--force`                                  |             | No                                    | all               | Bypass an error-severity issue.                                                                        |
 | `--source-dir` / `--target-org` / `--wait` | `-d` / `-o` | See 0012                              | all               | Same dual-write shape as `domain-process-binding create`/`set`.                                        |
 
-`set` additionally requires `--developer-name` (to locate the record) and rejects a call with no other
+`update` additionally requires `--developer-name` (to locate the record) and rejects a call with no other
 field given (`no-fields-to-update`, matching 0012).
 
 ### Errors
@@ -210,19 +213,19 @@ omitted; `validate` matches that existing default rather than introducing a new 
 5. **`at4dxValidate.ts`** (new) — `validateBindings`, `filterBindingIssues` (or generalize 0011's
    `filterDomainProcessBindingIssues` if the two turn out identical enough to share).
 6. **`at4dxBuildXml.ts`** (new) — `buildBindingXml`, branching per `WritableBindingType`.
-7. **`at4dxWrite.ts`** (new) — `createBinding`/`setBinding`, following `at4dxDomainProcessWrite.ts`'s
+7. **`at4dxWrite.ts`** (new) — `createBinding`/`updateBinding`, following `at4dxDomainProcessWrite.ts`'s
    structure (scan-context helpers, `checkValidation`, `writeAndDeploy` reused verbatim if it can be
    generalized off `DomainProcessBinding`-specific naming, else duplicated with the CMDT-specific parts
    swapped — decide while implementing, not here).
-8. **`packages/simply-aep/src/commands/simply/aep/at4dx/binding/{validate,create,set}.ts`** — new
+8. **`packages/simply-aep/src/commands/simply/aep/at4dx/binding/{validate,create,update}.ts`** — new
    commands alongside `list.ts`.
-9. **`packages/simply-aep/messages/simply.aep.at4dx.binding.{validate,create,set}.md`**.
+9. **`packages/simply-aep/messages/simply.aep.at4dx.binding.{validate,create,update}.md`**.
 10. **`src/index.ts`** barrel (`simply-aep-core`) — export everything new; update
     `test/index.test.ts`'s exported-keys list.
 11. **Tests** — `test/at4dxOrgScan.test.ts`/`at4dxLocalScan.test.ts` extended for malformed/ambiguous;
     new `test/at4dxValidate.test.ts` (one case per rule); new `test/at4dxWrite.test.ts` (mirroring
-    `at4dxDomainProcessWrite.test.ts`'s create/set cases); `simply-aep/test/commands/.../binding/
-{validate,create,set}.test.ts` (mirroring `domain-process-binding/validate.test.ts`).
+    `at4dxDomainProcessWrite.test.ts`'s create/set cases, verb renamed); `simply-aep/test/commands/.../binding/
+{validate,create,update}.test.ts` (mirroring `domain-process-binding/validate.test.ts`).
 12. **Housekeeping**, per `CLAUDE.md`: `pnpm run readme` for `simply-aep-core` and `simply-aep` (verify
     exactly one `<!-- commandsstop -->` after regenerating — PR #140 hit a duplicate-block bug in
     `oclif readme` on this exact repo); `pnpm run build` at the root; `pnpm --filter site run sync`
@@ -242,13 +245,13 @@ omitted; `validate` matches that existing default rather than introducing a new 
 | Two Domain records resolving to the same SObject (one via primary, one via alternate) | `duplicate-domain-sobject`, `error`.                                                                           |
 | Same `DeveloperName` across two `source` values                                       | `duplicate-developer-name`, `error`.                                                                           |
 | Well-formed input across all three types                                              | Empty `issues`.                                                                                                |
-| `createBinding`/`setBinding` happy path, each of Service/Selector/Domain              | Correct XML fields per type (no `BindingSObject__c` written for Service; no `Priority__c` written for Domain). |
+| `createBinding`/`updateBinding` happy path, each of Service/Selector/Domain           | Correct XML fields per type (no `BindingSObject__c` written for Service; no `Priority__c` written for Domain). |
 | `createBinding` with `--sobject` and `--type service`                                 | `type-field-mismatch` error.                                                                                   |
-| `setBinding` merge-on-partial-update, force-bypass, org+source dual-write             | Mirrors `at4dxDomainProcessWrite.test.ts`'s existing cases.                                                    |
+| `updateBinding` merge-on-partial-update, force-bypass, org+source dual-write          | Mirrors `at4dxDomainProcessWrite.test.ts`'s existing `set` cases.                                              |
 
 **Command** (`simply-aep`): mirrors `domain-process-binding/validate.test.ts` and `create.test.ts`/
 `set.test.ts` (not yet read in detail for this doc — confirm their exact case list while implementing
-step 11, since they're the direct template).
+step 11, since they're the direct template; verb renamed to `update` in the new command's own test file).
 
 **NUT**: none, matching every existing AT4DX command.
 
@@ -258,9 +261,13 @@ step 11, since they're the direct template).
   `error`**, now that this doc confirms AT4DX ships the identical validation rule there too. Deliberately
   not decided or changed here — a follow-up doc's call, since it changes already-shipped CI-gate behavior
   for existing `domain-process-binding validate` users.
-- **Whether `binding validate`/`create`/`set` need a `--sobject`/`--key` scope filter** the way
+- **Whether `binding validate`/`create`/`update` need a `--sobject`/`--key` scope filter** the way
   `domain-process-binding` does. Deferred: Service has no SObject to filter on, so the filter's meaning
   would differ per `--type` in a way `domain-process-binding`'s single-CMDT filter didn't have to handle.
   Revisit if a real project asks for it.
 - **`entityDefinitionEligibility.ts`'s extraction** is a small refactor riding along with this feature
   rather than its own doc — flagged here in case review disagrees with bundling it in.
+- **Renaming `domain-process-binding set` (and `field-set-inclusion set`, 0016) to `update` for
+  consistency** is explicitly deferred, per direct instruction, to a later doc rather than done as a side
+  effect of this one — `binding` is intentionally the first (and, until that doc lands, the only) AT4DX
+  write command using `update`.
