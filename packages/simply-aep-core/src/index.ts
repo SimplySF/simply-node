@@ -109,3 +109,37 @@ export {
   validateDomainProcessBindings,
 } from './at4dxDomainProcessResolve.js';
 export { createDomainProcessBinding, setDomainProcessBinding } from './at4dxDomainProcessWrite.js';
+export {
+  FIELD_SET_INCLUSION_OBJECT,
+  FIELD_SET_INCLUSION_LOCAL_OBJECT_NAME,
+  FIELD_SET_INCLUSION_RULES,
+  FieldSetInclusionWriteError,
+  type AmbiguousFieldSetInclusionRecord,
+  type At4dxFieldSetInclusionCreateResult,
+  type At4dxFieldSetInclusionListResult,
+  type At4dxFieldSetInclusionUpdateResult,
+  type At4dxFieldSetInclusionValidateResult,
+  type At4dxFieldSetInclusionWriteResult,
+  type CreateFieldSetInclusionInput,
+  type CreateFieldSetInclusionTarget,
+  type FieldSetInclusionFieldsInput,
+  type FieldSetInclusionIssue,
+  type FieldSetInclusionIssueRule,
+  type FieldSetInclusionIssueScope,
+  type FieldSetInclusionIssueSeverity,
+  type FieldSetInclusionRuleInfo,
+  type FieldSetInclusionSObjectField,
+  type FieldSetInclusionWriteErrorCode,
+  type MalformedFieldSetInclusionRecord,
+  type RawFieldSetInclusionRecord,
+  type UpdateFieldSetInclusionInput,
+  type UpdateFieldSetInclusionTarget,
+} from './at4dxFieldSetInclusionTypes.js';
+export { buildFieldSetInclusionXml, type FieldSetInclusionXmlFields } from './at4dxFieldSetInclusionBuildXml.js';
+export {
+  scanLocalFieldSetInclusions,
+  type FieldSetInclusionLocalScanResult,
+} from './at4dxFieldSetInclusionLocalScan.js';
+export { scanOrgFieldSetInclusions, type FieldSetInclusionOrgScanResult } from './at4dxFieldSetInclusionOrgScan.js';
+export { validateFieldSetInclusions } from './at4dxFieldSetInclusionResolve.js';
+export { createFieldSetInclusion, updateFieldSetInclusion } from './at4dxFieldSetInclusionWrite.js';

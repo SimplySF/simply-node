@@ -120,6 +120,42 @@ await createDomainProcessBinding(
 // writes force-app/main/default/customMetadata/DomainProcessBinding.Account_Before_Insert_Assign_Owner.md-meta.xml
 ```
 
+### AT4DX Selector field set inclusions
+
+`SelectorConfig_FieldSetInclusion__mdt` — tells a selector to add a named field set's items to its queried field list. Unlike the bindings above, there's no priority/winner concept: every `IsActive__c: true` record for a SObject contributes its field set simultaneously. See [design doc 0016](https://github.com/SimplySF/simply-node/blob/main/docs/design/0016-at4dx-selector-config-field-set-inclusion.md).
+
+| Export                                                                                                                                                                                                                                                                                                               | Description                                                                                                                                                                                                                    |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `scanOrgFieldSetInclusions(connection)`                                                                                                                                                                                                                                                                              | Queries a live org for `SelectorConfig_FieldSetInclusion__mdt` records.                                                                                                                                                        |
+| `scanLocalFieldSetInclusions(sourceDirs)`                                                                                                                                                                                                                                                                            | Scans local DX source for the same data.                                                                                                                                                                                       |
+| `validateFieldSetInclusions(records, diagnostics)`                                                                                                                                                                                                                                                                   | Pure function: checks a scan's records/diagnostics for a missing/ambiguous/ineligible SObject reference, a duplicate `FieldsetName__c` (unique org-wide, not per-SObject), and duplicate `DeveloperName`s.                     |
+| `createFieldSetInclusion(input, target)`, `updateFieldSetInclusion(input, target)`                                                                                                                                                                                                                                   | Create or update a `SelectorConfig_FieldSetInclusion__mdt` record — writes local DX source, deploys to a connected org, or both — validating the result first and refusing to write a wiring problem unless `force` is passed. |
+| `buildFieldSetInclusionXml(record, meta)`                                                                                                                                                                                                                                                                            | Pure function: serializes a record to the full `.md-meta.xml` text `createFieldSetInclusion`/`updateFieldSetInclusion` write.                                                                                                  |
+| `FIELD_SET_INCLUSION_OBJECT`, `FIELD_SET_INCLUSION_LOCAL_OBJECT_NAME`, `FIELD_SET_INCLUSION_RULES`                                                                                                                                                                                                                   | Constants for the Custom Metadata Type's API name, local object name, and `validateFieldSetInclusions`'s rule table.                                                                                                           |
+| `FieldSetInclusionWriteError`                                                                                                                                                                                                                                                                                        | The error `createFieldSetInclusion`/`updateFieldSetInclusion` throw, with a `code` (see `FieldSetInclusionWriteErrorCode`) instead of a message you'd have to string-match.                                                    |
+| `RawFieldSetInclusionRecord`, `At4dxFieldSetInclusionListResult`, `FieldSetInclusionSObjectField`                                                                                                                                                                                                                    | Types for the row shape above.                                                                                                                                                                                                 |
+| `FieldSetInclusionIssue`, `FieldSetInclusionIssueRule`, `FieldSetInclusionIssueSeverity`, `FieldSetInclusionIssueScope`, `FieldSetInclusionRuleInfo`, `At4dxFieldSetInclusionValidateResult`, `MalformedFieldSetInclusionRecord`, `AmbiguousFieldSetInclusionRecord`                                                 | Types for `validateFieldSetInclusions`'s input/output.                                                                                                                                                                         |
+| `FieldSetInclusionFieldsInput`, `CreateFieldSetInclusionInput`, `UpdateFieldSetInclusionInput`, `CreateFieldSetInclusionTarget`, `UpdateFieldSetInclusionTarget`, `At4dxFieldSetInclusionWriteResult`, `At4dxFieldSetInclusionCreateResult`, `At4dxFieldSetInclusionUpdateResult`, `FieldSetInclusionWriteErrorCode` | Types for the create/update functions above.                                                                                                                                                                                   |
+
+```ts
+import {
+  scanLocalFieldSetInclusions,
+  validateFieldSetInclusions,
+  createFieldSetInclusion,
+} from '@simplysf/simply-aep-core';
+
+const { records, malformed, ambiguous } = scanLocalFieldSetInclusions(['force-app/main/default']);
+
+const issues = validateFieldSetInclusions(records, { malformed, ambiguous });
+// issues.some(issue => issue.severity === 'error') tells you whether this project's field set wiring is broken
+
+await createFieldSetInclusion(
+  { developerName: 'Account_Contact_Fields', sobject: 'Account', fieldsetName: 'ContactRelatedFields' },
+  { sourceDir: 'force-app/main/default' },
+);
+// writes force-app/main/default/customMetadata/SelectorConfig_FieldSetInclusion.Account_Contact_Fields.md-meta.xml
+```
+
 ## Issues
 
 Please report any issues at https://github.com/SimplySF/simply-node/issues
