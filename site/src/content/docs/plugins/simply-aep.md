@@ -11,6 +11,76 @@ sf plugins install @simplysf/simply-aep
 
 ## Commands
 
+## `sf simply aep at4dx binding create`
+
+Create a new AT4DX Application Factory binding (Service, Selector, or Domain) in local source and/or a connected org.
+
+```
+USAGE
+  $ sf simply aep at4dx binding create -t service|selector|domain -n <value> -c <value> [--json] [--flags-dir <value>] [-d <value>]
+    [-o <value>] [--api-version <value>] [--wait <value>] [--label <value>] [--binding-interface <value>] [-s <value>]
+    [--sobject-alternate] [--priority <value>] [--force]
+
+FLAGS
+  -c, --to=<value>                 (required) The interface/SObject's implementing Apex class (To__c).
+  -d, --source-dir=<value>         The package directory to create the binding's .md-meta.xml under. Created if the
+                                   customMetadata folder doesn't exist yet.
+  -n, --developer-name=<value>     (required) The binding's DeveloperName. Must start with a letter, contain only
+                                   letters, numbers, and single underscores, not end with an underscore, and be 40
+                                   characters or fewer.
+  -o, --target-org=<value>         Deploy the generated binding to this org after writing it.
+  -s, --sobject=<value>            The SObject API name to bind against (BindingSObject__c, or
+                                   BindingSObjectAlternate__c with --sobject-alternate). Required, and only allowed,
+                                   when --type is selector or domain.
+  -t, --type=<option>              (required) Which Application Factory binding type to create: service, selector, or
+                                   domain.
+                                   <options: service|selector|domain>
+      --api-version=<value>        Override the api version used for api requests made by this command
+      --binding-interface=<value>  BindingInterface__c — the Apex interface this binding maps to. Required, and only
+                                   allowed, when --type is service.
+      --force                      Write (and deploy) even if validation finds an error-severity issue. Validation still
+                                   runs and its issues are still printed and returned.
+      --label=<value>              The binding's label. Defaults to --developer-name. Must be 40 characters or fewer.
+      --priority=<value>           Priority__c. Higher numbers are higher priority; omit for least priority. Only
+                                   allowed when --type is service or selector — Domain has no Priority__c field.
+      --[no-]sobject-alternate     Write --sobject to BindingSObjectAlternate__c instead of BindingSObject__c. Use this
+                                   for a SObject that can't be referenced through an EntityDefinition field at all (for
+                                   example ServiceResource and other Setup objects). Only allowed when --type is
+                                   selector or domain.
+      --wait=<value>               [default: 33] Deploy poll timeout, in minutes. Only meaningful with --target-org.
+
+GLOBAL FLAGS
+  --flags-dir=<value>  Import flag values from a directory.
+  --json               Format output as json.
+
+DESCRIPTION
+  Create a new AT4DX Application Factory binding (Service, Selector, or Domain) in local source and/or a connected org.
+
+  Generates a `<LocalObjectName>.<DeveloperName>.md-meta.xml` file from the given flags and writes it under
+  --source-dir, deploys it to --target-org, or both. Validates the resulting binding — alongside everything else of the
+  same --type already in scope — with the same rules `simply aep at4dx binding validate` uses, and refuses to write if
+  that introduces an error-severity issue unless --force is passed. At least one of --source-dir/--target-org is
+  required; both may be given at once (write to source and deploy it live in the same run). Given --target-org alone,
+  the file is written to a temporary directory, deployed, and discarded — no working-tree footprint.
+
+  `--type service` uses --binding-interface (BindingInterface__c) and rejects --sobject/--sobject-alternate; `--type
+  selector`/`domain` use --sobject and write it to BindingSObject__c by default (pass --sobject-alternate to write
+  BindingSObjectAlternate__c instead, for a SObject — such as ServiceResource and other Setup objects — that can't be
+  referenced through an EntityDefinition field at all). `--priority` is accepted for `--type service`/`selector` only;
+  Domain has no such field.
+
+EXAMPLES
+  $ sf simply aep at4dx binding create --source-dir sfdx-source/core --type service --developer-name My_Service_Binding --binding-interface IMyService --to MyServiceImpl
+
+  $ sf simply aep at4dx binding create --target-org myOrg --type selector --developer-name Account_Selector --sobject Account --to AccountsSelector --priority 1
+
+  $ sf simply aep at4dx binding create --source-dir sfdx-source/core --type domain --developer-name Account_Domain --sobject Account --to AccountDomain
+
+  $ sf simply aep at4dx binding create --source-dir sfdx-source/core --type selector --developer-name ServiceResource_Selector --sobject ServiceResource --sobject-alternate --to ServiceResourceSelector
+```
+
+_See code: [lib/commands/simply/aep/at4dx/binding/create.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.7.0/packages/simply-aep/lib/commands/simply/aep/at4dx/binding/create.js)_
+
 ## `sf simply aep at4dx binding list`
 
 List the AT4DX Application Factory bindings configured in an org or local source, resolved to show which record wins for each binding key.
@@ -65,7 +135,133 @@ FLAG DESCRIPTIONS
     Comma-separated list of binding types to include. If not specified, all four are included.
 ```
 
-_See code: [lib/commands/simply/aep/at4dx/binding/list.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.6.1/packages/simply-aep/lib/commands/simply/aep/at4dx/binding/list.js)_
+_See code: [lib/commands/simply/aep/at4dx/binding/list.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.7.0/packages/simply-aep/lib/commands/simply/aep/at4dx/binding/list.js)_
+
+## `sf simply aep at4dx binding update`
+
+Update an existing AT4DX Application Factory binding (Service, Selector, or Domain) in local source and/or a connected org.
+
+```
+USAGE
+  $ sf simply aep at4dx binding update -t service|selector|domain -n <value> [--json] [--flags-dir <value>] [-d <value>...] [-o
+    <value>] [--api-version <value>] [--wait <value>] [--label <value>] [-c <value>] [--binding-interface <value>] [-s
+    <value>] [--sobject-alternate] [--priority <value>] [--force]
+
+FLAGS
+  -c, --to=<value>                 The interface/SObject's implementing Apex class (To__c). If not given, the existing
+                                   value is kept.
+  -d, --source-dir=<value>...      One or more paths to directories containing Salesforce DX source, searched for the
+                                   binding to update.
+  -n, --developer-name=<value>     (required) The DeveloperName of the binding to update.
+  -o, --target-org=<value>         Locate (when --source-dir isn't given) and/or deploy the binding to this org.
+  -s, --sobject=<value>            The SObject API name to bind against. Only allowed when --type is selector or domain.
+                                   If not given, the existing value is kept.
+  -t, --type=<option>              (required) Which Application Factory binding type to look in: service, selector, or
+                                   domain.
+                                   <options: service|selector|domain>
+      --api-version=<value>        Override the api version used for api requests made by this command
+      --binding-interface=<value>  BindingInterface__c — the Apex interface this binding maps to. Only allowed when
+                                   --type is service. If not given, the existing value is kept.
+      --force                      Write (and deploy) even if validation finds an error-severity issue. Validation still
+                                   runs and its issues are still printed and returned.
+      --label=<value>              The binding's label. If not given, the existing label is kept.
+      --priority=<value>           Priority__c. Only allowed when --type is service or selector — Domain has no
+                                   Priority__c field. If not given, the existing value is kept.
+      --[no-]sobject-alternate     Write --sobject to BindingSObjectAlternate__c instead of BindingSObject__c, for a
+                                   SObject that can't be referenced through an EntityDefinition field at all (for
+                                   example ServiceResource and other Setup objects). Only allowed when --type is
+                                   selector or domain. If not given, the binding keeps whichever field it already uses —
+                                   this flag only needs to be passed to change it.
+      --wait=<value>               [default: 33] Deploy poll timeout, in minutes. Only meaningful with --target-org.
+
+GLOBAL FLAGS
+  --flags-dir=<value>  Import flag values from a directory.
+  --json               Format output as json.
+
+DESCRIPTION
+  Update an existing AT4DX Application Factory binding (Service, Selector, or Domain) in local source and/or a connected
+  org.
+
+  Finds the binding named --developer-name (of the given --type) in local source and/or a connected org, applies only
+  the fields given as flags — everything else, including which SObject reference field a Selector/Domain binding uses,
+  is preserved from the found record — and rewrites its `.md-meta.xml` file. Validates the resulting binding — alongside
+  everything else of the same --type already in scope — with the same rules `simply aep at4dx binding validate` uses,
+  and refuses to write if that introduces an error-severity issue unless --force is passed.
+
+  When --source-dir is given, the binding is located there (searched across every directory given, same as
+  `list`/`validate`) and that exact file is rewritten; the found file is also deployed if --target-org is given. When
+  only --target-org is given, the binding is located and updated directly in the org via a temporary file, deployed,
+  then discarded — no working-tree footprint.
+
+  --developer-name identifies the binding to update and can't itself be changed by this command. --type identifies which
+  Application Factory Custom Metadata Type to look in and can't be changed either — bindings don't move between types.
+
+EXAMPLES
+  $ sf simply aep at4dx binding update --source-dir sfdx-source/core --source-dir sfdx-source/app --type selector --developer-name Account_Selector --priority 5
+
+  $ sf simply aep at4dx binding update --target-org myOrg --type domain --developer-name Account_Domain --to AccountDomainV2
+```
+
+_See code: [lib/commands/simply/aep/at4dx/binding/update.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.7.0/packages/simply-aep/lib/commands/simply/aep/at4dx/binding/update.js)_
+
+## `sf simply aep at4dx binding validate`
+
+Validate the AT4DX Application Factory bindings configured in an org or local source, failing when a wiring problem is found.
+
+```
+USAGE
+  $ sf simply aep at4dx binding validate [--json] [--flags-dir <value>] [-o <value>] [--api-version <value>] [-d <value>...] [-t
+    service|selector|domain|unit-of-work...]
+
+FLAGS
+  -d, --source-dir=<value>...  One or more paths to directories containing Salesforce DX source. Use this for
+                               local-source discovery.
+  -o, --target-org=<value>     Username or alias of the org to read bindings from. Use this for live-org discovery.
+  -t, --type=<option>...       Binding type(s) to include: service, selector, domain, unit-of-work.
+                               <options: service|selector|domain|unit-of-work>
+      --api-version=<value>    Override the api version used for api requests made by this command
+
+GLOBAL FLAGS
+  --flags-dir=<value>  Import flag values from a directory.
+  --json               Format output as json.
+
+DESCRIPTION
+  Validate the AT4DX Application Factory bindings configured in an org or local source, failing when a wiring problem is
+  found.
+
+  Reads `ApplicationFactory_ServiceBinding__mdt`, `ApplicationFactory_SelectorBinding__mdt`, and
+  `ApplicationFactory_DomainBinding__mdt` — either from a live org or from local Salesforce DX source — and checks them
+  for problems `simply aep at4dx binding list` doesn't fail on: a binding with no resolvable key, a Selector/Domain
+  binding whose SObject reference is ambiguous or names a standard object that can't actually go through an
+  EntityDefinition metadata relationship, two records sharing a platform-unique `To__c`, two Domain records resolving to
+  the same SObject, and the same DeveloperName defined more than once within one binding type. Exactly one of
+  `--target-org` or `--source-dir` must be specified.
+
+  `ApplicationFactory_UnitOfWorkBinding__mdt` records are scanned when `--type` includes `unit-of-work` (to keep
+  `--type`'s meaning consistent with `binding list`) but never contribute an issue — every record contributes to one
+  ordered registration list with no possible wiring conflict.
+
+  Prints a table of every issue found. Exits non-zero when any issue is an error (a warning alone doesn't fail the
+  command) — use this in CI to gate on AT4DX Application Factory wiring problems before they reach an org.
+
+EXAMPLES
+  $ sf simply aep at4dx binding validate --target-org myOrg
+
+  $ sf simply aep at4dx binding validate --source-dir sfdx-source/core --source-dir sfdx-source/app
+
+  $ sf simply aep at4dx binding validate --target-org myOrg --type service,selector
+
+  $ sf simply aep at4dx binding validate --target-org myOrg --json
+
+FLAG DESCRIPTIONS
+  -t, --type=service|selector|domain|unit-of-work...
+
+    Binding type(s) to include: service, selector, domain, unit-of-work.
+
+    Comma-separated list of binding types to include. If not specified, all four are included.
+```
+
+_See code: [lib/commands/simply/aep/at4dx/binding/validate.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.7.0/packages/simply-aep/lib/commands/simply/aep/at4dx/binding/validate.js)_
 
 ## `sf simply aep at4dx domain-process-binding create`
 
@@ -146,7 +342,7 @@ EXAMPLES
   $ sf simply aep at4dx domain-process-binding create --source-dir sfdx-source/core --developer-name ServiceResource_Before_Update_Sync --sobject ServiceResource --sobject-alternate --process-context TriggerExecution --trigger-operation Before_Update --type Action --class-to-inject ServiceResourceSyncAction --order 10
 ```
 
-_See code: [lib/commands/simply/aep/at4dx/domain-process-binding/create.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.6.1/packages/simply-aep/lib/commands/simply/aep/at4dx/domain-process-binding/create.js)_
+_See code: [lib/commands/simply/aep/at4dx/domain-process-binding/create.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.7.0/packages/simply-aep/lib/commands/simply/aep/at4dx/domain-process-binding/create.js)_
 
 ## `sf simply aep at4dx domain-process-binding list`
 
@@ -192,7 +388,7 @@ EXAMPLES
   $ sf simply aep at4dx domain-process-binding list --target-org myOrg --active-only --json
 ```
 
-_See code: [lib/commands/simply/aep/at4dx/domain-process-binding/list.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.6.1/packages/simply-aep/lib/commands/simply/aep/at4dx/domain-process-binding/list.js)_
+_See code: [lib/commands/simply/aep/at4dx/domain-process-binding/list.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.7.0/packages/simply-aep/lib/commands/simply/aep/at4dx/domain-process-binding/list.js)_
 
 ## `sf simply aep at4dx domain-process-binding set`
 
@@ -271,7 +467,7 @@ EXAMPLES
   $ sf simply aep at4dx domain-process-binding set --target-org myOrg --developer-name Account_Before_Insert_Assign_Owner --class-to-inject AccountAssignOwnerActionV2
 ```
 
-_See code: [lib/commands/simply/aep/at4dx/domain-process-binding/set.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.6.1/packages/simply-aep/lib/commands/simply/aep/at4dx/domain-process-binding/set.js)_
+_See code: [lib/commands/simply/aep/at4dx/domain-process-binding/set.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.7.0/packages/simply-aep/lib/commands/simply/aep/at4dx/domain-process-binding/set.js)_
 
 ## `sf simply aep at4dx domain-process-binding validate`
 
@@ -324,4 +520,4 @@ EXAMPLES
   $ sf simply aep at4dx domain-process-binding validate --target-org myOrg --json
 ```
 
-_See code: [lib/commands/simply/aep/at4dx/domain-process-binding/validate.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.6.1/packages/simply-aep/lib/commands/simply/aep/at4dx/domain-process-binding/validate.js)_
+_See code: [lib/commands/simply/aep/at4dx/domain-process-binding/validate.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.7.0/packages/simply-aep/lib/commands/simply/aep/at4dx/domain-process-binding/validate.js)_

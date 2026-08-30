@@ -22,27 +22,53 @@
 
 export {
   ALL_BINDING_TYPES,
+  ALL_WRITABLE_BINDING_TYPES,
   AT4DX_BINDING_OBJECTS,
   AT4DX_BINDING_LOCAL_OBJECT_NAMES,
   BINDING_TYPE_BY_FLAG,
+  BINDING_RULES,
+  WRITABLE_BINDING_TYPE_BY_FLAG,
   bindingTypeForLocalObjectName,
+  BindingWriteError,
   type AepConnection,
+  type AmbiguousBindingRecord,
+  type At4dxBindingCreateResult,
   type At4dxBindingListResult,
   type At4dxBindingRow,
+  type At4dxBindingUpdateResult,
+  type At4dxBindingValidateResult,
+  type At4dxBindingWriteResult,
+  type BindingFieldsInput,
+  type BindingIssue,
+  type BindingIssueRule,
+  type BindingIssueScope,
+  type BindingIssueSeverity,
+  type BindingKeyField,
+  type BindingRuleInfo,
   type BindingType,
   type BindingTypeFlag,
+  type BindingWriteErrorCode,
+  type CreateBindingInput,
+  type CreateBindingTarget,
+  type MalformedBindingRecord,
   type RawBindingRecord,
+  type UpdateBindingInput,
+  type UpdateBindingTarget,
+  type WritableBindingType,
+  type WritableBindingTypeFlag,
 } from './at4dxBindingTypes.js';
-export { scanLocalBindings } from './at4dxLocalScan.js';
+export { buildBindingXml, type BindingXmlFields } from './at4dxBuildXml.js';
+export { scanLocalBindings, type LocalScanResult } from './at4dxLocalScan.js';
 export { scanOrgBindings, type OrgScanResult } from './at4dxOrgScan.js';
 export { resolveBindings } from './at4dxResolve.js';
+export { validateBindings } from './at4dxValidate.js';
+export { createBinding, updateBinding } from './at4dxWrite.js';
+export { ENTITY_DEFINITION_STANDARD_OBJECTS, isCustomObjectApiName } from './entityDefinitionEligibility.js';
 export {
   ALL_TRIGGER_OPERATIONS,
   DOMAIN_PROCESS_BINDING_OBJECT,
   DOMAIN_PROCESS_BINDING_LOCAL_OBJECT_NAME,
   DOMAIN_PROCESS_BINDING_RULES,
-  ENTITY_DEFINITION_STANDARD_OBJECTS,
-  isCustomObjectApiName,
   DomainProcessBindingWriteError,
   type AmbiguousDomainProcessBindingRecord,
   type At4dxDomainProcessBindingCreateResult,

@@ -61,13 +61,15 @@ describe('scanLocalBindings', () => {
       ])}\n</CustomMetadata>\n`,
     );
 
-    const records = scanLocalBindings([tmpDir], ['Service']);
+    const { records } = scanLocalBindings([tmpDir], ['Service']);
 
-    expect(records).toEqual([
+    expect(records).toMatchObject([
       {
         bindingType: 'Service',
         developerName: 'My_Service',
+        label: 'My Service',
         key: 'IMyService',
+        keyField: undefined,
         to: undefined,
         priority: undefined,
         sequence: undefined,
@@ -88,13 +90,15 @@ describe('scanLocalBindings', () => {
       ])}\n</CustomMetadata>\n`,
     );
 
-    const records = scanLocalBindings([tmpDir], ['Service']);
+    const { records } = scanLocalBindings([tmpDir], ['Service']);
 
-    expect(records).toEqual([
+    expect(records).toMatchObject([
       {
         bindingType: 'Service',
         developerName: 'My_Service',
+        label: 'My Service',
         key: 'IMyService',
+        keyField: undefined,
         to: 'MyServiceImpl',
         priority: undefined,
         sequence: undefined,
@@ -116,10 +120,11 @@ describe('scanLocalBindings', () => {
       ])}\n</CustomMetadata>\n`,
     );
 
-    const records = scanLocalBindings([tmpDir], ['Selector']);
+    const { records } = scanLocalBindings([tmpDir], ['Selector']);
 
     expect(records).toHaveLength(1);
     expect(records[0].key).toBe('Campaign');
+    expect(records[0].keyField).toBe('alternate');
     expect(records[0].priority).toBe(1);
   });
 
@@ -143,13 +148,14 @@ describe('scanLocalBindings', () => {
       ])}\n</CustomMetadata>\n`,
     );
 
-    const records = scanLocalBindings([tmpDir], ['Service']);
+    const { records } = scanLocalBindings([tmpDir], ['Service']);
 
     expect(records).toHaveLength(1);
     expect(records[0].bindingType).toBe('Service');
   });
 
-  it('returns an empty array when no matching CustomMetadata components are found', () => {
-    expect(scanLocalBindings([tmpDir], ['Service', 'Selector', 'Domain', 'UnitOfWork'])).toEqual([]);
+  it('returns an empty result when no matching CustomMetadata components are found', () => {
+    const result = scanLocalBindings([tmpDir], ['Service', 'Selector', 'Domain', 'UnitOfWork']);
+    expect(result).toEqual({ records: [], malformed: [], ambiguous: [] });
   });
 });

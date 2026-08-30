@@ -19,51 +19,61 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import {
   ALL_BINDING_TYPES,
   BINDING_TYPE_BY_FLAG,
-  resolveBindings,
   scanLocalBindings,
   scanOrgBindings,
-  type At4dxBindingListResult,
-  type At4dxBindingRow,
+  validateBindings,
+  type At4dxBindingValidateResult,
+  type BindingIssue,
   type BindingType,
   type BindingTypeFlag,
-  type RawBindingRecord,
 } from '@simplysf/simply-aep-core';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('@simplysf/simply-aep', 'simply.aep.at4dx.binding.list');
+const messages = Messages.loadMessages('@simplysf/simply-aep', 'simply.aep.at4dx.binding.validate');
 
 const BINDING_TYPE_FLAG_OPTIONS: BindingTypeFlag[] = ['service', 'selector', 'domain', 'unit-of-work'];
 
-/** The table's presentational shape — `priority`/`sequence` collapse into one `order` column, and `ambiguous` folds into `effective`'s display text. The `--json` result keeps the full `At4dxBindingRow` shape; this is display-only. */
+/** The table's presentational shape for one issue — `--json` keeps the full `BindingIssue` shape; this is display-only. */
 type DisplayRow = {
   bindingType: BindingType;
+  severity: string;
+  rule: string;
   key: string;
-  to: string;
-  order: string;
-  effective: string;
+  developerName: string;
   source: string;
+  message: string;
 };
 
-function toDisplayRow(row: At4dxBindingRow): DisplayRow {
-  const order = row.priority ?? row.sequence;
-
+function toDisplayRow(issue: BindingIssue): DisplayRow {
   return {
-    bindingType: row.bindingType,
-    key: row.key,
-    to: row.to ?? '',
-    order: order === undefined ? '' : String(order),
-    effective: row.ambiguous ? 'ambiguous' : String(row.effective),
-    source: row.source,
+    bindingType: issue.bindingType,
+    severity: issue.severity,
+    rule: issue.rule,
+    key: issue.key ?? '',
+    developerName: issue.developerName ?? '',
+    source: issue.source,
+    message: issue.message,
   };
 }
 
+const ISSUE_TABLE_COLUMNS: Array<{ key: keyof DisplayRow; name: string }> = [
+  { key: 'bindingType', name: 'TYPE' },
+  { key: 'severity', name: 'SEVERITY' },
+  { key: 'rule', name: 'RULE' },
+  { key: 'key', name: 'KEY' },
+  { key: 'developerName', name: 'DEVELOPER NAME' },
+  { key: 'source', name: 'SOURCE' },
+  { key: 'message', name: 'MESSAGE' },
+];
+
 /**
- * Lists the AT4DX Application Factory bindings (`ApplicationFactory_ServiceBinding__mdt`,
- * `ApplicationFactory_SelectorBinding__mdt`, `ApplicationFactory_DomainBinding__mdt`,
- * `ApplicationFactory_UnitOfWorkBinding__mdt`) configured in a target org or local DX source,
- * resolved down to which record wins for each binding key.
+ * Validates the AT4DX Application Factory bindings (Service/Selector/Domain) configured in a target org
+ * or local DX source — wiring problems that are invisible to `binding list` — and fails (non-zero exit)
+ * when any of them is a real bug, for use as a CI gate. `UnitOfWork` records are scanned when requested
+ * (to keep `--type`'s meaning consistent with `list`) but never contribute issues — see
+ * docs/design/0015-at4dx-binding-validate-create-set.md's Problem section for why.
  */
-export default class At4dxBindingList extends SfCommand<At4dxBindingListResult> {
+export default class At4dxBindingValidate extends SfCommand<At4dxBindingValidateResult> {
   public static readonly summary = messages.getMessage('summary');
   public static readonly description = messages.getMessage('description');
   public static readonly examples = messages.getMessages('examples');
@@ -88,15 +98,11 @@ export default class At4dxBindingList extends SfCommand<At4dxBindingListResult> 
       multiple: true,
       delimiter: ',',
     }),
-    'effective-only': Flags.boolean({
-      summary: messages.getMessage('flags.effective-only.summary'),
-      default: false,
-    }),
   };
 
-  /** @returns The resolved bindings for the requested source and type(s). */
-  public async run(): Promise<At4dxBindingListResult> {
-    const { flags } = await this.parse(At4dxBindingList);
+  /** @returns The validation issues found for the requested source and type(s). Sets `process.exitCode = 1` when any issue is severity `error`. */
+  public async run(): Promise<At4dxBindingValidateResult> {
+    const { flags } = await this.parse(At4dxBindingValidate);
 
     const targetOrg = flags['target-org'];
     const sourceDirs = flags['source-dir'] ?? [];
@@ -110,7 +116,8 @@ export default class At4dxBindingList extends SfCommand<At4dxBindingListResult> 
       : ALL_BINDING_TYPES;
 
     let source: string;
-    let resolvedRows: At4dxBindingRow[];
+    let issues: BindingIssue[];
+    let bindingCount: number;
 
     if (targetOrg) {
       const connection = targetOrg.getConnection(flags['api-version']);
@@ -130,43 +137,45 @@ export default class At4dxBindingList extends SfCommand<At4dxBindingListResult> 
         throw messages.createError('error.at4dxNotDetected');
       }
 
-      resolvedRows = resolveBindings(scanResult.records);
+      bindingCount = scanResult.records.length;
+      issues = validateBindings(scanResult.records, {
+        malformed: scanResult.malformed,
+        ambiguous: scanResult.ambiguous,
+      });
     } else {
       source = 'local';
 
       this.spinner.start(messages.getMessage('info.scanningLocalSource'));
-      let records: RawBindingRecord[];
+      let scanResult: ReturnType<typeof scanLocalBindings>;
       try {
-        ({ records } = scanLocalBindings(sourceDirs, requestedTypes));
+        scanResult = scanLocalBindings(sourceDirs, requestedTypes);
       } catch (error) {
         this.spinner.stop();
         throw messages.createError('error.localScanFailed', [(error as Error).message]);
       }
       this.spinner.stop();
 
-      if (records.length === 0) {
+      if (scanResult.records.length === 0 && scanResult.malformed.length === 0) {
         throw messages.createError('error.at4dxNotDetected');
       }
 
-      resolvedRows = resolveBindings(records);
+      bindingCount = scanResult.records.length;
+      issues = validateBindings(scanResult.records, {
+        malformed: scanResult.malformed,
+        ambiguous: scanResult.ambiguous,
+      });
     }
 
-    const bindings = flags['effective-only'] ? resolvedRows.filter((row) => row.effective) : resolvedRows;
+    if (issues.length > 0) {
+      this.table({ data: issues.map(toDisplayRow), columns: ISSUE_TABLE_COLUMNS });
+    } else {
+      this.info(messages.getMessage('info.valid', [bindingCount, source]));
+    }
 
-    this.table({
-      data: bindings.map(toDisplayRow),
-      columns: [
-        { key: 'bindingType', name: 'TYPE' },
-        { key: 'key', name: 'KEY' },
-        { key: 'to', name: 'TO' },
-        { key: 'order', name: 'ORDER' },
-        { key: 'effective', name: 'EFFECTIVE' },
-        { key: 'source', name: 'SOURCE' },
-      ],
-    });
+    if (issues.some((issue) => issue.severity === 'error')) {
+      process.exitCode = 1;
+    }
 
-    this.info(messages.getMessage('info.complete', [bindings.length, source]));
-
-    return { source, bindings };
+    return { source, bindingCount, issues };
   }
 }
