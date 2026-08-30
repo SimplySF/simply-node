@@ -21,8 +21,8 @@ importers:
         specifier: ^10.0.1
         version: 10.0.1(eslint@10.9.0(jiti@2.6.1)(supports-color@7.2.0))
       '@oclif/plugin-command-snapshot':
-        specifier: ^5.3.19
-        version: 5.3.35
+        specifier: ^5.4.0
+        version: 5.4.0
       '@salesforce/cli-plugins-testkit':
         specifier: ^5.3.57
         version: 5.3.66(supports-color@7.2.0)
@@ -142,8 +142,8 @@ importers:
         version: 4.4.3(supports-color@8.1.1)
     devDependencies:
       '@oclif/plugin-command-snapshot':
-        specifier: ^5.3.19
-        version: 5.3.35
+        specifier: ^5.4.0
+        version: 5.4.0
 
   packages/simply-aep:
     dependencies:
@@ -167,8 +167,8 @@ importers:
         version: link:../simply-core
     devDependencies:
       '@oclif/plugin-command-snapshot':
-        specifier: ^5.3.19
-        version: 5.3.35
+        specifier: ^5.4.0
+        version: 5.4.0
       '@salesforce/plugin-command-reference':
         specifier: ^3.1.99
         version: 3.1.132(@types/node@26.4.0)(supports-color@8.1.1)
@@ -229,8 +229,8 @@ importers:
         version: 4.4.3
     devDependencies:
       '@oclif/plugin-command-snapshot':
-        specifier: ^5.3.19
-        version: 5.3.35
+        specifier: ^5.4.0
+        version: 5.4.0
       '@salesforce/plugin-command-reference':
         specifier: ^3.1.99
         version: 3.1.132(@types/node@26.4.0)(supports-color@8.1.1)
@@ -275,8 +275,8 @@ importers:
         version: 4.4.3
     devDependencies:
       '@oclif/plugin-command-snapshot':
-        specifier: ^5.3.19
-        version: 5.3.35
+        specifier: ^5.4.0
+        version: 5.4.0
       '@salesforce/plugin-command-reference':
         specifier: ^3.1.99
         version: 3.1.132(@types/node@26.4.0)(supports-color@8.1.1)
@@ -318,8 +318,8 @@ importers:
         version: 4.0.3
     devDependencies:
       '@oclif/plugin-command-snapshot':
-        specifier: ^5.3.19
-        version: 5.3.35
+        specifier: ^5.4.0
+        version: 5.4.0
       '@salesforce/plugin-command-reference':
         specifier: ^3.1.99
         version: 3.1.132(@types/node@26.4.0)(supports-color@8.1.1)
@@ -389,8 +389,8 @@ importers:
         version: 9.3.3
     devDependencies:
       '@oclif/plugin-command-snapshot':
-        specifier: ^5.3.19
-        version: 5.3.35
+        specifier: ^5.4.0
+        version: 5.4.0
       '@salesforce/plugin-command-reference':
         specifier: ^3.1.99
         version: 3.1.132(@types/node@26.4.0)(supports-color@8.1.1)
@@ -423,8 +423,8 @@ importers:
         version: 4.7.9
     devDependencies:
       '@oclif/plugin-command-snapshot':
-        specifier: ^5.3.19
-        version: 5.3.35
+        specifier: ^5.4.0
+        version: 5.4.0
       '@salesforce/plugin-command-reference':
         specifier: ^3.1.99
         version: 3.1.132(@types/node@26.4.0)(supports-color@8.1.1)
@@ -457,8 +457,8 @@ importers:
         version: 13.0.6
     devDependencies:
       '@oclif/plugin-command-snapshot':
-        specifier: ^5.3.19
-        version: 5.3.35
+        specifier: ^5.4.0
+        version: 5.4.0
       '@salesforce/plugin-command-reference':
         specifier: ^3.1.99
         version: 3.1.132(@types/node@26.4.0)(supports-color@8.1.1)
@@ -503,8 +503,8 @@ importers:
         version: 4.4.3
     devDependencies:
       '@oclif/plugin-command-snapshot':
-        specifier: ^5.3.19
-        version: 5.3.35
+        specifier: ^5.4.0
+        version: 5.4.0
       '@salesforce/plugin-command-reference':
         specifier: ^3.1.99
         version: 3.1.132(@types/node@26.4.0)(supports-color@8.1.1)
@@ -552,8 +552,8 @@ importers:
         version: 4.4.3
     devDependencies:
       '@oclif/plugin-command-snapshot':
-        specifier: ^5.3.19
-        version: 5.3.35
+        specifier: ^5.4.0
+        version: 5.4.0
       '@salesforce/plugin-command-reference':
         specifier: ^3.1.99
         version: 3.1.132(@types/node@26.4.0)(supports-color@8.1.1)
@@ -602,8 +602,8 @@ importers:
         version: 13.0.6
     devDependencies:
       '@oclif/plugin-command-snapshot':
-        specifier: ^5.3.19
-        version: 5.3.35
+        specifier: ^5.4.0
+        version: 5.4.0
       '@salesforce/plugin-command-reference':
         specifier: ^3.1.99
         version: 3.1.132(@types/node@26.4.0)(supports-color@8.1.1)
@@ -661,8 +661,8 @@ importers:
         version: 4.7.9
     devDependencies:
       '@oclif/plugin-command-snapshot':
-        specifier: ^5.3.19
-        version: 5.3.35
+        specifier: ^5.4.0
+        version: 5.4.0
       '@salesforce/plugin-command-reference':
         specifier: ^3.1.99
         version: 3.1.132(@types/node@26.4.0)(supports-color@8.1.1)
@@ -704,8 +704,8 @@ importers:
         version: 4.4.3
     devDependencies:
       '@oclif/plugin-command-snapshot':
-        specifier: ^5.3.19
-        version: 5.3.35
+        specifier: ^5.4.0
+        version: 5.4.0
       '@salesforce/plugin-command-reference':
         specifier: ^3.1.99
         version: 3.1.132(@types/node@26.4.0)(supports-color@8.1.1)
@@ -2054,8 +2054,8 @@ packages:
     resolution: {integrity: sha512-QCJIZoVJxV7jywgVAUlsQwl3dr3Sa21kfi5z9KrYolbexWJUtFSEtMoNiBWojD05mYycLnB50gp/VxlGdaOCRA==}
     engines: {node: '>=18.0.0'}
 
-  '@oclif/plugin-command-snapshot@5.3.35':
-    resolution: {integrity: sha512-IIj6zISG1muLLSpPI560n6Q2F4njN+OFTP/PXp+sdGxrB0pT/NtuRQ6DXwo0fvOX2AA6aG7HMLNYRO5h5feGJg==}
+  '@oclif/plugin-command-snapshot@5.4.0':
+    resolution: {integrity: sha512-ZU+PTQZZcHw96ntsUCPAYmbVft+raaYCVdHRTCDnCx0lzZCc3CST6vWqjKh0/hoKRS7D0x3c9F4M1ckbDKbMZw==}
     engines: {node: '>=18.0.0'}
     hasBin: true
 
@@ -8901,7 +8901,7 @@ snapshots:
       wrap-ansi: 7.0.0
       wsl-utils: 0.4.0
 
-  '@oclif/plugin-command-snapshot@5.3.35':
+  '@oclif/plugin-command-snapshot@5.4.0':
     dependencies:
       '@oclif/core': 4.14.0
       ansis: 3.17.0

@@ -89,7 +89,7 @@
     "debug": "^4.4.3"
   },
   "devDependencies": {
-    "@oclif/plugin-command-snapshot": "^5.3.19"
+    "@oclif/plugin-command-snapshot": "^5.4.0"
   },
   "publishConfig": {
     "access": "public"
