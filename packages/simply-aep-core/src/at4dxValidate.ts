@@ -24,12 +24,12 @@ import {
 import { ENTITY_DEFINITION_STANDARD_OBJECTS, isCustomObjectApiName } from './entityDefinitionEligibility.js';
 import type { LocalScanResult } from './at4dxLocalScan.js';
 
-/** `unsupported-entity-definition-object`/`unnecessary-entity-definition-alternate` for every Selector/Domain record. */
+/** `unsupported-entity-definition-object`/`unnecessary-entity-definition-alternate` for every Selector/Domain/UnitOfWork record. */
 function entityDefinitionIssues(records: RawBindingRecord[]): BindingIssue[] {
   const issues: BindingIssue[] = [];
 
   for (const record of records) {
-    if (record.bindingType === 'Service' || record.bindingType === 'UnitOfWork' || !record.keyField) {
+    if (record.bindingType === 'Service' || !record.keyField) {
       continue;
     }
 
@@ -67,11 +67,24 @@ function entityDefinitionIssues(records: RawBindingRecord[]): BindingIssue[] {
   return issues;
 }
 
-/** `duplicate-domain-sobject` — two or more Domain records resolving to the same SObject. */
-function duplicateDomainSObjectIssues(records: RawBindingRecord[]): BindingIssue[] {
+/**
+ * `duplicate-domain-sobject`/`duplicate-unit-of-work-sobject` — two or more records of the same
+ * (Domain or UnitOfWork) binding type resolving to the same SObject. Both types have
+ * `BindingSObject__c`/`BindingSObjectAlternate__c` platform-unique (see
+ * docs/design/0017-at4dx-binding-unit-of-work-write-support.md for UnitOfWork's confirmed schema), so
+ * this is the identical detection logic for each — parameterized by `bindingType`/`rule` rather than
+ * duplicated, but kept as two distinct public rule ids (not merged into one) since
+ * `duplicate-domain-sobject` already shipped in docs/design/0015-at4dx-binding-validate-create-set.md
+ * and renaming it would break an existing consumer's `BindingIssueRule` match.
+ */
+function duplicateUniqueSObjectIssues(
+  records: RawBindingRecord[],
+  bindingType: 'Domain' | 'UnitOfWork',
+  rule: 'duplicate-domain-sobject' | 'duplicate-unit-of-work-sobject',
+): BindingIssue[] {
   const byKey = new Map<string, RawBindingRecord[]>();
   for (const record of records) {
-    if (record.bindingType !== 'Domain') {
+    if (record.bindingType !== bindingType) {
       continue;
     }
     const group = byKey.get(record.key) ?? [];
@@ -85,12 +98,47 @@ function duplicateDomainSObjectIssues(records: RawBindingRecord[]): BindingIssue
       continue;
     }
     for (const record of group) {
-      const info = BINDING_RULES['duplicate-domain-sobject'];
+      const info = BINDING_RULES[rule];
       issues.push({
         severity: info.severity,
         rule: info.rule,
         scope: info.scope,
-        message: `${record.developerName}: shares SObject ${record.key} with another Domain binding — BindingSObject__c/BindingSObjectAlternate__c are unique on this binding type, so both cannot deploy together.`,
+        message: `${record.developerName}: shares SObject ${record.key} with another ${bindingType} binding — BindingSObject__c/BindingSObjectAlternate__c are unique on this binding type, so both cannot deploy together.`,
+        bindingType: record.bindingType,
+        developerName: record.developerName,
+        key: record.key,
+        source: record.source,
+        filePath: record.filePath,
+      });
+    }
+  }
+  return issues;
+}
+
+/** `sequence-collision` — two or more UnitOfWork records sharing a defined `BindingSequence__c`. Records with no `sequence` at all are never flagged — that's the ordinary "unordered" default, not a conflict. */
+function sequenceCollisionIssues(records: RawBindingRecord[]): BindingIssue[] {
+  const bySequence = new Map<number, RawBindingRecord[]>();
+  for (const record of records) {
+    if (record.bindingType !== 'UnitOfWork' || record.sequence === undefined) {
+      continue;
+    }
+    const group = bySequence.get(record.sequence) ?? [];
+    group.push(record);
+    bySequence.set(record.sequence, group);
+  }
+
+  const issues: BindingIssue[] = [];
+  for (const group of bySequence.values()) {
+    if (group.length <= 1) {
+      continue;
+    }
+    for (const record of group) {
+      const info = BINDING_RULES['sequence-collision'];
+      issues.push({
+        severity: info.severity,
+        rule: info.rule,
+        scope: info.scope,
+        message: `${record.developerName}: shares BindingSequence__c ${String(record.sequence)} with another UnitOfWork binding — both SObjects are still registered, but their relative commit order is no longer deterministic.`,
         bindingType: record.bindingType,
         developerName: record.developerName,
         key: record.key,
@@ -138,47 +186,43 @@ function duplicateToIssues(records: RawBindingRecord[]): BindingIssue[] {
   return issues;
 }
 
-/** `missing-sobject-reference` — one issue per malformed record. `UnitOfWork` is never validated (see `validateBindings`). */
+/** `missing-sobject-reference` — one issue per malformed record. */
 function missingSObjectReferenceIssues(malformed: MalformedBindingRecord[]): BindingIssue[] {
-  return malformed
-    .filter((record) => record.bindingType !== 'UnitOfWork')
-    .map((record) => {
-      const info = BINDING_RULES['missing-sobject-reference'];
-      const message =
-        record.bindingType === 'Service'
-          ? `${record.developerName}: BindingInterface__c is not set — this binding has no interface to bind against.`
-          : `${record.developerName}: neither BindingSObject__c nor BindingSObjectAlternate__c is set — this binding has no SObject to bind against.`;
-      return {
-        severity: info.severity,
-        rule: info.rule,
-        scope: info.scope,
-        message,
-        bindingType: record.bindingType,
-        developerName: record.developerName,
-        source: record.source,
-        filePath: record.filePath,
-      };
-    });
+  return malformed.map((record) => {
+    const info = BINDING_RULES['missing-sobject-reference'];
+    const message =
+      record.bindingType === 'Service'
+        ? `${record.developerName}: BindingInterface__c is not set — this binding has no interface to bind against.`
+        : `${record.developerName}: neither BindingSObject__c nor BindingSObjectAlternate__c is set — this binding has no SObject to bind against.`;
+    return {
+      severity: info.severity,
+      rule: info.rule,
+      scope: info.scope,
+      message,
+      bindingType: record.bindingType,
+      developerName: record.developerName,
+      source: record.source,
+      filePath: record.filePath,
+    };
+  });
 }
 
-/** `ambiguous-sobject-reference` — one issue per ambiguous record. `UnitOfWork` is never validated (see `validateBindings`). */
+/** `ambiguous-sobject-reference` — one issue per ambiguous record. */
 function ambiguousSObjectReferenceIssues(ambiguous: AmbiguousBindingRecord[]): BindingIssue[] {
-  return ambiguous
-    .filter((record) => record.bindingType !== 'UnitOfWork')
-    .map((record) => {
-      const info = BINDING_RULES['ambiguous-sobject-reference'];
-      return {
-        severity: info.severity,
-        rule: info.rule,
-        scope: info.scope,
-        message: `${record.developerName}: BindingSObject__c (${record.key}) and BindingSObjectAlternate__c (${record.alternateKey}) are both set to different values — only one should be specified.`,
-        bindingType: record.bindingType,
-        developerName: record.developerName,
-        key: record.key,
-        source: record.source,
-        filePath: record.filePath,
-      };
-    });
+  return ambiguous.map((record) => {
+    const info = BINDING_RULES['ambiguous-sobject-reference'];
+    return {
+      severity: info.severity,
+      rule: info.rule,
+      scope: info.scope,
+      message: `${record.developerName}: BindingSObject__c (${record.key}) and BindingSObjectAlternate__c (${record.alternateKey}) are both set to different values — only one should be specified.`,
+      bindingType: record.bindingType,
+      developerName: record.developerName,
+      key: record.key,
+      source: record.source,
+      filePath: record.filePath,
+    };
+  });
 }
 
 type DeveloperNameOccurrence = {
@@ -204,9 +248,6 @@ function duplicateDeveloperNameIssues(
   };
 
   for (const raw of records) {
-    if (raw.bindingType === 'UnitOfWork') {
-      continue;
-    }
     record({
       bindingType: raw.bindingType,
       developerName: raw.developerName,
@@ -216,9 +257,6 @@ function duplicateDeveloperNameIssues(
     });
   }
   for (const raw of malformed) {
-    if (raw.bindingType === 'UnitOfWork') {
-      continue;
-    }
     record({
       bindingType: raw.bindingType,
       developerName: raw.developerName,
@@ -258,16 +296,15 @@ function duplicateDeveloperNameIssues(
 
 /**
  * Validate a scan's AT4DX Application Factory binding records for wiring problems `resolveBindings`/
- * `list` don't fail on: a binding with no resolvable key, a Selector/Domain binding whose SObject
- * reference is ambiguous or names an object `EntityDefinition` can't actually reference, two records
- * sharing a platform-unique `To__c`, two Domain records resolving to the same SObject, and the same
- * `DeveloperName` defined more than once within one binding type.
+ * `list` don't fail on: a binding with no resolvable key, a Selector/Domain/UnitOfWork binding whose
+ * SObject reference is ambiguous or names an object `EntityDefinition` can't actually reference, two
+ * Service/Selector/Domain records sharing a platform-unique `To__c`, two Domain (or two UnitOfWork)
+ * records resolving to the same SObject, two UnitOfWork records sharing a `BindingSequence__c`, and the
+ * same `DeveloperName` defined more than once within one binding type.
  *
- * `UnitOfWork` records are never validated — see docs/design/0015-at4dx-binding-validate-create-set.md's
- * Problem section for why. A caller that scans `UnitOfWork` alongside the other types can pass its
- * records through unfiltered; this function simply ignores them.
- *
- * See docs/design/0015-at4dx-binding-validate-create-set.md for the full rationale behind each rule.
+ * See docs/design/0015-at4dx-binding-validate-create-set.md for the original rationale behind each rule,
+ * and docs/design/0017-at4dx-binding-unit-of-work-write-support.md for why UnitOfWork was brought into
+ * every rule here except `duplicate-to` (it has no `To__c` field, permanently).
  *
  * @param scanOrRecords - Either a scan result envelope (`{ records, malformed, ambiguous }`, as returned by `scanOrgBindings`/`scanLocalBindings`), or the raw binding records alone.
  * @param diagnostics - The `malformed`/`ambiguous` records the same scan reported alongside `records`. Omitted when the first argument is already a scan envelope.
@@ -288,7 +325,9 @@ export function validateBindings(
 
   return [
     ...entityDefinitionIssues(records),
-    ...duplicateDomainSObjectIssues(records),
+    ...duplicateUniqueSObjectIssues(records, 'Domain', 'duplicate-domain-sobject'),
+    ...duplicateUniqueSObjectIssues(records, 'UnitOfWork', 'duplicate-unit-of-work-sobject'),
+    ...sequenceCollisionIssues(records),
     ...duplicateToIssues(records),
     ...missingSObjectReferenceIssues(malformed),
     ...ambiguousSObjectReferenceIssues(ambiguous),

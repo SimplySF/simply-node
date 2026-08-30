@@ -67,11 +67,11 @@ const ISSUE_TABLE_COLUMNS: Array<{ key: keyof DisplayRow; name: string }> = [
 ];
 
 /**
- * Validates the AT4DX Application Factory bindings (Service/Selector/Domain) configured in a target org
- * or local DX source — wiring problems that are invisible to `binding list` — and fails (non-zero exit)
- * when any of them is a real bug, for use as a CI gate. `UnitOfWork` records are scanned when requested
- * (to keep `--type`'s meaning consistent with `list`) but never contribute issues — see
- * docs/design/0015-at4dx-binding-validate-create-set.md's Problem section for why.
+ * Validates the AT4DX Application Factory bindings (Service/Selector/Domain/UnitOfWork) configured in a
+ * target org or local DX source — wiring problems that are invisible to `binding list` — and fails
+ * (non-zero exit) when any of them is a real bug, for use as a CI gate. `UnitOfWork` bindings are
+ * validated identically to Selector/Domain except for `duplicate-to` (they have no `To__c` field at
+ * all) — see docs/design/0017-at4dx-binding-unit-of-work-write-support.md.
  */
 export default class At4dxBindingValidate extends SfCommand<At4dxBindingValidateResult> {
   public static readonly summary = messages.getMessage('summary');

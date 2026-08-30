@@ -197,4 +197,54 @@ describe('simply aep at4dx binding update', () => {
     ]);
     expect(forced.issues.some((issue) => issue.rule === 'duplicate-to')).to.equal(true);
   });
+
+  it('updates the sequence on a UnitOfWork binding, preserving the SObject reference', async () => {
+    await At4dxBindingCreate.run([
+      '--source-dir',
+      sourceDir,
+      '--type',
+      'unit-of-work',
+      '--developer-name',
+      'Account_UOW',
+      '--sobject',
+      'Account',
+      '--sequence',
+      '10',
+    ]);
+
+    const result = await At4dxBindingUpdate.run([
+      '--source-dir',
+      sourceDir,
+      '--type',
+      'unit-of-work',
+      '--developer-name',
+      'Account_UOW',
+      '--sequence',
+      '20',
+      '--json',
+    ]);
+
+    expect(result.issues).to.deep.equal([]);
+    const xml = fs.readFileSync(result.filePath as string, 'utf-8');
+    expect(xml).to.include('<field>BindingSequence__c</field><value xsi:type="xsd:double">20</value>');
+    expect(xml).to.include('<field>BindingSObject__c</field><value xsi:type="xsd:string">Account</value>');
+  });
+
+  it('errors on a non-numeric --sequence', async () => {
+    try {
+      await At4dxBindingUpdate.run([
+        '--source-dir',
+        sourceDir,
+        '--type',
+        'unit-of-work',
+        '--developer-name',
+        'Account_UOW',
+        '--sequence',
+        'not-a-number',
+      ]);
+      expect.fail('should have thrown');
+    } catch (err) {
+      expect((err as SfError).message).to.include('not a valid --sequence');
+    }
+  });
 });

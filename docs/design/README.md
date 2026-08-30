@@ -52,6 +52,7 @@ refactors that keep the public surface identical (though a short doc is welcome 
 | [0014](0014-domain-process-binding-entity-definition-eligibility.md) | `domain-process-binding validate`: EntityDefinition field-choice checks      | Implemented           |
 | [0015](0015-at4dx-binding-validate-create-set.md)                    | `simply aep at4dx binding validate`/`create`/`update`                        | Implemented           |
 | [0016](0016-at4dx-selector-config-field-set-inclusion.md)            | `simply aep at4dx field-set-inclusion list`/`validate`/`create`/`update`     | Implemented           |
+| [0017](0017-at4dx-binding-unit-of-work-write-support.md)             | `binding validate`/`create`/`update` for UnitOfWork bindings                 | Implemented           |
 
 ## Template
 

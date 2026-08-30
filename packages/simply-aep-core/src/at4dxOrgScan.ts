@@ -131,15 +131,6 @@ export async function scanOrgBindings(connection: AepConnection, types: BindingT
         for (const record of result.records as unknown as OrgBindingRecord[]) {
           const key = bindingType === 'Service' ? (record.BindingInterface__c ?? undefined) : resolveSObjectKey(record);
 
-          // UnitOfWork keeps the pre-0015 silent-drop behavior: no malformed/ambiguous tracking, out
-          // of scope for validateBindings (see docs/design/0015-at4dx-binding-validate-create-set.md).
-          if (bindingType === 'UnitOfWork') {
-            if (key) {
-              records.push(toRawRecord(bindingType, record, key, source));
-            }
-            continue;
-          }
-
           if (!key) {
             malformed.push({ bindingType, developerName: record.DeveloperName, source });
             continue;

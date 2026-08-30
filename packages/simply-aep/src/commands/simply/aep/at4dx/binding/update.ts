@@ -29,7 +29,7 @@ import { toBindingCliError } from '../../../../../common/bindingWriteError.js';
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('@simplysf/simply-aep', 'simply.aep.at4dx.binding.update');
 
-const WRITABLE_TYPE_OPTIONS: WritableBindingTypeFlag[] = ['service', 'selector', 'domain'];
+const WRITABLE_TYPE_OPTIONS: WritableBindingTypeFlag[] = ['service', 'selector', 'domain', 'unit-of-work'];
 
 type IssueDisplayRow = { severity: string; rule: string; message: string };
 
@@ -44,9 +44,9 @@ function toIssueDisplayRow(issue: BindingIssue): IssueDisplayRow {
 }
 
 /**
- * Updates an existing AT4DX Application Factory binding (Service/Selector/Domain) in local DX source
- * and/or a connected org — only the fields given change; everything else, including which SObject
- * reference field a Selector/Domain binding uses, is preserved from the found record.
+ * Updates an existing AT4DX Application Factory binding (Service/Selector/Domain/UnitOfWork) in local DX
+ * source and/or a connected org — only the fields given change; everything else, including which
+ * SObject reference field a Selector/Domain/UnitOfWork binding uses, is preserved from the found record.
  */
 export default class At4dxBindingUpdate extends SfCommand<At4dxBindingUpdateResult> {
   public static readonly summary = messages.getMessage('summary');
@@ -86,6 +86,7 @@ export default class At4dxBindingUpdate extends SfCommand<At4dxBindingUpdateResu
       allowNo: true,
     }),
     priority: Flags.string({ summary: messages.getMessage('flags.priority.summary') }),
+    sequence: Flags.string({ summary: messages.getMessage('flags.sequence.summary') }),
     force: Flags.boolean({ summary: messages.getMessage('flags.force.summary'), default: false }),
   };
 
@@ -106,6 +107,14 @@ export default class At4dxBindingUpdate extends SfCommand<At4dxBindingUpdateResu
       }
     }
 
+    let sequence: number | undefined;
+    if (flags.sequence !== undefined) {
+      sequence = Number(flags.sequence);
+      if (Number.isNaN(sequence)) {
+        throw messages.createError('error.invalidSequence', [flags.sequence]);
+      }
+    }
+
     const connection = targetOrg?.getConnection(flags['api-version']);
 
     try {
@@ -119,6 +128,7 @@ export default class At4dxBindingUpdate extends SfCommand<At4dxBindingUpdateResu
           sobject: flags.sobject,
           sobjectAlternate: flags['sobject-alternate'],
           priority,
+          sequence,
           force: flags.force,
         },
         { sourceDirs, connection, wait: Duration.minutes(Number(flags.wait)) },
