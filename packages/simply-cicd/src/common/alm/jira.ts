@@ -18,7 +18,7 @@ import type { AlmIssueRef, AlmIssueRendering, AlmProvider } from './types.js';
 
 /** Escapes a configured project key so it can be embedded in the match pattern literally. */
 function escapeKey(projectKey: string): string {
-  return projectKey.replace(/[-/^$*+?.()|[\]{}]/g, '\\$&');
+  return projectKey.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
 }
 
 /** An `AlmProvider` for Jira, which keys issues as `PROJECT-123`. */
