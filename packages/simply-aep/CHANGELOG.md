@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.9.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-aep%400.8.0...%40simplysf%2Fsimply-aep%400.9.0) (2026-08-30)
+
+### Features
+
+- **simply-aep:** add at4dx field-set-inclusion list/validate/create/update ([35848f0](https://github.com/SimplySF/simply-node/commit/35848f031d33739c121ec9b7961f51b4e66e0467)), closes [#148](https://github.com/SimplySF/simply-node/issues/148)
+
 # [0.8.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-aep%400.7.0...%40simplysf%2Fsimply-aep%400.8.0) (2026-08-30)
 
 ### Features
