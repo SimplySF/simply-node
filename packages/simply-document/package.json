@@ -1,7 +1,7 @@
 {
   "name": "@simplysf/simply-document",
   "description": "Utilities for generating project documentation",
-  "version": "0.3.6",
+  "version": "0.3.7",
   "author": "@ClayChipps",
   "homepage": "https://github.com/SimplySF/simply-node",
   "bugs": "https://github.com/SimplySF/simply-node/issues",
@@ -64,7 +64,7 @@
     "handlebars": "^4.7.9"
   },
   "devDependencies": {
-    "@oclif/plugin-command-snapshot": "^5.3.19",
+    "@oclif/plugin-command-snapshot": "^5.4.0",
     "@salesforce/plugin-command-reference": "^3.1.99",
     "@vitest/coverage-v8": "^4.1.10",
     "vitest": "^4.1.10"

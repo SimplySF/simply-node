@@ -1,7 +1,7 @@
 {
   "name": "@simplysf/simply-cicd",
   "description": "Commands for Salesforce CI/CD pipelines",
-  "version": "0.8.5",
+  "version": "0.8.6",
   "author": "@ClayChipps",
   "homepage": "https://github.com/SimplySF/simply-node",
   "bugs": "https://github.com/SimplySF/simply-node/issues",
@@ -68,7 +68,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
-    "@oclif/plugin-command-snapshot": "^5.3.19",
+    "@oclif/plugin-command-snapshot": "^5.4.0",
     "@salesforce/plugin-command-reference": "^3.1.99",
     "@vitest/coverage-v8": "^4.1.10",
     "vitest": "^4.1.10"
