@@ -87,6 +87,41 @@ describe('createBinding', () => {
     expect(records[0]).toMatchObject({ key: 'Account', to: 'AccountDomain', priority: undefined });
   });
 
+  it('writes a UnitOfWork binding with sequence but no to/priority/bindingInterface field', async () => {
+    await createBinding(
+      { bindingType: 'UnitOfWork', developerName: 'Account_UOW', sobject: 'Account', sequence: 10 },
+      { sourceDir: tmpDir },
+    );
+
+    const { records } = scanLocalBindings([tmpDir], ['UnitOfWork']);
+    expect(records[0]).toMatchObject({ key: 'Account', sequence: 10, to: undefined, priority: undefined });
+
+    const xml = fs.readFileSync(
+      path.join(tmpDir, 'customMetadata', 'ApplicationFactory_UnitOfWorkBinding.Account_UOW.md-meta.xml'),
+      'utf-8',
+    );
+    expect(xml).not.toContain('To__c');
+    expect(xml).not.toContain('Priority__c');
+    expect(xml).not.toContain('BindingInterface__c');
+    expect(xml).toContain('BindingSequence__c');
+  });
+
+  it('writes a UnitOfWork binding using BindingSObjectAlternate__c when sobjectAlternate is true', async () => {
+    await createBinding(
+      {
+        bindingType: 'UnitOfWork',
+        developerName: 'ServiceResource_UOW',
+        sobject: 'ServiceResource',
+        sobjectAlternate: true,
+      },
+      { sourceDir: tmpDir },
+    );
+
+    const { records } = scanLocalBindings([tmpDir], ['UnitOfWork']);
+    expect(records[0].keyField).toBe('alternate');
+    expect(records[0].key).toBe('ServiceResource');
+  });
+
   it('defaults label to developerName', async () => {
     await createBinding(baseSelectorCreateInput(), { sourceDir: tmpDir });
 
@@ -130,6 +165,39 @@ describe('createBinding', () => {
         {
           sourceDir: tmpDir,
         },
+      ),
+    ).rejects.toThrow(expect.objectContaining({ code: 'type-field-mismatch' }) as Error);
+  });
+
+  it('rejects priority given with bindingType UnitOfWork', async () => {
+    await expect(
+      createBinding(
+        { bindingType: 'UnitOfWork', developerName: 'Account_UOW', sobject: 'Account', priority: 1 },
+        { sourceDir: tmpDir },
+      ),
+    ).rejects.toThrow(expect.objectContaining({ code: 'type-field-mismatch' }) as Error);
+  });
+
+  it('rejects to given with bindingType UnitOfWork', async () => {
+    await expect(
+      createBinding(
+        { bindingType: 'UnitOfWork', developerName: 'Account_UOW', sobject: 'Account', to: 'SomeImpl' },
+        { sourceDir: tmpDir },
+      ),
+    ).rejects.toThrow(expect.objectContaining({ code: 'type-field-mismatch' }) as Error);
+  });
+
+  it('rejects sequence given with a non-UnitOfWork bindingType', async () => {
+    await expect(createBinding(baseSelectorCreateInput({ sequence: 10 }), { sourceDir: tmpDir })).rejects.toThrow(
+      expect.objectContaining({ code: 'type-field-mismatch' }) as Error,
+    );
+  });
+
+  it('rejects a Selector create with no to given', async () => {
+    await expect(
+      createBinding(
+        { bindingType: 'Selector', developerName: 'Account_Selector', sobject: 'Account' },
+        { sourceDir: tmpDir },
       ),
     ).rejects.toThrow(expect.objectContaining({ code: 'type-field-mismatch' }) as Error);
   });
@@ -252,6 +320,22 @@ describe('updateBinding', () => {
 
     const { records } = scanLocalBindings([tmpDir], ['Selector']);
     expect(records[0].keyField).toBe('primary');
+  });
+
+  it('changes only the sequence on a UnitOfWork binding, preserving the SObject reference', async () => {
+    await createBinding(
+      { bindingType: 'UnitOfWork', developerName: 'Account_UOW', sobject: 'Account', sequence: 10 },
+      { sourceDir: tmpDir },
+    );
+
+    const result = await updateBinding(
+      { bindingType: 'UnitOfWork', developerName: 'Account_UOW', sequence: 20 },
+      { sourceDirs: [tmpDir] },
+    );
+
+    expect(result.issues).toEqual([]);
+    const { records } = scanLocalBindings([tmpDir], ['UnitOfWork']);
+    expect(records[0]).toMatchObject({ key: 'Account', sequence: 20 });
   });
 
   it('rejects when the DeveloperName is not found', async () => {

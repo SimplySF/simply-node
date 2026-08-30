@@ -85,12 +85,26 @@ function checkTypeFieldMismatch(bindingType: WritableBindingType, input: Binding
   } else if (input.bindingInterface !== undefined) {
     throw new BindingWriteError(
       'type-field-mismatch',
-      'bindingInterface cannot be set when bindingType is Selector or Domain — use sobject instead.',
+      'bindingInterface cannot be set when bindingType is Selector, Domain, or UnitOfWork — use sobject instead.',
     );
   }
 
-  if (bindingType === 'Domain' && input.priority !== undefined) {
-    throw new BindingWriteError('type-field-mismatch', 'priority cannot be set when bindingType is Domain.');
+  if ((bindingType === 'Domain' || bindingType === 'UnitOfWork') && input.priority !== undefined) {
+    throw new BindingWriteError(
+      'type-field-mismatch',
+      'priority cannot be set when bindingType is Domain or UnitOfWork.',
+    );
+  }
+
+  if (bindingType === 'UnitOfWork' && input.to !== undefined) {
+    throw new BindingWriteError(
+      'type-field-mismatch',
+      'to cannot be set when bindingType is UnitOfWork, which has no To__c field — use sequence instead.',
+    );
+  }
+
+  if (bindingType !== 'UnitOfWork' && input.sequence !== undefined) {
+    throw new BindingWriteError('type-field-mismatch', 'sequence can only be set when bindingType is UnitOfWork.');
   }
 }
 
@@ -274,6 +288,12 @@ export async function createBinding(
   const label = input.label ?? input.developerName;
   checkLabel(label);
   checkTypeFieldMismatch(input.bindingType, input);
+  if (input.bindingType !== 'UnitOfWork' && !input.to) {
+    throw new BindingWriteError(
+      'type-field-mismatch',
+      'to is required when bindingType is Service, Selector, or Domain.',
+    );
+  }
   const { key, keyField } = keyFromCreateInput(input.bindingType, input);
 
   const scan = await scanCreateContext(input.bindingType, target);
@@ -296,6 +316,7 @@ export async function createBinding(
     keyField,
     to: input.to,
     priority: input.priority,
+    sequence: input.sequence,
     source: scan.source,
   };
 
@@ -307,7 +328,7 @@ export async function createBinding(
 
   const localObjectName = AT4DX_BINDING_LOCAL_OBJECT_NAMES[input.bindingType];
   const xml = buildBindingXml(
-    { bindingType: input.bindingType, key, keyField, to: input.to, priority: input.priority },
+    { bindingType: input.bindingType, key, keyField, to: input.to, priority: input.priority, sequence: input.sequence },
     { label },
   );
   const localFilePath = target.sourceDir
@@ -358,6 +379,7 @@ function mergeBindingRecord(
     keyField,
     to: input.to ?? existing.to,
     priority: input.priority ?? existing.priority,
+    sequence: input.sequence ?? existing.sequence,
   };
 }
 
@@ -417,6 +439,7 @@ export async function updateBinding(
       keyField: merged.keyField,
       to: merged.to,
       priority: merged.priority,
+      sequence: merged.sequence,
     },
     { label: merged.label },
   );

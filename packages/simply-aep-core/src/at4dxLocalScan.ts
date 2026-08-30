@@ -103,13 +103,7 @@ export function scanLocalBindings(sourceDirs: string[], types: BindingType[]): L
         ? fieldValue(values, 'BindingInterface__c')
         : (bindingSObject ?? bindingSObjectAlternate);
 
-    // UnitOfWork keeps the pre-0015 silent-drop behavior: no malformed/ambiguous tracking, out of
-    // scope for validateBindings (see docs/design/0015-at4dx-binding-validate-create-set.md).
-    if (bindingType === 'UnitOfWork') {
-      if (!key) {
-        continue;
-      }
-    } else if (!key) {
+    if (!key) {
       malformed.push({ bindingType, developerName, source, filePath });
       continue;
     } else if (bindingSObject && bindingSObjectAlternate && bindingSObjectAlternate !== key) {

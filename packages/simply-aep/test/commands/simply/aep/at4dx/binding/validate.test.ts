@@ -185,7 +185,7 @@ describe('simply aep at4dx binding validate', () => {
     expect(process.exitCode).to.equal(1);
   });
 
-  it('should never flag a UnitOfWork record even when it shares a malformed shape', async () => {
+  it('should surface a UnitOfWork record with no resolvable SObject as a missing-sobject-reference error', async () => {
     writeCustomMetadata(
       'ApplicationFactory_UnitOfWorkBinding.Unresolvable.md-meta.xml',
       [
@@ -205,7 +205,38 @@ describe('simply aep at4dx binding validate', () => {
 
     const result = await At4dxBindingValidate.run(['--source-dir', sourceDir, '--json']);
 
-    expect(result.issues).to.deep.equal([]);
+    expect(result.issues).to.have.lengthOf(1);
+    expect(result.issues[0]).to.deep.include({
+      severity: 'error',
+      rule: 'missing-sobject-reference',
+      developerName: 'Unresolvable',
+    });
+    expect(process.exitCode).to.equal(1);
+  });
+
+  it('should flag a sequence-collision warning when two UnitOfWork records share BindingSequence__c', async () => {
+    writeCustomMetadata(
+      'ApplicationFactory_UnitOfWorkBinding.Account_UOW.md-meta.xml',
+      [
+        '  <values><field>BindingSequence__c</field><value xsi:type="xsd:double">10</value></values>',
+        '  <values><field>BindingSObject__c</field><value xsi:type="xsd:string">Account</value></values>',
+        '  <values><field>BindingSObjectAlternate__c</field><value xsi:nil="true"/></values>',
+      ].join('\n'),
+    );
+    writeCustomMetadata(
+      'ApplicationFactory_UnitOfWorkBinding.Contact_UOW.md-meta.xml',
+      [
+        '  <values><field>BindingSequence__c</field><value xsi:type="xsd:double">10</value></values>',
+        '  <values><field>BindingSObject__c</field><value xsi:type="xsd:string">Contact</value></values>',
+        '  <values><field>BindingSObjectAlternate__c</field><value xsi:nil="true"/></values>',
+      ].join('\n'),
+    );
+
+    const result = await At4dxBindingValidate.run(['--source-dir', sourceDir, '--json']);
+
+    const collisionIssues = result.issues.filter((issue) => issue.rule === 'sequence-collision');
+    expect(collisionIssues).to.have.lengthOf(2);
+    expect(collisionIssues[0].severity).to.equal('warning');
     expect(process.exitCode).to.equal(undefined);
   });
 });

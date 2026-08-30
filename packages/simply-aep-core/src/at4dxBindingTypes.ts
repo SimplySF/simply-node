@@ -154,7 +154,12 @@ export type AmbiguousBindingRecord = {
 /** The severity of a `BindingIssue` — whether it fails `validate`'s exit code or is advisory only. */
 export type BindingIssueSeverity = 'error' | 'warning';
 
-/** Which check in `validateBindings` produced a `BindingIssue`. See docs/design/0015-at4dx-binding-validate-create-set.md. */
+/**
+ * Which check in `validateBindings` produced a `BindingIssue`. See
+ * docs/design/0015-at4dx-binding-validate-create-set.md for the original five/six, and
+ * docs/design/0017-at4dx-binding-unit-of-work-write-support.md for `duplicate-unit-of-work-sobject`/
+ * `sequence-collision`.
+ */
 export type BindingIssueRule =
   | 'missing-sobject-reference'
   | 'ambiguous-sobject-reference'
@@ -162,6 +167,8 @@ export type BindingIssueRule =
   | 'unnecessary-entity-definition-alternate'
   | 'duplicate-to'
   | 'duplicate-domain-sobject'
+  | 'duplicate-unit-of-work-sobject'
+  | 'sequence-collision'
   | 'duplicate-developer-name';
 
 /**
@@ -231,6 +238,22 @@ export const BINDING_RULES: Readonly<Record<BindingIssueRule, BindingRuleInfo>> 
     summary:
       'Two Domain bindings resolve to the same SObject — BindingSObject__c/BindingSObjectAlternate__c are unique on this binding type, so both cannot deploy together.',
   },
+  'duplicate-unit-of-work-sobject': {
+    rule: 'duplicate-unit-of-work-sobject',
+    severity: 'error',
+    scope: 'record',
+    title: 'Duplicate UnitOfWork SObject',
+    summary:
+      'Two UnitOfWork bindings resolve to the same SObject — BindingSObject__c/BindingSObjectAlternate__c are unique on this binding type, so both cannot deploy together.',
+  },
+  'sequence-collision': {
+    rule: 'sequence-collision',
+    severity: 'warning',
+    scope: 'scan',
+    title: 'Sequence collision',
+    summary:
+      'Two UnitOfWork bindings share a BindingSequence__c value — AT4DX still registers both SObjects, but their relative commit order is no longer deterministic.',
+  },
   'duplicate-developer-name': {
     rule: 'duplicate-developer-name',
     severity: 'error',
@@ -263,37 +286,44 @@ export type At4dxBindingValidateResult = {
   issues: BindingIssue[];
 };
 
-/** The Application Factory binding types `createBinding`/`updateBinding` support. UnitOfWork has no `To__c` field and no wiring conflict to validate — out of scope, see docs/design/0015-at4dx-binding-validate-create-set.md. */
-export type WritableBindingType = 'Service' | 'Selector' | 'Domain';
+/**
+ * The Application Factory binding types `createBinding`/`updateBinding` support. UnitOfWork joined in
+ * docs/design/0017-at4dx-binding-unit-of-work-write-support.md — it has no `To__c` field (`sequence`
+ * instead), but does share the same SObject-reference wiring problems Selector/Domain already have.
+ */
+export type WritableBindingType = 'Service' | 'Selector' | 'Domain' | 'UnitOfWork';
 
-export const ALL_WRITABLE_BINDING_TYPES: WritableBindingType[] = ['Service', 'Selector', 'Domain'];
+export const ALL_WRITABLE_BINDING_TYPES: WritableBindingType[] = ['Service', 'Selector', 'Domain', 'UnitOfWork'];
 
 /** The `--type` flag's CLI-facing spelling for each writable binding type. */
-export type WritableBindingTypeFlag = 'service' | 'selector' | 'domain';
+export type WritableBindingTypeFlag = 'service' | 'selector' | 'domain' | 'unit-of-work';
 
 export const WRITABLE_BINDING_TYPE_BY_FLAG: Record<WritableBindingTypeFlag, WritableBindingType> = {
   service: 'Service',
   selector: 'Selector',
   domain: 'Domain',
+  'unit-of-work': 'UnitOfWork',
 };
 
 /** The fields `createBinding`/`updateBinding` accept, shared with the CLI's flags. On `update`, every field is optional — only the ones supplied change. */
 export type BindingFieldsInput = {
   label?: string;
-  /** `To__c` — the interface/SObject's implementing Apex class. Required on `create`, optional on `update`. */
+  /** `To__c` — the interface/SObject's implementing Apex class. Required on `create` for Service/Selector/Domain; rejected outright for UnitOfWork, which has no such field. */
   to?: string;
-  /** `BindingInterface__c`. `--type service` only — rejected for Selector/Domain. */
+  /** `BindingInterface__c`. `--type service` only — rejected for Selector/Domain/UnitOfWork. */
   bindingInterface?: string;
-  /** `BindingSObject__c`/`BindingSObjectAlternate__c`'s resolved value. `--type selector`/`domain` only — rejected for Service. */
+  /** `BindingSObject__c`/`BindingSObjectAlternate__c`'s resolved value. `--type selector`/`domain`/`unit-of-work` only — rejected for Service. */
   sobject?: string;
   /**
    * Tri-state on purpose (`true` | `false` | `undefined`): `undefined` means "don't change which
    * field this is stored in" on `update` (defaulting to `'primary'` on `create`). See `BindingKeyField`.
-   * `--type selector`/`domain` only.
+   * `--type selector`/`domain`/`unit-of-work` only.
    */
   sobjectAlternate?: boolean;
-  /** `Priority__c`. `--type service`/`selector` only — rejected for Domain, which has no such field. */
+  /** `Priority__c`. `--type service`/`selector` only — rejected for Domain/UnitOfWork, neither of which has such a field. */
   priority?: number;
+  /** `BindingSequence__c`. `--type unit-of-work` only — rejected for every other type. See docs/design/0017-at4dx-binding-unit-of-work-write-support.md. */
+  sequence?: number;
 };
 
 /** Where a write reads its validation context from and, when writing locally, where the file goes. Exactly one of `sourceDir`/`connection` is required; both may be given (see docs/design/0012-at4dx-domain-process-binding-create-set.md). */
@@ -315,7 +345,12 @@ export type UpdateBindingTarget = {
 export type CreateBindingInput = BindingFieldsInput & {
   bindingType: WritableBindingType;
   developerName: string;
-  to: string;
+  /**
+   * Required for Service/Selector/Domain, rejected for UnitOfWork (which has no `To__c` field) —
+   * enforced by `createBinding` itself rather than the type system, since exactly one of `to`/`sequence`
+   * is meaningful depending on `bindingType`. See docs/design/0017-at4dx-binding-unit-of-work-write-support.md.
+   */
+  to?: string;
   /** Write/deploy even if validation finds an `error`-severity issue. The issue still appears in the result. */
   force?: boolean;
 };

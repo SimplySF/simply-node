@@ -50,6 +50,8 @@ describe('BINDING_RULES', () => {
       'unnecessary-entity-definition-alternate',
       'duplicate-to',
       'duplicate-domain-sobject',
+      'duplicate-unit-of-work-sobject',
+      'sequence-collision',
       'duplicate-developer-name',
     ];
 
@@ -61,12 +63,19 @@ describe('BINDING_RULES', () => {
 });
 
 describe('validateBindings', () => {
-  it('returns an empty array for well-formed input across all three writable types', () => {
+  it('returns an empty array for well-formed input across all four writable types', () => {
     const service = record({ bindingType: 'Service', developerName: 'Svc', key: 'IMyService', to: 'MyServiceImpl' });
     const selector = record({ bindingType: 'Selector', developerName: 'Sel', key: 'Account', to: 'AccountsSelector' });
     const domain = record({ bindingType: 'Domain', developerName: 'Dom', key: 'Contact', to: 'ContactDomain' });
+    const unitOfWork = record({
+      bindingType: 'UnitOfWork',
+      developerName: 'UOW',
+      key: 'Opportunity',
+      to: undefined,
+      sequence: 10,
+    });
 
-    expect(validateBindings([service, selector, domain], noDiagnostics)).toEqual([]);
+    expect(validateBindings([service, selector, domain, unitOfWork], noDiagnostics)).toEqual([]);
   });
 
   it('returns an empty array for empty input', () => {
@@ -253,20 +262,192 @@ describe('validateBindings', () => {
     expect(issues.filter((issue) => issue.rule === 'duplicate-developer-name')).toEqual([]);
   });
 
-  it('never validates UnitOfWork records', () => {
-    const unitOfWork = record({
+  it('flags a missing-sobject-reference error for a malformed UnitOfWork record', () => {
+    const malformed: MalformedBindingRecord[] = [
+      { bindingType: 'UnitOfWork', developerName: 'Unresolvable', source: 'core' },
+    ];
+
+    const issues = validateBindings([], { malformed, ambiguous: [] });
+
+    expect(issues).toEqual([
+      expect.objectContaining({
+        severity: 'error',
+        rule: 'missing-sobject-reference',
+        bindingType: 'UnitOfWork',
+        developerName: 'Unresolvable',
+        message: expect.stringContaining('BindingSObject__c') as string,
+      }),
+    ]);
+  });
+
+  it('flags an ambiguous-sobject-reference error for an ambiguous UnitOfWork record', () => {
+    const ambiguous: AmbiguousBindingRecord[] = [
+      {
+        bindingType: 'UnitOfWork',
+        developerName: 'Ambiguous',
+        key: 'Account',
+        alternateKey: 'Contact',
+        source: 'core',
+      },
+    ];
+
+    const issues = validateBindings([], { malformed: [], ambiguous });
+
+    expect(issues).toEqual([
+      expect.objectContaining({
+        severity: 'error',
+        rule: 'ambiguous-sobject-reference',
+        bindingType: 'UnitOfWork',
+        developerName: 'Ambiguous',
+        key: 'Account',
+      }),
+    ]);
+  });
+
+  it('flags an unsupported-entity-definition-object error for a UnitOfWork record on the primary field', () => {
+    const unsupported = record({
       bindingType: 'UnitOfWork',
       key: 'ServiceResource',
       keyField: 'primary',
       to: undefined,
     });
-    const malformed: MalformedBindingRecord[] = [
-      { bindingType: 'UnitOfWork', developerName: 'Malformed', source: 'core' },
-    ];
 
-    const issues = validateBindings([unitOfWork], { malformed, ambiguous: [] });
+    const issues = validateBindings([unsupported], noDiagnostics);
 
-    expect(issues).toEqual([]);
+    expect(issues).toEqual([
+      expect.objectContaining({ severity: 'error', rule: 'unsupported-entity-definition-object' }),
+    ]);
+  });
+
+  it('flags an unnecessary-entity-definition-alternate warning for an eligible object on a UnitOfWork alternate field', () => {
+    const unnecessary = record({ bindingType: 'UnitOfWork', key: 'Account', keyField: 'alternate', to: undefined });
+
+    const issues = validateBindings([unnecessary], noDiagnostics);
+
+    expect(issues).toEqual([
+      expect.objectContaining({ severity: 'warning', rule: 'unnecessary-entity-definition-alternate' }),
+    ]);
+  });
+
+  it('flags a duplicate-unit-of-work-sobject error when two UnitOfWork records resolve to the same SObject via different fields', () => {
+    const primary = record({
+      bindingType: 'UnitOfWork',
+      developerName: 'Primary',
+      key: 'Account',
+      keyField: 'primary',
+      to: undefined,
+      sequence: 10,
+    });
+    const alternate = record({
+      bindingType: 'UnitOfWork',
+      developerName: 'Alternate',
+      key: 'Account',
+      keyField: 'alternate',
+      to: undefined,
+      sequence: 20,
+    });
+
+    const issues = validateBindings([primary, alternate], noDiagnostics);
+
+    const duplicateIssues = issues.filter((issue) => issue.rule === 'duplicate-unit-of-work-sobject');
+    expect(duplicateIssues).toHaveLength(2);
+    for (const issue of duplicateIssues) {
+      expect(issue.severity).toBe('error');
+    }
+  });
+
+  it('does not confuse duplicate-unit-of-work-sobject with duplicate-domain-sobject across the two types', () => {
+    const domain = record({ bindingType: 'Domain', developerName: 'Dom', key: 'Account', to: 'DomainImpl' });
+    const unitOfWork = record({
+      bindingType: 'UnitOfWork',
+      developerName: 'UOW',
+      key: 'Account',
+      to: undefined,
+      sequence: 10,
+    });
+
+    const issues = validateBindings([domain, unitOfWork], noDiagnostics);
+
+    expect(issues.filter((issue) => issue.rule === 'duplicate-domain-sobject')).toEqual([]);
+    expect(issues.filter((issue) => issue.rule === 'duplicate-unit-of-work-sobject')).toEqual([]);
+  });
+
+  it('flags a sequence-collision warning when two UnitOfWork records share BindingSequence__c', () => {
+    const first = record({
+      bindingType: 'UnitOfWork',
+      developerName: 'First',
+      key: 'Account',
+      to: undefined,
+      sequence: 10,
+    });
+    const second = record({
+      bindingType: 'UnitOfWork',
+      developerName: 'Second',
+      key: 'Contact',
+      to: undefined,
+      sequence: 10,
+    });
+
+    const issues = validateBindings([first, second], noDiagnostics);
+
+    const collisionIssues = issues.filter((issue) => issue.rule === 'sequence-collision');
+    expect(collisionIssues).toHaveLength(2);
+    for (const issue of collisionIssues) {
+      expect(issue.severity).toBe('warning');
+    }
+  });
+
+  it('does not flag sequence-collision when neither UnitOfWork record has a sequence set', () => {
+    const first = record({ bindingType: 'UnitOfWork', developerName: 'First', key: 'Account', to: undefined });
+    const second = record({ bindingType: 'UnitOfWork', developerName: 'Second', key: 'Contact', to: undefined });
+
+    const issues = validateBindings([first, second], noDiagnostics);
+
+    expect(issues.filter((issue) => issue.rule === 'sequence-collision')).toEqual([]);
+  });
+
+  it('never flags duplicate-to for UnitOfWork, even when two records happen to share a to value', () => {
+    const first = record({
+      bindingType: 'UnitOfWork',
+      developerName: 'First',
+      key: 'Account',
+      to: 'Shared',
+      sequence: 1,
+    });
+    const second = record({
+      bindingType: 'UnitOfWork',
+      developerName: 'Second',
+      key: 'Contact',
+      to: 'Shared',
+      sequence: 2,
+    });
+
+    const issues = validateBindings([first, second], noDiagnostics);
+
+    expect(issues.filter((issue) => issue.rule === 'duplicate-to')).toEqual([]);
+  });
+
+  it('flags a duplicate-developer-name error for the same DeveloperName across two UnitOfWork sources', () => {
+    const first = record({
+      bindingType: 'UnitOfWork',
+      developerName: 'Shared',
+      key: 'Account',
+      to: undefined,
+      source: 'core',
+    });
+    const second = record({
+      bindingType: 'UnitOfWork',
+      developerName: 'Shared',
+      key: 'Contact',
+      to: undefined,
+      source: 'app',
+    });
+
+    const issues = validateBindings([first, second], noDiagnostics);
+
+    const duplicateIssues = issues.filter((issue) => issue.rule === 'duplicate-developer-name');
+    expect(duplicateIssues).toHaveLength(2);
+    expect(duplicateIssues.map((issue) => issue.source).sort()).toEqual(['app', 'core']);
   });
 
   it("stamps every issue's severity and scope from BINDING_RULES", () => {

@@ -29,7 +29,7 @@ import { toBindingCliError } from '../../../../../common/bindingWriteError.js';
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('@simplysf/simply-aep', 'simply.aep.at4dx.binding.create');
 
-const WRITABLE_TYPE_OPTIONS: WritableBindingTypeFlag[] = ['service', 'selector', 'domain'];
+const WRITABLE_TYPE_OPTIONS: WritableBindingTypeFlag[] = ['service', 'selector', 'domain', 'unit-of-work'];
 
 type IssueDisplayRow = { severity: string; rule: string; message: string };
 
@@ -44,8 +44,9 @@ function toIssueDisplayRow(issue: BindingIssue): IssueDisplayRow {
 }
 
 /**
- * Creates a new AT4DX Application Factory binding (Service/Selector/Domain) in local DX source and/or a
- * connected org, validating it against everything already scanned of the same type before writing.
+ * Creates a new AT4DX Application Factory binding (Service/Selector/Domain/UnitOfWork) in local DX
+ * source and/or a connected org, validating it against everything already scanned of the same type
+ * before writing.
  */
 export default class At4dxBindingCreate extends SfCommand<At4dxBindingCreateResult> {
   public static readonly summary = messages.getMessage('summary');
@@ -75,7 +76,7 @@ export default class At4dxBindingCreate extends SfCommand<At4dxBindingCreateResu
       required: true,
     }),
     label: Flags.string({ summary: messages.getMessage('flags.label.summary') }),
-    to: Flags.string({ summary: messages.getMessage('flags.to.summary'), char: 'c', required: true }),
+    to: Flags.string({ summary: messages.getMessage('flags.to.summary'), char: 'c' }),
     'binding-interface': Flags.string({ summary: messages.getMessage('flags.binding-interface.summary') }),
     sobject: Flags.string({ summary: messages.getMessage('flags.sobject.summary'), char: 's' }),
     'sobject-alternate': Flags.boolean({
@@ -83,6 +84,7 @@ export default class At4dxBindingCreate extends SfCommand<At4dxBindingCreateResu
       allowNo: true,
     }),
     priority: Flags.string({ summary: messages.getMessage('flags.priority.summary') }),
+    sequence: Flags.string({ summary: messages.getMessage('flags.sequence.summary') }),
     force: Flags.boolean({ summary: messages.getMessage('flags.force.summary'), default: false }),
   };
 
@@ -103,6 +105,14 @@ export default class At4dxBindingCreate extends SfCommand<At4dxBindingCreateResu
       }
     }
 
+    let sequence: number | undefined;
+    if (flags.sequence !== undefined) {
+      sequence = Number(flags.sequence);
+      if (Number.isNaN(sequence)) {
+        throw messages.createError('error.invalidSequence', [flags.sequence]);
+      }
+    }
+
     const connection = targetOrg?.getConnection(flags['api-version']);
 
     try {
@@ -116,6 +126,7 @@ export default class At4dxBindingCreate extends SfCommand<At4dxBindingCreateResu
           sobject: flags.sobject,
           sobjectAlternate: flags['sobject-alternate'],
           priority,
+          sequence,
           force: flags.force,
         },
         { sourceDir, connection, wait: Duration.minutes(Number(flags.wait)) },

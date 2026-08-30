@@ -71,6 +71,88 @@ describe('simply aep at4dx binding create', () => {
     }
   });
 
+  it('errors on a non-numeric --sequence', async () => {
+    try {
+      await At4dxBindingCreate.run([
+        '--source-dir',
+        sourceDir,
+        '--type',
+        'unit-of-work',
+        '--developer-name',
+        'Account_UOW',
+        '--sobject',
+        'Account',
+        '--sequence',
+        'not-a-number',
+      ]);
+      expect.fail('should have thrown');
+    } catch (err) {
+      expect((err as SfError).message).to.include('not a valid --sequence');
+    }
+  });
+
+  it('errors when --type selector is given with no --to', async () => {
+    try {
+      await At4dxBindingCreate.run([
+        '--source-dir',
+        sourceDir,
+        '--type',
+        'selector',
+        '--developer-name',
+        'Account_Selector',
+        '--sobject',
+        'Account',
+      ]);
+      expect.fail('should have thrown');
+    } catch (err) {
+      expect((err as SfError).message).to.include('to is required');
+    }
+  });
+
+  it('creates a UnitOfWork binding with --sequence and no --to', async () => {
+    const result = await At4dxBindingCreate.run([
+      '--source-dir',
+      sourceDir,
+      '--type',
+      'unit-of-work',
+      '--developer-name',
+      'Account_UOW',
+      '--sobject',
+      'Account',
+      '--sequence',
+      '10',
+      '--json',
+    ]);
+
+    expect(result.filePath).to.equal(
+      path.join(sourceDir, 'customMetadata', 'ApplicationFactory_UnitOfWorkBinding.Account_UOW.md-meta.xml'),
+    );
+    expect(result.issues).to.deep.equal([]);
+    const xml = fs.readFileSync(result.filePath as string, 'utf-8');
+    expect(xml).to.include('<field>BindingSequence__c</field><value xsi:type="xsd:double">10</value>');
+    expect(xml).not.to.include('To__c');
+  });
+
+  it('errors when --to is given with --type unit-of-work', async () => {
+    try {
+      await At4dxBindingCreate.run([
+        '--source-dir',
+        sourceDir,
+        '--type',
+        'unit-of-work',
+        '--developer-name',
+        'Account_UOW',
+        '--sobject',
+        'Account',
+        '--to',
+        'SomeImpl',
+      ]);
+      expect.fail('should have thrown');
+    } catch (err) {
+      expect((err as SfError).message).to.include('to cannot be set');
+    }
+  });
+
   it('creates a Selector binding in local source and returns its file path', async () => {
     const result = await At4dxBindingCreate.run(['--source-dir', sourceDir, ...SELECTOR_FLAGS, '--json']);
 
