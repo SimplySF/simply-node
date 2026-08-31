@@ -58,6 +58,21 @@ The Connected App's OAuth policy must include the `api` and `id`/`openid` scopes
 
 `Connection.bulk2.query()` (jsforce's own convenience method) routes each result page through jsforce's legacy HTTP transport, which fully buffers each page into memory before your code can consume it — defeating streaming for large exports. These helpers avoid that by fetching result pages directly with `undici`, converting the response body straight to a Node stream, and piping it onward. jsforce is still used for job creation and polling; only the result-page fetch bypasses it.
 
+Use `streamBulkQuery` directly when you want to consume or transform the results without ever touching the filesystem — e.g. piping the CSV stream through `csv-parse` to process records one at a time, the same way `queryRecords` uses it internally above its `bulkThreshold`:
+
+```ts
+import { parse } from 'csv-parse';
+import { streamBulkQuery } from '@simplysf/simply-core';
+
+const { jobId, numberRecordsProcessed, stream } = await streamBulkQuery(connection, 'SELECT Id, Name FROM Account');
+
+for await (const record of stream.pipe(parse({ columns: true })) as AsyncIterable<Record<string, string>>) {
+  console.log(record.Id, record.Name);
+}
+```
+
+Memory stays flat regardless of result set size — pages are fetched lazily as the stream is consumed, not buffered up front. Use `streamBulkQueryToFile` instead for the common "just write it to disk" case:
+
 ```ts
 import { streamBulkQueryToFile } from '@simplysf/simply-core';
 
