@@ -142,6 +142,16 @@ Two repo-wide updates land once, now, rather than being repeated in every follow
   written. The existing "extracting or growing a library package meant for consumption outside this
   monorepo" trigger bullet already covers every package in the plan below — no wording change needed there.
 
+A third repo-wide step, missed in this doc's first draft and only discovered while implementing
+`simply-document-core` (0020): **`eslint.config.mjs`'s hardcoded `allPackages` and `libraryPackages` arrays**
+gate which directories get TypeScript-aware linting (`languageOptions.parserOptions.project` and the
+type-checked rule sets only apply to files under a listed package). A new `-core` package left off both
+arrays doesn't fail loudly with a missing-config error — it silently falls back to plain-JS parsing, which
+then fails with a confusing `Parsing error: Unexpected token type` on its first `export type`. Every
+follow-up doc's implementation plan must add the new package to both arrays (it belongs in
+`libraryPackages`, same as `simply-aep-core`) as an explicit step, not just to `CONTRIBUTING.md` and
+`docs/design/README.md`.
+
 ## Testing
 
 No tests in this doc — it introduces no code. Each follow-up doc inherits 0009's testing section verbatim:

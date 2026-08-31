@@ -47,10 +47,8 @@ packages/simply-document-core/src/changeReportTemplate.ts` (and the same for
 4. **`simply-document` depends on `simply-document-core`** (`workspace:^0.1.0`). `src/commands/simply/
 document/diff.ts` and `.../generate.ts` change their import from `../../../common/*.js` to
    `@simplysf/simply-document-core`. `src/index.ts` is already the standard stub — no change needed there.
-   No dependency drops from `simply-document`'s own `package.json`: `handlebars` stays (nothing else in
-   `simply-document` uses it today, but removing it isn't required by this move and isn't verified safe
-   without re-checking — leaving it is the conservative call, revisit only if a future change removes the
-   last other use, if any surfaces).
+   `handlebars` drops from `simply-document`'s own `package.json` — verified by grepping `src/` after the
+   move that nothing outside the two relocated files imported it directly.
 5. **Document like a library**: `README.md`'s `## API` section (import snippet + one row per exported
    function, modeled on `simply-aep-core/README.md`'s tables), `CONTRIBUTING.md` stub (copy
    `simply-aep-core/CONTRIBUTING.md`, swap the package-specific paragraph), `test/index.test.ts` asserting
@@ -162,11 +160,17 @@ packages/simply-document-core/src/changeReportTemplate.ts`, same for
 7. **Update `packages/simply-document`**:
    - `src/commands/simply/document/diff.ts` and `.../generate.ts` — change imports to
      `@simplysf/simply-document-core`.
-   - `package.json` — add `@simplysf/simply-document-core: workspace:^0.1.0` to `dependencies`.
+   - `package.json` — add `@simplysf/simply-document-core: workspace:^0.1.0` to `dependencies`, drop
+     `handlebars` (confirmed unused directly by `simply-document`'s `src/` once the two files move out).
    - `README.md` — no `## API` section existed before (this package's README was already pure command
      reference); no change needed there beyond the standard `pnpm run readme` regeneration check.
 8. **`CONTRIBUTING.md`** — add a `simply-document-core` row to the repository-structure table, phrased like
    the `simply-aep-core` row (externally-consumable, not purely internal).
+   8a. **`eslint.config.mjs`** — add `packages/simply-document-core` to both the `allPackages` and
+   `libraryPackages` arrays (same as `simply-aep-core`). Discovered missing during implementation, not
+   anticipated when this doc was first drafted — see 0019's corrected "repo-wide updates" section. Without
+   this, the package's `.ts` files get parsed as plain JS instead of TypeScript and fail lint with
+   `Parsing error: Unexpected token type` on the first `export type`.
 9. **`docs/design/README.md`** — add this doc's row to the index table (already added as part of landing
    0019; update its `Status` here when this doc itself is agreed).
 10. **Housekeeping per `CLAUDE.md`**: `pnpm run readme` in `packages/simply-document` (confirms no `## API`

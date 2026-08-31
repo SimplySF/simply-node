@@ -58,6 +58,7 @@ const allPackages = [
   'packages/simply-core',
   'packages/simply-data',
   'packages/simply-document',
+  'packages/simply-document-core',
   'packages/simply-flow',
   'packages/simply-package',
   'packages/simply-permissions',
@@ -74,6 +75,7 @@ const libraryPackages = [
   'packages/simply-plugin-kit',
   'packages/simply-report',
   'packages/simply-aep-core',
+  'packages/simply-document-core',
 ];
 
 // sf-plugin's recommended rules only ever applied to the oclif command packages, not the libraries or simply.
