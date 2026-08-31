@@ -1,7 +1,7 @@
 {
   "name": "@simplysf/simply-cicd",
   "description": "Commands for Salesforce CI/CD pipelines",
-  "version": "0.8.6",
+  "version": "0.8.7",
   "author": "@ClayChipps",
   "homepage": "https://github.com/SimplySF/simply-node",
   "bugs": "https://github.com/SimplySF/simply-node/issues",

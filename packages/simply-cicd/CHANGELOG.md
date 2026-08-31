@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.8.7](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-cicd%400.8.6...%40simplysf%2Fsimply-cicd%400.8.7) (2026-08-31)
+
+### Bug Fixes
+
+- **security:** address CodeQL findings in test workflow and simply-cicd ([ac2a333](https://github.com/SimplySF/simply-node/commit/ac2a3337f12845785e83b23b4a2dd5b929b2054a))
+
 ## [0.8.6](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-cicd%400.8.5...%40simplysf%2Fsimply-cicd%400.8.6) (2026-08-30)
 
 **Note:** Version bump only for package @simplysf/simply-cicd
