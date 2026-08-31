@@ -50,7 +50,7 @@ import {
   type StaticResourceItem,
   type ValidationRuleItem,
   type VisualforcePageItem,
-} from '../../../common/technicalDesignDocumentTemplate.js';
+} from '@simplysf/simply-document-core';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('@simplysf/simply-document', 'simply.document.generate');

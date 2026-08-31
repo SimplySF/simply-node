@@ -55,7 +55,7 @@ refactors that keep the public surface identical (though a short doc is welcome 
 | [0017](0017-at4dx-binding-unit-of-work-write-support.md)             | `binding validate`/`create`/`update` for UnitOfWork bindings                 | Implemented           |
 | [0018](0018-domain-process-binding-set-rename-to-update.md)          | Rename `domain-process-binding set` to `update`                              | Implemented           |
 | [0019](0019-plugin-core-library-extraction.md)                       | Extracting `-core` library packages from the other `simply-*` plugins        | Draft                 |
-| [0020](0020-simply-document-core.md)                                 | Splitting `simply-document-core` out of `simply-document`                    | Draft                 |
+| [0020](0020-simply-document-core.md)                                 | Splitting `simply-document-core` out of `simply-document`                    | Implemented           |
 
 ## Template
 

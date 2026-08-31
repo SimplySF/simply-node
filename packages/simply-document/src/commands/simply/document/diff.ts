@@ -20,11 +20,7 @@ import path from 'node:path';
 import { promisify } from 'node:util';
 import { Messages } from '@salesforce/core';
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import {
-  buildChangeReportHtml,
-  type ChangeEntry,
-  type ChangesByComponentType,
-} from '../../../common/changeReportTemplate.js';
+import { buildChangeReportHtml, type ChangeEntry, type ChangesByComponentType } from '@simplysf/simply-document-core';
 
 const exec = promisify(execCallback);
 
