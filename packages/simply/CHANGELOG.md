@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.0.1](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply%405.0.0...%40simplysf%2Fsimply%405.0.1) (2026-08-31)
+
+**Note:** Version bump only for package @simplysf/simply
+
 # [5.0.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply%404.2.0...%40simplysf%2Fsimply%405.0.0) (2026-08-31)
 
 - feat(simply-aep)!: rename domain-process-binding set to update ([f6be0a9](https://github.com/SimplySF/simply-node/commit/f6be0a922cac82192a1b452773558fee4bacea64)), closes [#148](https://github.com/SimplySF/simply-node/issues/148) [#149](https://github.com/SimplySF/simply-node/issues/149)

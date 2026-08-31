@@ -1,7 +1,7 @@
 {
   "name": "@simplysf/simply-document",
   "description": "Utilities for generating project documentation",
-  "version": "0.3.7",
+  "version": "0.4.0",
   "author": "@ClayChipps",
   "homepage": "https://github.com/SimplySF/simply-node",
   "bugs": "https://github.com/SimplySF/simply-node/issues",
@@ -61,7 +61,7 @@
     "@salesforce/sf-plugins-core": "^12.2.16",
     "@salesforce/source-deploy-retrieve": "^12.37.2",
     "@salesforce/ts-types": "^2.0.12",
-    "@simplysf/simply-document-core": "workspace:^0.1.0"
+    "@simplysf/simply-document-core": "workspace:^0.2.0"
   },
   "devDependencies": {
     "@oclif/plugin-command-snapshot": "^5.4.0",
