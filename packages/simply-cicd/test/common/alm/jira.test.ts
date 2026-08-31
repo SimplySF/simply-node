@@ -45,6 +45,12 @@ describe('JiraProvider', () => {
     expect(issues.map((issue) => issue.key)).toEqual(['A.B-1']);
   });
 
+  it('treats a literal backslash in a project key as literal, not an escape character', () => {
+    const issues = provider.extractIssues(String.raw`a1 A\B-1 and AXB-2`, [String.raw`A\B`]);
+
+    expect(issues.map((issue) => issue.key)).toEqual([String.raw`A\B-1`]);
+  });
+
   it('renders plain text when no base URL is given', () => {
     const issues = provider.extractIssues('a1 PROJ-1 b2 PROJ-2', ['PROJ']);
 

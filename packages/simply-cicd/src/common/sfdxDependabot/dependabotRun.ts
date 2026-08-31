@@ -42,7 +42,7 @@ export async function resolvePackageDetails(
     throw new Error('Missing subscriber package version ID (SUBSCRIBER_PACKAGE_VERSION_ID).');
   }
 
-  logger.info(`Querying DevHub ${devhubUsername} for package details of 04t version: ${subscriberPackageVersionId}...`);
+  logger.info(`Querying DevHub for package details of 04t version: ${subscriberPackageVersionId}...`);
 
   const query = `SELECT MajorVersion, MinorVersion, PatchVersion, Name, BuildNumber FROM SubscriberPackageVersion WHERE Id = '${subscriberPackageVersionId}'`;
   const args = ['data', 'query', '-o', devhubUsername, '-q', query, '--use-tooling-api', '--json'];
