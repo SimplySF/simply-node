@@ -73,7 +73,7 @@ export {
   type AmbiguousDomainProcessBindingRecord,
   type At4dxDomainProcessBindingCreateResult,
   type At4dxDomainProcessBindingListResult,
-  type At4dxDomainProcessBindingSetResult,
+  type At4dxDomainProcessBindingUpdateResult,
   type At4dxDomainProcessBindingValidateResult,
   type At4dxDomainProcessBindingWriteResult,
   type CreateDomainProcessBindingInput,
@@ -91,9 +91,9 @@ export {
   type MalformedDomainProcessBindingRecord,
   type ProcessContext,
   type RawDomainProcessBindingRecord,
-  type SetDomainProcessBindingInput,
-  type SetDomainProcessBindingTarget,
   type TriggerOperation,
+  type UpdateDomainProcessBindingInput,
+  type UpdateDomainProcessBindingTarget,
 } from './at4dxDomainProcessBindingTypes.js';
 export { buildDomainProcessBindingXml, type DomainProcessBindingXmlFields } from './at4dxDomainProcessBuildXml.js';
 export {
@@ -108,7 +108,7 @@ export {
   resolveDomainProcessBindings,
   validateDomainProcessBindings,
 } from './at4dxDomainProcessResolve.js';
-export { createDomainProcessBinding, setDomainProcessBinding } from './at4dxDomainProcessWrite.js';
+export { createDomainProcessBinding, updateDomainProcessBinding } from './at4dxDomainProcessWrite.js';
 export {
   FIELD_SET_INCLUSION_OBJECT,
   FIELD_SET_INCLUSION_LOCAL_OBJECT_NAME,

@@ -27,7 +27,7 @@ import {
   DomainProcessBindingWriteError,
   type CreateDomainProcessBindingInput,
 } from '../src/at4dxDomainProcessBindingTypes.js';
-import { createDomainProcessBinding, setDomainProcessBinding } from '../src/at4dxDomainProcessWrite.js';
+import { createDomainProcessBinding, updateDomainProcessBinding } from '../src/at4dxDomainProcessWrite.js';
 import { scanLocalDomainProcessBindings } from '../src/at4dxDomainProcessLocalScan.js';
 
 /* eslint-disable camelcase -- AT4DX Custom Metadata field API names (ClassToInject__c, TriggerOperation__c, etc.) */
@@ -165,7 +165,7 @@ describe('createDomainProcessBinding', () => {
   });
 });
 
-describe('setDomainProcessBinding', () => {
+describe('updateDomainProcessBinding', () => {
   let tmpDir: string;
 
   beforeEach(() => {
@@ -179,7 +179,7 @@ describe('setDomainProcessBinding', () => {
   it('changes only the given fields, preserving everything else', async () => {
     await createDomainProcessBinding(baseCreateInput({ description: 'original' }), { sourceDir: tmpDir });
 
-    const result = await setDomainProcessBinding(
+    const result = await updateDomainProcessBinding(
       { developerName: 'Account_Before_Insert_Test', order: 20 },
       { sourceDirs: [tmpDir] },
     );
@@ -199,7 +199,10 @@ describe('setDomainProcessBinding', () => {
       sourceDir: tmpDir,
     });
 
-    await setDomainProcessBinding({ developerName: 'Account_Before_Insert_Test', order: 50 }, { sourceDirs: [tmpDir] });
+    await updateDomainProcessBinding(
+      { developerName: 'Account_Before_Insert_Test', order: 50 },
+      { sourceDirs: [tmpDir] },
+    );
 
     const { records } = scanLocalDomainProcessBindings([tmpDir]);
     expect(records[0].sobjectField).toBe('alternate');
@@ -214,7 +217,7 @@ describe('setDomainProcessBinding', () => {
       sourceDir: tmpDir,
     });
 
-    await setDomainProcessBinding(
+    await updateDomainProcessBinding(
       { developerName: 'Account_Before_Insert_Test', sobjectAlternate: false },
       { sourceDirs: [tmpDir] },
     );
@@ -227,7 +230,7 @@ describe('setDomainProcessBinding', () => {
     await createDomainProcessBinding(baseCreateInput(), { sourceDir: tmpDir });
 
     await expect(
-      setDomainProcessBinding({ developerName: 'Does_Not_Exist', order: 1 }, { sourceDirs: [tmpDir] }),
+      updateDomainProcessBinding({ developerName: 'Does_Not_Exist', order: 1 }, { sourceDirs: [tmpDir] }),
     ).rejects.toThrow(expect.objectContaining({ code: 'developer-name-not-found' }) as Error);
   });
 
@@ -235,7 +238,7 @@ describe('setDomainProcessBinding', () => {
     await createDomainProcessBinding(baseCreateInput(), { sourceDir: tmpDir });
 
     await expect(
-      setDomainProcessBinding({ developerName: 'Account_Before_Insert_Test' }, { sourceDirs: [tmpDir] }),
+      updateDomainProcessBinding({ developerName: 'Account_Before_Insert_Test' }, { sourceDirs: [tmpDir] }),
     ).rejects.toThrow(expect.objectContaining({ code: 'no-fields-to-update' }) as Error);
   });
 
@@ -246,10 +249,10 @@ describe('setDomainProcessBinding', () => {
     });
 
     await expect(
-      setDomainProcessBinding({ developerName: 'Account_Before_Insert_Other', order: 10 }, { sourceDirs: [tmpDir] }),
+      updateDomainProcessBinding({ developerName: 'Account_Before_Insert_Other', order: 10 }, { sourceDirs: [tmpDir] }),
     ).rejects.toMatchObject({ code: 'validation-failed' });
 
-    const forced = await setDomainProcessBinding(
+    const forced = await updateDomainProcessBinding(
       { developerName: 'Account_Before_Insert_Other', order: 10, force: true },
       { sourceDirs: [tmpDir] },
     );
@@ -259,7 +262,7 @@ describe('setDomainProcessBinding', () => {
   it('clears the previous context field when switching processContext with its matching field', async () => {
     await createDomainProcessBinding(baseCreateInput(), { sourceDir: tmpDir });
 
-    await setDomainProcessBinding(
+    await updateDomainProcessBinding(
       {
         developerName: 'Account_Before_Insert_Test',
         processContext: 'DomainMethodExecution',
@@ -280,7 +283,7 @@ describe('setDomainProcessBinding', () => {
     await createDomainProcessBinding(baseCreateInput(), { sourceDir: tmpDir });
 
     await expect(
-      setDomainProcessBinding(
+      updateDomainProcessBinding(
         { developerName: 'Account_Before_Insert_Test', processContext: 'DomainMethodExecution' },
         { sourceDirs: [tmpDir] },
       ),
@@ -288,14 +291,14 @@ describe('setDomainProcessBinding', () => {
   });
 
   it('requires at least one of sourceDirs/connection', async () => {
-    await expect(setDomainProcessBinding({ developerName: 'Anything', order: 1 }, {})).rejects.toThrow(
+    await expect(updateDomainProcessBinding({ developerName: 'Anything', order: 1 }, {})).rejects.toThrow(
       expect.objectContaining({ code: 'source-or-target-required' }) as Error,
     );
   });
 
   it('reports at4dx-not-detected when the local scan finds nothing at all', async () => {
     await expect(
-      setDomainProcessBinding({ developerName: 'Anything', order: 1 }, { sourceDirs: [tmpDir] }),
+      updateDomainProcessBinding({ developerName: 'Anything', order: 1 }, { sourceDirs: [tmpDir] }),
     ).rejects.toThrow(expect.objectContaining({ code: 'at4dx-not-detected' }) as Error);
   });
 });
@@ -405,7 +408,7 @@ describe('org-connected create/set', () => {
       pollStatus: sinon.stub().resolves(fakeDeployResult),
     } as never);
 
-    const result = await setDomainProcessBinding(
+    const result = await updateDomainProcessBinding(
       { developerName: 'Account_Before_Insert_Test', order: 99 },
       { connection, wait: Duration.minutes(1) },
     );
