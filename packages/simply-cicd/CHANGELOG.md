@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.8.8](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-cicd%400.8.7...%40simplysf%2Fsimply-cicd%400.8.8) (2026-08-31)
+
+**Note:** Version bump only for package @simplysf/simply-cicd
+
 ## [0.8.7](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-cicd%400.8.6...%40simplysf%2Fsimply-cicd%400.8.7) (2026-08-31)
 
 ### Bug Fixes
