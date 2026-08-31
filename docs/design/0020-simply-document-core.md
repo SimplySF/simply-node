@@ -1,6 +1,6 @@
 # 0020 — Splitting `simply-document-core` out of `simply-document`
 
-**Status:** Draft
+**Status:** Implemented (PR #154)
 **Package:** new `packages/simply-document-core`; `packages/simply-document` (CLI, slimmed)
 **Date:** 2026-08-30
 
