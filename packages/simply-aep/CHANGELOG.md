@@ -3,6 +3,19 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.11.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-aep%400.10.0...%40simplysf%2Fsimply-aep%400.11.0) (2026-08-31)
+
+- feat(simply-aep)!: rename domain-process-binding set to update ([f6be0a9](https://github.com/SimplySF/simply-node/commit/f6be0a922cac82192a1b452773558fee4bacea64)), closes [#148](https://github.com/SimplySF/simply-node/issues/148) [#149](https://github.com/SimplySF/simply-node/issues/149)
+
+### BREAKING CHANGES
+
+- `sf simply aep at4dx domain-process-binding set` is now
+  `update`, and simply-aep-core's `setDomainProcessBinding`/
+  `SetDomainProcessBindingInput`/`Target`/`At4dxDomainProcessBindingSetResult`
+  are renamed to their `update*` equivalents. This is the last AT4DX write
+  command still using `set` after `binding` (#148) and `field-set-inclusion`
+  (#149) already standardized on `update` — see design doc 0018.
+
 # [0.10.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-aep%400.9.1...%40simplysf%2Fsimply-aep%400.10.0) (2026-08-30)
 
 ### Features
