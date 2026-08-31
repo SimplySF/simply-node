@@ -106,7 +106,7 @@
   },
   {
     "alias": [],
-    "command": "simply:aep:at4dx:domain-process-binding:set",
+    "command": "simply:aep:at4dx:domain-process-binding:update",
     "flagAliases": [],
     "flagChars": ["c", "d", "n", "o", "s", "t"],
     "flags": [

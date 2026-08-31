@@ -263,7 +263,7 @@ export type At4dxDomainProcessBindingValidateResult = {
   issues: DomainProcessBindingIssue[];
 };
 
-/** The fields `createDomainProcessBinding`/`setDomainProcessBinding` accept, shared with the CLI's flags. On `set`, every field is optional — only the ones supplied change. */
+/** The fields `createDomainProcessBinding`/`updateDomainProcessBinding` accept, shared with the CLI's flags. On `update`, every field is optional — only the ones supplied change. */
 export type DomainProcessBindingFieldsInput = {
   label?: string;
   sobject?: string;
@@ -295,8 +295,8 @@ export type CreateDomainProcessBindingTarget = {
   wait?: Duration;
 };
 
-/** Same shape as `CreateDomainProcessBindingTarget`, but `sourceDirs` is a search scope (one or more roots) rather than a single destination, since `set` locates an existing file instead of choosing where to create one. */
-export type SetDomainProcessBindingTarget = {
+/** Same shape as `CreateDomainProcessBindingTarget`, but `sourceDirs` is a search scope (one or more roots) rather than a single destination, since `update` locates an existing file instead of choosing where to create one. */
+export type UpdateDomainProcessBindingTarget = {
   sourceDirs?: string[];
   connection?: Connection;
   wait?: Duration;
@@ -313,12 +313,12 @@ export type CreateDomainProcessBindingInput = DomainProcessBindingFieldsInput & 
   force?: boolean;
 };
 
-export type SetDomainProcessBindingInput = DomainProcessBindingFieldsInput & {
+export type UpdateDomainProcessBindingInput = DomainProcessBindingFieldsInput & {
   developerName: string;
   force?: boolean;
 };
 
-/** The error conditions `createDomainProcessBinding`/`setDomainProcessBinding` signal structurally (via `code`) rather than by message text, so a `Messages`-based caller (the CLI) can map each one to its own error key without string-matching. Errors outside this list (a scan/deploy I/O failure) are rethrown as the underlying error. */
+/** The error conditions `createDomainProcessBinding`/`updateDomainProcessBinding` signal structurally (via `code`) rather than by message text, so a `Messages`-based caller (the CLI) can map each one to its own error key without string-matching. Errors outside this list (a scan/deploy I/O failure) are rethrown as the underlying error. */
 export type DomainProcessBindingWriteErrorCode =
   | 'source-or-target-required'
   | 'context-field-mismatch'
@@ -356,4 +356,4 @@ export type At4dxDomainProcessBindingWriteResult = {
 };
 
 export type At4dxDomainProcessBindingCreateResult = At4dxDomainProcessBindingWriteResult;
-export type At4dxDomainProcessBindingSetResult = At4dxDomainProcessBindingWriteResult;
+export type At4dxDomainProcessBindingUpdateResult = At4dxDomainProcessBindingWriteResult;

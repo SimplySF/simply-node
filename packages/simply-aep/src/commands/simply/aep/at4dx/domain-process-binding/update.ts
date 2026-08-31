@@ -19,8 +19,8 @@ import { Messages } from '@salesforce/core';
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import {
   ALL_TRIGGER_OPERATIONS,
-  setDomainProcessBinding,
-  type At4dxDomainProcessBindingSetResult,
+  updateDomainProcessBinding,
+  type At4dxDomainProcessBindingUpdateResult,
   type DomainProcessBindingIssue,
   type DomainProcessType,
   type ProcessContext,
@@ -29,7 +29,7 @@ import {
 import { toDomainProcessBindingCliError } from '../../../../../common/domainProcessBindingWriteError.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('@simplysf/simply-aep', 'simply.aep.at4dx.domain-process-binding.set');
+const messages = Messages.loadMessages('@simplysf/simply-aep', 'simply.aep.at4dx.domain-process-binding.update');
 
 type IssueDisplayRow = { severity: string; rule: string; message: string };
 
@@ -48,7 +48,7 @@ function toIssueDisplayRow(issue: DomainProcessBindingIssue): IssueDisplayRow {
  * source and/or a connected org — only the fields given change; everything else, including which
  * SObject reference field the binding uses, is preserved from the found record.
  */
-export default class At4dxDomainProcessBindingSet extends SfCommand<At4dxDomainProcessBindingSetResult> {
+export default class At4dxDomainProcessBindingUpdate extends SfCommand<At4dxDomainProcessBindingUpdateResult> {
   public static readonly summary = messages.getMessage('summary');
   public static readonly description = messages.getMessage('description');
   public static readonly examples = messages.getMessages('examples');
@@ -105,8 +105,8 @@ export default class At4dxDomainProcessBindingSet extends SfCommand<At4dxDomainP
     force: Flags.boolean({ summary: messages.getMessage('flags.force.summary'), default: false }),
   };
 
-  public async run(): Promise<At4dxDomainProcessBindingSetResult> {
-    const { flags } = await this.parse(At4dxDomainProcessBindingSet);
+  public async run(): Promise<At4dxDomainProcessBindingUpdateResult> {
+    const { flags } = await this.parse(At4dxDomainProcessBindingUpdate);
 
     const sourceDirs = flags['source-dir'] ?? [];
     const targetOrg = flags['target-org'];
@@ -125,7 +125,7 @@ export default class At4dxDomainProcessBindingSet extends SfCommand<At4dxDomainP
     const connection = targetOrg?.getConnection(flags['api-version']);
 
     try {
-      const result = await setDomainProcessBinding(
+      const result = await updateDomainProcessBinding(
         {
           developerName: flags['developer-name'],
           label: flags.label,

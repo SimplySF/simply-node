@@ -60,7 +60,7 @@ it('exports the expected set of runtime values', () => {
       'buildDomainProcessBindingXml',
       'deployMetadataFile',
       'createDomainProcessBinding',
-      'setDomainProcessBinding',
+      'updateDomainProcessBinding',
       'FIELD_SET_INCLUSION_OBJECT',
       'FIELD_SET_INCLUSION_LOCAL_OBJECT_NAME',
       'FIELD_SET_INCLUSION_RULES',

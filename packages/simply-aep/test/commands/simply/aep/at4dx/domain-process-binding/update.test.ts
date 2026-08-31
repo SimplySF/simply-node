@@ -22,9 +22,9 @@ import { MockTestOrgData, TestContext } from '@salesforce/core/testSetup';
 import sinon from 'sinon';
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import At4dxDomainProcessBindingCreate from '../../../../../../src/commands/simply/aep/at4dx/domain-process-binding/create.js';
-import At4dxDomainProcessBindingSet from '../../../../../../src/commands/simply/aep/at4dx/domain-process-binding/set.js';
+import At4dxDomainProcessBindingUpdate from '../../../../../../src/commands/simply/aep/at4dx/domain-process-binding/update.js';
 
-describe('simply aep at4dx domain-process-binding set', () => {
+describe('simply aep at4dx domain-process-binding update', () => {
   const $$ = new TestContext({ sinon });
   const testOrg = new MockTestOrgData();
   let sourceDir: string;
@@ -34,7 +34,7 @@ describe('simply aep at4dx domain-process-binding set', () => {
   });
 
   beforeEach(async () => {
-    sourceDir = fs.mkdtempSync(path.join(os.tmpdir(), 'simply-aep-dpb-set-'));
+    sourceDir = fs.mkdtempSync(path.join(os.tmpdir(), 'simply-aep-dpb-update-'));
     await At4dxDomainProcessBindingCreate.run([
       '--source-dir',
       sourceDir,
@@ -62,7 +62,7 @@ describe('simply aep at4dx domain-process-binding set', () => {
 
   it('errors when neither --source-dir nor --target-org is specified', async () => {
     try {
-      await At4dxDomainProcessBindingSet.run(['--developer-name', 'Account_Before_Insert_Test', '--order', '20']);
+      await At4dxDomainProcessBindingUpdate.run(['--developer-name', 'Account_Before_Insert_Test', '--order', '20']);
       expect.fail('should have thrown');
     } catch (err) {
       expect((err as SfError).message).to.include('You must specify at least one of --source-dir or --target-org');
@@ -71,7 +71,7 @@ describe('simply aep at4dx domain-process-binding set', () => {
 
   it('errors when no field besides --developer-name is given', async () => {
     try {
-      await At4dxDomainProcessBindingSet.run([
+      await At4dxDomainProcessBindingUpdate.run([
         '--source-dir',
         sourceDir,
         '--developer-name',
@@ -85,7 +85,7 @@ describe('simply aep at4dx domain-process-binding set', () => {
 
   it('errors when the DeveloperName is not found', async () => {
     try {
-      await At4dxDomainProcessBindingSet.run([
+      await At4dxDomainProcessBindingUpdate.run([
         '--source-dir',
         sourceDir,
         '--developer-name',
@@ -100,7 +100,7 @@ describe('simply aep at4dx domain-process-binding set', () => {
   });
 
   it('updates only the given field, preserving everything else', async () => {
-    const result = await At4dxDomainProcessBindingSet.run([
+    const result = await At4dxDomainProcessBindingUpdate.run([
       '--source-dir',
       sourceDir,
       '--developer-name',
@@ -137,7 +137,7 @@ describe('simply aep at4dx domain-process-binding set', () => {
       '10',
     ]);
 
-    const result = await At4dxDomainProcessBindingSet.run([
+    const result = await At4dxDomainProcessBindingUpdate.run([
       '--source-dir',
       sourceDir,
       '--developer-name',
@@ -175,7 +175,7 @@ describe('simply aep at4dx domain-process-binding set', () => {
     ]);
 
     try {
-      await At4dxDomainProcessBindingSet.run([
+      await At4dxDomainProcessBindingUpdate.run([
         '--source-dir',
         sourceDir,
         '--developer-name',
@@ -189,7 +189,7 @@ describe('simply aep at4dx domain-process-binding set', () => {
       expect((err as SfError).message).to.include('wiring problem');
     }
 
-    const forced = await At4dxDomainProcessBindingSet.run([
+    const forced = await At4dxDomainProcessBindingUpdate.run([
       '--source-dir',
       sourceDir,
       '--developer-name',

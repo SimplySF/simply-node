@@ -25,7 +25,7 @@ import {
   DomainProcessBindingWriteError,
   type AmbiguousDomainProcessBindingRecord,
   type At4dxDomainProcessBindingCreateResult,
-  type At4dxDomainProcessBindingSetResult,
+  type At4dxDomainProcessBindingUpdateResult,
   type CreateDomainProcessBindingInput,
   type CreateDomainProcessBindingTarget,
   type DomainProcessBindingIssue,
@@ -33,9 +33,9 @@ import {
   type MalformedDomainProcessBindingRecord,
   type ProcessContext,
   type RawDomainProcessBindingRecord,
-  type SetDomainProcessBindingInput,
-  type SetDomainProcessBindingTarget,
   type TriggerOperation,
+  type UpdateDomainProcessBindingInput,
+  type UpdateDomainProcessBindingTarget,
 } from './at4dxDomainProcessBindingTypes.js';
 import { deployMetadataFile } from './at4dxDomainProcessDeploy.js';
 import { scanLocalDomainProcessBindings } from './at4dxDomainProcessLocalScan.js';
@@ -139,11 +139,11 @@ async function scanCreateContext(target: CreateDomainProcessBindingTarget): Prom
 }
 
 /**
- * Scans for `set`'s lookup, matching `list`/`validate`'s "empty local scan means AT4DX isn't here"
- * heuristic — unlike `create`, `set` always expects to find an existing record, so an empty scan can't
- * be the good case.
+ * Scans for `update`'s lookup, matching `list`/`validate`'s "empty local scan means AT4DX isn't here"
+ * heuristic — unlike `create`, `update` always expects to find an existing record, so an empty scan
+ * can't be the good case.
  */
-async function scanSetContext(target: SetDomainProcessBindingTarget): Promise<ScanContext> {
+async function scanUpdateContext(target: UpdateDomainProcessBindingTarget): Promise<ScanContext> {
   if (target.sourceDirs && target.sourceDirs.length > 0) {
     const { records, malformed, ambiguous } = scanLocalDomainProcessBindings(target.sourceDirs);
     if (records.length === 0 && malformed.length === 0) {
@@ -186,7 +186,7 @@ function checkValidation(issues: DomainProcessBindingIssue[], force: boolean | u
 /**
  * Writes `xml` to `localFilePath` when given, otherwise to a fresh temp directory (removed afterward),
  * then deploys it when `connection` is given. Shared tail end of `createDomainProcessBinding`/
- * `setDomainProcessBinding` — everything before this point differs (locate-or-reject, merge), but the
+ * `updateDomainProcessBinding` — everything before this point differs (locate-or-reject, merge), but the
  * serialize/write/deploy sequence is identical.
  *
  * @throws {DomainProcessBindingWriteError} `deploy-failed` if a deploy was requested and didn't succeed. The local write (when `localFilePath` was given) is left in place either way — only the deploy step is undone-by-never-having-happened.
@@ -336,7 +336,7 @@ export async function createDomainProcessBinding(
  */
 function mergeDomainProcessBindingRecord(
   existing: RawDomainProcessBindingRecord,
-  input: SetDomainProcessBindingInput,
+  input: UpdateDomainProcessBindingInput,
 ): RawDomainProcessBindingRecord {
   let triggerOperation = existing.triggerOperation;
   let domainMethodToken = existing.domainMethodToken;
@@ -386,14 +386,15 @@ function mergeDomainProcessBindingRecord(
  * reference field it uses — see `DomainProcessBindingSObjectField`), re-validates the result, then
  * rewrites (and optionally deploys) the `.md-meta.xml`.
  *
- * See docs/design/0012-at4dx-domain-process-binding-create-set.md for the full behavior contract.
+ * See docs/design/0012-at4dx-domain-process-binding-create-set.md for the full behavior contract and
+ * docs/design/0018-domain-process-binding-set-rename-to-update.md for the `set` → `update` rename.
  *
  * @throws {DomainProcessBindingWriteError} See the error codes in `DomainProcessBindingWriteErrorCode`.
  */
-export async function setDomainProcessBinding(
-  input: SetDomainProcessBindingInput,
-  target: SetDomainProcessBindingTarget,
-): Promise<At4dxDomainProcessBindingSetResult> {
+export async function updateDomainProcessBinding(
+  input: UpdateDomainProcessBindingInput,
+  target: UpdateDomainProcessBindingTarget,
+): Promise<At4dxDomainProcessBindingUpdateResult> {
   if ((!target.sourceDirs || target.sourceDirs.length === 0) && !target.connection) {
     throw new DomainProcessBindingWriteError(
       'source-or-target-required',
@@ -416,7 +417,7 @@ export async function setDomainProcessBinding(
     );
   }
 
-  const scan = await scanSetContext(target);
+  const scan = await scanUpdateContext(target);
   const existing = scan.records.find((record) => record.developerName === input.developerName);
   if (!existing) {
     throw new DomainProcessBindingWriteError(

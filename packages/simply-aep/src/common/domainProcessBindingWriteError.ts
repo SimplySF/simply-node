@@ -18,13 +18,13 @@ import type { Messages } from '@salesforce/core';
 import { DomainProcessBindingWriteError, type DomainProcessBindingIssue } from '@simplysf/simply-aep-core';
 
 /**
- * Maps a `DomainProcessBindingWriteError` thrown by `createDomainProcessBinding`/`setDomainProcessBinding`
- * onto the calling command's own `error.*` message keys, shared by `create.ts`/`set.ts` since both throw
+ * Maps a `DomainProcessBindingWriteError` thrown by `createDomainProcessBinding`/`updateDomainProcessBinding`
+ * onto the calling command's own `error.*` message keys, shared by `create.ts`/`update.ts` since both throw
  * the same error type for the same set of codes. `printIssues` is called before returning the
  * `validation-failed` error, since that's the one code carrying data (`issues`) worth showing the user
  * beyond the error message itself.
  *
- * @param error - Whatever `createDomainProcessBinding`/`setDomainProcessBinding` rejected with.
+ * @param error - Whatever `createDomainProcessBinding`/`updateDomainProcessBinding` rejected with.
  * @param messages - The calling command's own loaded message catalog.
  * @param printIssues - Renders a validation issue table (the command's own `this.table`-based printer).
  * @returns An `Error` ready to throw from the command's `run()` — an `SfError` built from a message key when `error` is a recognized `DomainProcessBindingWriteError`, or `error` itself (coerced to `Error`) otherwise.
