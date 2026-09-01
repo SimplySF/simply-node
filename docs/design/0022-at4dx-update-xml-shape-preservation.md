@@ -1,6 +1,6 @@
 # 0022 — AT4DX `update` commands preserve existing `.md-meta.xml` shape
 
-**Status:** Draft
+**Status:** Implemented (PR #158)
 **Package:** `packages/simply-aep-core`
 **Date:** 2026-09-01
 
