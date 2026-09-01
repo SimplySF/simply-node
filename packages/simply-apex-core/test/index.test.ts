@@ -47,6 +47,11 @@ it('exports the expected set of runtime values', () => {
       'AT4DX_CLASSES',
       'FORCE_DI_CLASSES',
       'ClassesToSilenceSchema',
+      'generateApexTestSuite',
+      'isTestClassSource',
+      'scanTestClasses',
+      'buildApexTestSuiteXml',
+      'ApexTestSuiteError',
     ].sort(),
   );
 });
