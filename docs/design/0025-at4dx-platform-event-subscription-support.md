@@ -214,10 +214,32 @@ own definition rather than `field-set-inclusion`'s `'scan'` precedent for the co
 material caveat at the top — weren't independently confirmed against the source material's exact API
 names; see the code comment in `at4dxPlatformEventSubscriptionTypes.ts`.
 
-**Stage 2 — simulate.** `resolvePlatformEventDistribution` in the same `Resolve` module, and the
-`simulate` command. `matcher-rule-missing-field` and `unreachable-subscription` are refactored to derive
-from the shared rule-evaluation helper this stage introduces, so there is one implementation of the
-distributor's logic rather than two.
+**Stage 2 — simulate. Landed.** `resolvePlatformEventDistribution` in the same `Resolve` module, and the
+`simulate` command. `matcher-rule-missing-field` and `unreachable-subscription` are refactored onto two
+shared helpers this stage introduces (`isMissingMatcherField` — already private in Stage 1, now reused —
+and a new `hasPreFilterMatchField`), so field-presence and pre-filter-reachability logic is stated once,
+not duplicated between `validatePlatformEventSubscriptions` and the simulator.
+
+The evaluation order this stage settled on, in the absence of source material to confirm it against
+(see the provenance caveat at the top): per candidate record, in sequence, (1) restrict to records on
+`input.eventBus` — a different bus isn't a candidate at all, not even as a reported miss, matching how
+the real trigger's own query scopes to one bus; (2) `IsActive__c: false` misses with reason `inactive`,
+ahead of everything else, since the distributor's own static SOQL never loads it; (3) `triggerHandler`'s
+pre-filter runs _before_ the matcher rule and independently of which fields that record's `MatcherRule__c`
+needs — so a record can pass the pre-filter via `Event__c` while its matcher rule is `MatchCategory` and
+`EventCategory__c` is blank, which is how `matcher-rule-missing-field` actually manifests in a real org:
+the pre-filter doesn't know or care which field the matcher rule dereferences. A miss from this step is
+tagged `prefiltered`. (4) Only once a record has passed the pre-filter does a blank required field become
+the `matcher-rule-missing-field` hazard — modeled as a miss rather than a thrown exception, since this is
+a simulation. (5) Everything else is `no-match`: every field the matcher rule needs is present, but the
+value(s) don't equal the simulated event's. `MatchEventBus` never reaches step 4 or 5 with a `false`
+result — it dereferences nothing, so once it clears the pre-filter it always matches.
+
+`resolvePlatformEventDistribution`'s `matches` are returned in scan order, not a resolved winner
+order — there is no priority/sequence field on this CMDT (see "What makes this family shaped
+differently" above), so this mirrors `list`'s flat posture rather than `binding list`'s resolved one.
+Answers Open question 3 below: `simulate` does belong in the CLI, landed as
+`platform-event-subscription simulate` with `--event-bus` (required), `--category`, `--event-name`.
 
 **Stage 3 — write.** `BuildXml`, `Write`, `create`/`update` commands, `PlatformEventSubscriptionWriteError`.
 
@@ -255,10 +277,9 @@ Per [0010](0010-at4dx-domain-process-binding-validate.md)'s unit tier, mirroring
 2. **Command topic naming.** This doc specifies the core library precisely and the command surface only
    in outline. `platform-event-subscription` is a long topic segment; whether it shortens (e.g.
    `pe-subscription`, `subscription`) is a `simply-aep` CLI-package decision, not made here.
-3. **Does `simulate` belong in the CLI at all?** It's specified here as a command because the library
-   function has to exist either way and a command is nearly free to add on top of it. If the only
-   intended consumer turns out to be something outside this repo, the command can be dropped without
-   touching stage 2's library work.
+3. **Does `simulate` belong in the CLI at all?** ~~It's specified here as a command because the library
+   function has to exist either way and a command is nearly free to add on top of it.~~ **Resolved in
+   Stage 2:** yes — landed as `platform-event-subscription simulate`.
 4. **Should `unreachable-subscription` fire for non-`MatchEventBus` rules?** As specified it cannot:
    any other rule with a blank match field is already the harder `matcher-rule-missing-field` error. If
    a future AT4DX release adds the missing null guards, that error becomes a warning and this rule's

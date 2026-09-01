@@ -194,3 +194,62 @@ export type At4dxPlatformEventSubscriptionValidateResult = {
   recordCount: number;
   issues: PlatformEventSubscriptionIssue[];
 };
+
+/**
+ * A hypothetical event, as `PlatformEventDistributor` would see it off the trigger: which bus it
+ * published on, and its `Category__c`/`EventName__c` field values. Both are optional because a real
+ * event can leave either blank, exactly like a subscription's `EventCategory__c`/`Event__c`.
+ */
+export type PlatformEventDistributionInput = {
+  eventBus: string;
+  category?: string;
+  eventName?: string;
+};
+
+/** One subscription `resolvePlatformEventDistribution` determined would receive the simulated event. */
+export type PlatformEventDistributionMatch = {
+  developerName: string;
+  consumer: string;
+  eventBus: string;
+  /** `Execute_Synchronous__c` — whether the distributor invokes this consumer synchronously or async. */
+  executeSynchronous: boolean;
+  source: string;
+  /** Absolute path to the `.md-meta.xml` this record was parsed from. Local scans only. */
+  filePath?: string;
+};
+
+/**
+ * Why a subscription on the simulated event's bus did *not* receive it, in the same order
+ * `PlatformEventDistributor` itself would evaluate a record — see `resolvePlatformEventDistribution`.
+ */
+export type PlatformEventDistributionMissReason =
+  /** `IsActive__c` is false — the distributor's own static SOQL never loads this record at all. */
+  | 'inactive'
+  /** `triggerHandler`'s pre-filter rejects the record before any matcher rule runs — see `unreachable-subscription`. */
+  | 'prefiltered'
+  /** Passed the pre-filter, but `matcherRule` dereferences a match field this record leaves blank — the runtime NullPointerException hazard, see `matcher-rule-missing-field`. */
+  | 'matcher-rule-missing-field'
+  /** Passed the pre-filter and every field the matcher rule needs is present, but the value(s) don't match the simulated event. */
+  | 'no-match';
+
+/** One subscription on the simulated event's bus that did *not* receive it, and the structured reason why. */
+export type PlatformEventDistributionMiss = {
+  developerName: string;
+  consumer: string;
+  eventBus: string;
+  reason: PlatformEventDistributionMissReason;
+  source: string;
+  /** Absolute path to the `.md-meta.xml` this record was parsed from. Local scans only. */
+  filePath?: string;
+};
+
+/**
+ * `resolvePlatformEventDistribution`'s result envelope: the exact consumer set
+ * `PlatformEventDistributor` would build for the simulated event, in scan order, plus every
+ * subscription on that bus that didn't match and why.
+ */
+export type PlatformEventDistributionResult = {
+  input: PlatformEventDistributionInput;
+  matches: PlatformEventDistributionMatch[];
+  misses: PlatformEventDistributionMiss[];
+};
