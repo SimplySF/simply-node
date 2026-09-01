@@ -55,3 +55,13 @@ export {
 } from './apexTraceSilence.js';
 
 export { ClassesToSilenceSchema, type ClassesToSilence } from './schemas/classesToSilence.js';
+
+export {
+  generateApexTestSuite,
+  isTestClassSource,
+  scanTestClasses,
+  buildApexTestSuiteXml,
+  ApexTestSuiteError,
+  type ApexTestSuiteErrorCode,
+  type ApexTestSuiteGenerateResult,
+} from './apexTestSuite.js';

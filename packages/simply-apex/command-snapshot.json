@@ -17,6 +17,14 @@
   },
   {
     "alias": [],
+    "command": "simply:apex:test-suite:generate",
+    "flagAliases": [],
+    "flagChars": ["d", "n"],
+    "flags": ["flags-dir", "json", "name", "output-dir", "source-dir"],
+    "plugin": "@simplysf/simply-apex"
+  },
+  {
+    "alias": [],
     "command": "simply:apex:trace:setup",
     "flagAliases": [],
     "flagChars": ["o"],

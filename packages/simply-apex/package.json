@@ -55,6 +55,9 @@
               },
               "trace": {
                 "description": "Commands for working with Apex trace flags"
+              },
+              "test-suite": {
+                "description": "Commands for working with Apex test suites"
               }
             }
           }

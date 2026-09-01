@@ -22,6 +22,7 @@ This package is part of the [`@simplysf/simply`](https://github.com/SimplySF/sim
 
 - [`sf simply apex execute`](#sf-simply-apex-execute)
 - [`sf simply apex logs purge`](#sf-simply-apex-logs-purge)
+- [`sf simply apex test-suite generate`](#sf-simply-apex-test-suite-generate)
 - [`sf simply apex trace setup`](#sf-simply-apex-trace-setup)
 - [`sf simply apex trace silence`](#sf-simply-apex-trace-silence)
 
@@ -58,7 +59,7 @@ FLAG DESCRIPTIONS
     The path to the local .apex file containing the anonymous Apex code to execute.
 ```
 
-_See code: [lib/commands/simply/apex/execute.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-apex@1.6.9/packages/simply-apex/lib/commands/simply/apex/execute.js)_
+_See code: [lib/commands/simply/apex/execute.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-apex@1.6.10/packages/simply-apex/lib/commands/simply/apex/execute.js)_
 
 ## `sf simply apex logs purge`
 
@@ -114,7 +115,55 @@ FLAG DESCRIPTIONS
     elapses, then throws.
 ```
 
-_See code: [lib/commands/simply/apex/logs/purge.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-apex@1.6.9/packages/simply-apex/lib/commands/simply/apex/logs/purge.js)_
+_See code: [lib/commands/simply/apex/logs/purge.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-apex@1.6.10/packages/simply-apex/lib/commands/simply/apex/logs/purge.js)_
+
+## `sf simply apex test-suite generate`
+
+Generate an Apex test suite from source.
+
+```
+USAGE
+  $ sf simply apex test-suite generate -d <value>... -n <value> --output-dir <value> [--json] [--flags-dir <value>]
+
+FLAGS
+  -d, --source-dir=<value>...  (required) Directories to scan for Apex classes
+  -n, --name=<value>           (required) API name for the test suite
+      --output-dir=<value>     (required) Output directory
+
+GLOBAL FLAGS
+  --flags-dir=<value>  Import flag values from a directory.
+  --json               Format output as json.
+
+DESCRIPTION
+  Generate an Apex test suite from source.
+
+  Scans one or more source directories for Apex classes, keeps only the ones whose first meaningful line (skipping
+  leading blank lines and comments) is an @IsTest annotation, and writes an ApexTestSuite metadata file listing them.
+  Every run regenerates the file from scratch based on the current state of --source-dir; an existing file with the same
+  name is always overwritten.
+
+EXAMPLES
+  $ sf simply apex test-suite generate --source-dir force-app/main/default/classes --name My_Suite --output-dir force-app/main/default/testSuites
+
+  $ sf simply apex test-suite generate --source-dir force-app/main/default/classes --source-dir force-app/extra/classes --name All_Tests --output-dir force-app/main/default/testSuites
+
+FLAG DESCRIPTIONS
+  -d, --source-dir=<value>...  Directories to scan for Apex classes
+
+    One or more directories to scan, recursively, for Apex classes. Only classes whose first meaningful line is an
+    @IsTest annotation are included in the generated suite.
+
+  -n, --name=<value>  API name for the test suite
+
+    The API name for the generated test suite; also used to derive the output filename, <name>.testSuite-meta.xml.
+
+  --output-dir=<value>  Output directory
+
+    The directory to write the generated ApexTestSuite metadata file to. Not automatically suffixed with testSuites/ —
+    pass that directory explicitly, e.g. force-app/main/default/testSuites.
+```
+
+_See code: [lib/commands/simply/apex/test-suite/generate.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-apex@1.6.10/packages/simply-apex/lib/commands/simply/apex/test-suite/generate.js)_
 
 ## `sf simply apex trace setup`
 
@@ -174,7 +223,7 @@ FLAG DESCRIPTIONS
     Defaults to the current date/time.
 ```
 
-_See code: [lib/commands/simply/apex/trace/setup.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-apex@1.6.9/packages/simply-apex/lib/commands/simply/apex/trace/setup.js)_
+_See code: [lib/commands/simply/apex/trace/setup.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-apex@1.6.10/packages/simply-apex/lib/commands/simply/apex/trace/setup.js)_
 
 ## `sf simply apex trace silence`
 
@@ -238,7 +287,7 @@ FLAG DESCRIPTIONS
     Adds di_Binding, di_Module, di_PlatformCache, and di_Injector to the classes to silence.
 ```
 
-_See code: [lib/commands/simply/apex/trace/silence.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-apex@1.6.9/packages/simply-apex/lib/commands/simply/apex/trace/silence.js)_
+_See code: [lib/commands/simply/apex/trace/silence.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-apex@1.6.10/packages/simply-apex/lib/commands/simply/apex/trace/silence.js)_
 <!-- commandsstop -->
 
 ## License

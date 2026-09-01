@@ -39,6 +39,7 @@
   "dependencies": {
     "@salesforce/apex-node": "^8.4.39",
     "@salesforce/core": "^8.30.0",
+    "@salesforce/source-deploy-retrieve": "^12.37.2",
     "@simplysf/simply-core": "workspace:^1.5.1",
     "zod": "^4.1.12"
   },

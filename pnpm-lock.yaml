@@ -248,6 +248,9 @@ importers:
       '@salesforce/core':
         specifier: ^8.30.0
         version: 8.32.6
+      '@salesforce/source-deploy-retrieve':
+        specifier: ^12.37.2
+        version: 12.37.2(supports-color@8.1.1)
       '@simplysf/simply-core':
         specifier: workspace:^1.5.1
         version: link:../simply-core
