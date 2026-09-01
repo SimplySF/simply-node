@@ -4,9 +4,9 @@ Cleanup package versions.
 
 # description
 
-Delete package versions for a given package provided a MAJOR.MINOR.PATCH matcher, either to select on or to exclude on. Does not delete released package versions.
+Delete package versions for a given package provided one or more MAJOR.MINOR.PATCH selectors, either to select on or to exclude on. Does not delete released package versions.
 
-If --matcher is provided, only the unreleased versions matching MAJOR.MINOR.PATCH are deleted. If --exclude-matcher is provided instead, every unreleased version that does _not_ match MAJOR.MINOR.PATCH is deleted. Exactly one of --matcher or --exclude-matcher must be specified.
+If --selector is provided, only the unreleased versions matching any of the given MAJOR.MINOR.PATCH values are deleted. If --selector-exclude is provided instead, every unreleased version that does _not_ match any of the given MAJOR.MINOR.PATCH values is deleted. Exactly one of --selector or --selector-exclude must be specified; each accepts multiple values.
 
 # flags.package.summary
 
@@ -16,39 +16,41 @@ Package Id
 
 The 0Ht Package Id that you wish to cleanup versions for.
 
-# flags.matcher.summary
+# flags.selector.summary
 
-MAJOR.MINOR.PATCH to select on
+One or more MAJOR.MINOR.PATCH values to select on
 
-# flags.matcher.description
+# flags.selector.description
 
-The MAJOR.MINOR.PATCH matcher that should be used to find package versions to delete. Only versions matching this matcher are deleted. Mutually exclusive with --exclude-matcher.
+The MAJOR.MINOR.PATCH selector(s) that should be used to find package versions to delete. Only unreleased versions matching any of the given selectors are deleted. Mutually exclusive with --selector-exclude.
 
-# flags.exclude-matcher.summary
+# flags.selector-exclude.summary
 
-MAJOR.MINOR.PATCH to exclude on
+One or more MAJOR.MINOR.PATCH values to exclude on
 
-# flags.exclude-matcher.description
+# flags.selector-exclude.description
 
-The MAJOR.MINOR.PATCH matcher that should be used to find package versions to keep. Every unreleased version that does not match this matcher is deleted. Mutually exclusive with --matcher.
+The MAJOR.MINOR.PATCH selector(s) that should be used to find package versions to keep. Every unreleased version that does not match any of the given selectors is deleted. Mutually exclusive with --selector.
 
 # examples
 
-- <%= config.bin %> <%= command.id %> --package 0Hoxx00000000CqCAI --matcher 2.10.0 --target-dev-hub myDevHub
+- <%= config.bin %> <%= command.id %> --package 0Hoxx00000000CqCAI --selector 2.10.0 --target-dev-hub myDevHub
 
-- <%= config.bin %> <%= command.id %> --package 0Hoxx00000000CqCAI --exclude-matcher 2.10.0 --target-dev-hub myDevHub
+- <%= config.bin %> <%= command.id %> --package 0Hoxx00000000CqCAI --selector 2.10.0 --selector 2.11.0 --target-dev-hub myDevHub
+
+- <%= config.bin %> <%= command.id %> --package 0Hoxx00000000CqCAI --selector-exclude 2.10.0 --target-dev-hub myDevHub
 
 # errors.connectionFailed
 
 Unable to establish connection to the org.
 
-# errors.matcherRequired
+# errors.selectorRequired
 
-You must specify either --matcher or --exclude-matcher.
+You must specify either --selector or --selector-exclude.
 
-# errors.matcherFormatMismatch
+# errors.selectorFormatMismatch
 
-The matcher must be in the format of MAJOR.MINOR.PATCH.
+The selector "%s" must be in the format of MAJOR.MINOR.PATCH.
 
 # errors.deletionJob
 

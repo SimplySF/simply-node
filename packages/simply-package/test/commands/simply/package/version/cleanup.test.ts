@@ -186,22 +186,22 @@ describe('simply package version cleanup', () => {
     }
   });
 
-  it('should error when neither --matcher nor --exclude-matcher is specified', async () => {
+  it('should error when neither --selector nor --selector-exclude is specified', async () => {
     try {
       await PackageVersionCleanup.run(['--package', myPackage0Hot, '--target-dev-hub', 'foor@bar.org']);
       expect.fail('should have thrown Error');
     } catch (err) {
       const error = err as SfError;
-      expect(error.message).to.include('You must specify either --matcher or --exclude-matcher.');
+      expect(error.message).to.include('You must specify either --selector or --selector-exclude.');
     }
   });
 
-  it('should error when both --matcher and --exclude-matcher are specified', async () => {
+  it('should error when both --selector and --selector-exclude are specified', async () => {
     try {
       await PackageVersionCleanup.run([
-        '--matcher',
+        '--selector',
         '0.2.0',
-        '--exclude-matcher',
+        '--selector-exclude',
         '0.1.0',
         '--package',
         myPackage0Hot,
@@ -211,7 +211,26 @@ describe('simply package version cleanup', () => {
       expect.fail('should have thrown Error');
     } catch (err) {
       const error = err as SfError;
-      expect(error.message.toLowerCase()).to.include('exclude-matcher');
+      expect(error.message.toLowerCase()).to.include('selector-exclude');
+    }
+  });
+
+  it('should error when one of multiple --selector values is not in MAJOR.MINOR.PATCH format', async () => {
+    try {
+      await PackageVersionCleanup.run([
+        '--selector',
+        '0.1.0',
+        '--selector',
+        'bad-format',
+        '--package',
+        myPackage0Hot,
+        '--target-dev-hub',
+        'foor@bar.org',
+      ]);
+      expect.fail('should have thrown Error');
+    } catch (err) {
+      const error = err as SfError;
+      expect(error.message).to.include('The selector "bad-format" must be in the format of MAJOR.MINOR.PATCH.');
     }
   });
 
@@ -230,7 +249,7 @@ describe('simply package version cleanup', () => {
     });
 
     const results = await PackageVersionCleanup.run([
-      '--matcher',
+      '--selector',
       '0.2.0',
       '--package',
       myPackage0Hot,
@@ -245,7 +264,7 @@ describe('simply package version cleanup', () => {
     expect(results).to.deep.equal(expectedResults);
   });
 
-  it('should select every unreleased version not matching --exclude-matcher for deletion', async () => {
+  it('should select the union of versions matching multiple --selector values for deletion', async () => {
     $$.SANDBOX.stub(Package, 'listVersions').resolves([
       packageVersion0101ListResult,
       packageVersion0102ListResult,
@@ -260,7 +279,42 @@ describe('simply package version cleanup', () => {
     });
 
     const results = await PackageVersionCleanup.run([
-      '--exclude-matcher',
+      '--selector',
+      '0.1.0',
+      '--selector',
+      '0.2.0',
+      '--package',
+      myPackage0Hot,
+      '--target-dev-hub',
+      'foor@bar.org',
+    ]);
+
+    // 0101 and 0201 are unreleased and match one of the two selectors, so both are deleted.
+    // 0102/0202 are released, so they're never touched regardless of matching a selector.
+    const expectedResults: PackageVersionCleanupResult[] = [
+      { Success: true, SubscriberPackageVersionId: packageVersion0101SubscriberId },
+      { Success: true, SubscriberPackageVersionId: packageVersion0201SubscriberId },
+    ];
+
+    expect(results).to.deep.equal(expectedResults);
+  });
+
+  it('should select every unreleased version not matching --selector-exclude for deletion', async () => {
+    $$.SANDBOX.stub(Package, 'listVersions').resolves([
+      packageVersion0101ListResult,
+      packageVersion0102ListResult,
+      packageVersion0201ListResult,
+      packageVersion0202ListResult,
+    ]);
+
+    $$.SANDBOX.stub(PackageVersion.prototype, 'delete').resolves({
+      errors: [],
+      id: 'testId',
+      success: true,
+    });
+
+    const results = await PackageVersionCleanup.run([
+      '--selector-exclude',
       '0.2.0',
       '--package',
       myPackage0Hot,
@@ -269,10 +323,42 @@ describe('simply package version cleanup', () => {
     ]);
 
     // 0101 is unreleased and doesn't match 0.2.0, so it's deleted. 0102/0202 are released (never
-    // deleted), and 0201 is unreleased but matches the exclusion matcher, so it's kept.
+    // deleted), and 0201 is unreleased but matches the exclusion selector, so it's kept.
     const expectedResults: PackageVersionCleanupResult[] = [
       { Success: true, SubscriberPackageVersionId: packageVersion0101SubscriberId },
     ];
+
+    expect(results).to.deep.equal(expectedResults);
+  });
+
+  it('should select every unreleased version matching none of multiple --selector-exclude values for deletion', async () => {
+    $$.SANDBOX.stub(Package, 'listVersions').resolves([
+      packageVersion0101ListResult,
+      packageVersion0102ListResult,
+      packageVersion0201ListResult,
+      packageVersion0202ListResult,
+    ]);
+
+    $$.SANDBOX.stub(PackageVersion.prototype, 'delete').resolves({
+      errors: [],
+      id: 'testId',
+      success: true,
+    });
+
+    const results = await PackageVersionCleanup.run([
+      '--selector-exclude',
+      '0.1.0',
+      '--selector-exclude',
+      '0.2.0',
+      '--package',
+      myPackage0Hot,
+      '--target-dev-hub',
+      'foor@bar.org',
+    ]);
+
+    // 0101 and 0201 are unreleased but each match one of the two exclusion selectors, so both are
+    // kept. 0102/0202 are released, so they were never candidates regardless.
+    const expectedResults: PackageVersionCleanupResult[] = [];
 
     expect(results).to.deep.equal(expectedResults);
   });
