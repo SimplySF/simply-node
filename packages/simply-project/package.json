@@ -1,7 +1,7 @@
 {
   "name": "@simplysf/simply-project",
   "description": "Utilities for working with Salesforce projects",
-  "version": "1.2.18",
+  "version": "1.2.19",
   "author": "@ClayChipps",
   "homepage": "https://github.com/SimplySF/simply-node",
   "bugs": "https://github.com/SimplySF/simply-node/issues",
