@@ -17,13 +17,13 @@
 import path from 'node:path';
 import { Messages } from '@salesforce/core';
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { ApexExecuteError, executeApex, type ApexExecuteResult } from '@simplysf/simply-apex-core';
 import { requireConnection, targetOrgFlags } from '@simplysf/simply-plugin-kit';
-import { ApexExecuteError, executeApex, type ApexExecuteResult } from '../../../common/apexExecute.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('@simplysf/simply-apex', 'simply.apex.execute');
 
-export type { ApexExecuteResult } from '../../../common/apexExecute.js';
+export type { ApexExecuteResult } from '@simplysf/simply-apex-core';
 
 /**
  * Executes an anonymous block of Apex code from a local .apex file against a target org and

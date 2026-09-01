@@ -16,19 +16,19 @@
 
 import { Messages } from '@salesforce/core';
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import { requireConnection, targetOrgFlags } from '@simplysf/simply-plugin-kit';
 import {
   ApexTraceSilenceError,
   resolveClasses,
   silenceApexClasses,
   type ApexTraceSilenceOutcome,
   type ApexTraceSilenceResult,
-} from '../../../../common/apexTraceSilence.js';
+} from '@simplysf/simply-apex-core';
+import { requireConnection, targetOrgFlags } from '@simplysf/simply-plugin-kit';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('@simplysf/simply-apex', 'simply.apex.trace.silence');
 
-export type { ApexTraceSilenceResult } from '../../../../common/apexTraceSilence.js';
+export type { ApexTraceSilenceResult } from '@simplysf/simply-apex-core';
 
 /**
  * Creates or updates a 24-hour CLASS_TRACING trace flag with a fully suppressed (NONE) debug

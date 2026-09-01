@@ -17,19 +17,19 @@
 import { Messages } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import { requireConnection, targetOrgFlags } from '@simplysf/simply-plugin-kit';
 import {
   deleteApexLogsViaBulkApi,
   deleteApexLogsViaCollections,
   queryApexLogIdsViaBulkApi,
   queryApexLogIdsViaRest,
   type ApexLogsPurgeResult,
-} from '../../../../common/apexLogsPurge.js';
+} from '@simplysf/simply-apex-core';
+import { requireConnection, targetOrgFlags } from '@simplysf/simply-plugin-kit';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('@simplysf/simply-apex', 'simply.apex.logs.purge');
 
-export type { ApexLogsPurgeResult } from '../../../../common/apexLogsPurge.js';
+export type { ApexLogsPurgeResult } from '@simplysf/simply-apex-core';
 
 /**
  * Deletes `ApexLog` records from the target org. By default all logs are purged; use `--where`

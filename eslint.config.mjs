@@ -53,6 +53,7 @@ const allPackages = [
   'packages/simply-aep',
   'packages/simply-aep-core',
   'packages/simply-apex',
+  'packages/simply-apex-core',
   'packages/simply-cicd',
   'packages/simply-community',
   'packages/simply-core',
@@ -76,6 +77,7 @@ const libraryPackages = [
   'packages/simply-report',
   'packages/simply-aep-core',
   'packages/simply-document-core',
+  'packages/simply-apex-core',
 ];
 
 // sf-plugin's recommended rules only ever applied to the oclif command packages, not the libraries or simply.
