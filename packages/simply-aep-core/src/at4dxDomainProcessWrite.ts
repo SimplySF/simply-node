@@ -19,7 +19,7 @@ import os from 'node:os';
 import path from 'node:path';
 import type { Connection } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
-import { buildDomainProcessBindingXml } from './at4dxDomainProcessBuildXml.js';
+import { buildDomainProcessBindingXml, patchDomainProcessBindingXml } from './at4dxDomainProcessBuildXml.js';
 import {
   DOMAIN_PROCESS_BINDING_LOCAL_OBJECT_NAME,
   DomainProcessBindingWriteError,
@@ -41,6 +41,7 @@ import { deployMetadataFile } from './at4dxDomainProcessDeploy.js';
 import { scanLocalDomainProcessBindings } from './at4dxDomainProcessLocalScan.js';
 import { scanOrgDomainProcessBindings } from './at4dxDomainProcessOrgScan.js';
 import { validateDomainProcessBindings } from './at4dxDomainProcessResolve.js';
+import { UnpatchableValueShapeError } from './customMetadataXml.js';
 
 const DEVELOPER_NAME_PATTERN = /^[A-Za-z][A-Za-z0-9_]*$/;
 const DEFAULT_WAIT = Duration.minutes(33);
@@ -435,7 +436,20 @@ export async function updateDomainProcessBinding(
   });
   checkValidation(issues, input.force);
 
-  const xml = buildDomainProcessBindingXml(merged, { label: merged.label });
+  let xml: string;
+  if (scan.isLocal) {
+    const existingXml = await fs.readFile(existing.filePath!, 'utf-8');
+    try {
+      xml = patchDomainProcessBindingXml(existingXml, existing, merged, { label: merged.label });
+    } catch (err) {
+      if (!(err instanceof UnpatchableValueShapeError)) {
+        throw err;
+      }
+      xml = buildDomainProcessBindingXml(merged, { label: merged.label });
+    }
+  } else {
+    xml = buildDomainProcessBindingXml(merged, { label: merged.label });
+  }
 
   return writeAndDeploy({
     developerName: input.developerName,

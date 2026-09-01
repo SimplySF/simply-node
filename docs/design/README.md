@@ -57,6 +57,7 @@ refactors that keep the public surface identical (though a short doc is welcome 
 | [0019](0019-plugin-core-library-extraction.md)                       | Extracting `-core` library packages from the other `simply-*` plugins         | Draft                 |
 | [0020](0020-simply-document-core.md)                                 | Splitting `simply-document-core` out of `simply-document`                     | Implemented           |
 | [0021](0021-package-version-cleanup-multi-selector.md)               | `package version cleanup`: `--selector`/`--selector-exclude`, multiple values | Implemented           |
+| [0022](0022-at4dx-update-xml-shape-preservation.md)                  | AT4DX `update` commands preserve existing `.md-meta.xml` shape                | Draft                 |
 
 ## Template
 
