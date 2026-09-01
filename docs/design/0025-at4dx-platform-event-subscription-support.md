@@ -199,9 +199,20 @@ than bolting a first attempt onto this one.
 
 Three landable stages. Each compiles, tests, and ships on its own.
 
-**Stage 1 — read.** `Types`, `LocalScan`, `OrgScan`, and `Resolve`'s `validatePlatformEventSubscriptions`
-with the four record-scope rules plus `duplicate-consumer` and `duplicate-developer-name`. Exports
-added to `index.ts`. `list` and `validate` commands.
+**Stage 1 — read. Landed.** `Types`, `LocalScan`, `OrgScan`, and `Resolve`'s
+`validatePlatformEventSubscriptions` with the four record-scope rules plus `duplicate-consumer` and
+`duplicate-developer-name`. Exports added to `index.ts`. `list` and `validate` commands.
+
+`non-conforming-event-bus` landed in `validatePlatformEventSubscriptions` itself, but neither CLI
+command populates `eventBusFields` yet — the local `objects/<Bus>__e/fields/` read and the org
+`describe` call this doc describes for that input are deferred to a follow-up, so the rule is
+currently silent on every real invocation. `missing-event-bus-or-consumer`'s `scope` was set to
+`'record'` per Open question 1 below, matching [0011](0011-domain-process-binding-issue-scoping.md)'s
+own definition rather than `field-set-inclusion`'s `'scan'` precedent for the comparable rule. The
+`MatcherRule__c` picklist's four values (`MatchEventBus`, `MatchCategory`, `MatchEvent`,
+`MatchCategoryAndEvent`) are implemented as specified in this doc, but — per the missing-reference-
+material caveat at the top — weren't independently confirmed against the source material's exact API
+names; see the code comment in `at4dxPlatformEventSubscriptionTypes.ts`.
 
 **Stage 2 — simulate.** `resolvePlatformEventDistribution` in the same `Resolve` module, and the
 `simulate` command. `matcher-rule-missing-field` and `unreachable-subscription` are refactored to derive

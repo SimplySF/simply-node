@@ -202,5 +202,21 @@
     "flagChars": ["d", "o"],
     "flags": ["api-version", "flags-dir", "json", "source-dir", "target-org"],
     "plugin": "@simplysf/simply-aep"
+  },
+  {
+    "alias": [],
+    "command": "simply:aep:at4dx:platform-event-subscription:list",
+    "flagAliases": [],
+    "flagChars": ["d", "o"],
+    "flags": ["api-version", "flags-dir", "json", "source-dir", "target-org"],
+    "plugin": "@simplysf/simply-aep"
+  },
+  {
+    "alias": [],
+    "command": "simply:aep:at4dx:platform-event-subscription:validate",
+    "flagAliases": [],
+    "flagChars": ["d", "o"],
+    "flags": ["api-version", "flags-dir", "json", "source-dir", "target-org"],
+    "plugin": "@simplysf/simply-aep"
   }
 ]

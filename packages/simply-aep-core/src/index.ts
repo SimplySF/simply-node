@@ -143,3 +143,32 @@ export {
 export { scanOrgFieldSetInclusions, type FieldSetInclusionOrgScanResult } from './at4dxFieldSetInclusionOrgScan.js';
 export { validateFieldSetInclusions } from './at4dxFieldSetInclusionResolve.js';
 export { createFieldSetInclusion, updateFieldSetInclusion } from './at4dxFieldSetInclusionWrite.js';
+
+// AT4DX Platform Event Subscription (docs/design/0025) — Stage 1 (read) only: Types, LocalScan,
+// OrgScan, and validatePlatformEventSubscriptions. The simulator (resolvePlatformEventDistribution,
+// Stage 2) and write path (Stage 3) land in follow-up doc updates/PRs — see 0025's Implementation plan.
+export {
+  ALL_MATCHER_RULES,
+  PLATFORM_EVENT_SUBSCRIPTION_OBJECT,
+  PLATFORM_EVENT_SUBSCRIPTION_LOCAL_OBJECT_NAME,
+  PLATFORM_EVENT_SUBSCRIPTION_RULES,
+  type MatcherRule,
+  type RawPlatformEventSubscriptionRecord,
+  type MalformedPlatformEventSubscriptionRecord,
+  type PlatformEventSubscriptionIssue,
+  type PlatformEventSubscriptionIssueRule,
+  type PlatformEventSubscriptionIssueScope,
+  type PlatformEventSubscriptionIssueSeverity,
+  type PlatformEventSubscriptionRuleInfo,
+  type At4dxPlatformEventSubscriptionListResult,
+  type At4dxPlatformEventSubscriptionValidateResult,
+} from './at4dxPlatformEventSubscriptionTypes.js';
+export {
+  scanLocalPlatformEventSubscriptions,
+  type PlatformEventSubscriptionLocalScanResult,
+} from './at4dxPlatformEventSubscriptionLocalScan.js';
+export {
+  scanOrgPlatformEventSubscriptions,
+  type PlatformEventSubscriptionOrgScanResult,
+} from './at4dxPlatformEventSubscriptionOrgScan.js';
+export { validatePlatformEventSubscriptions, type EventBusFields } from './at4dxPlatformEventSubscriptionResolve.js';
