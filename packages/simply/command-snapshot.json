@@ -205,6 +205,31 @@
   },
   {
     "alias": [],
+    "command": "simply:aep:at4dx:platform-event-subscription:create",
+    "flagAliases": [],
+    "flagChars": ["d", "n", "o"],
+    "flags": [
+      "active",
+      "api-version",
+      "consumer",
+      "developer-name",
+      "event-bus",
+      "event-category",
+      "event-name",
+      "flags-dir",
+      "force",
+      "json",
+      "label",
+      "matcher-rule",
+      "source-dir",
+      "synchronous",
+      "target-org",
+      "wait"
+    ],
+    "plugin": "@simplysf/simply-aep"
+  },
+  {
+    "alias": [],
     "command": "simply:aep:at4dx:platform-event-subscription:list",
     "flagAliases": [],
     "flagChars": ["d", "o"],
@@ -217,6 +242,31 @@
     "flagAliases": [],
     "flagChars": ["d", "o"],
     "flags": ["api-version", "category", "event-bus", "event-name", "flags-dir", "json", "source-dir", "target-org"],
+    "plugin": "@simplysf/simply-aep"
+  },
+  {
+    "alias": [],
+    "command": "simply:aep:at4dx:platform-event-subscription:update",
+    "flagAliases": [],
+    "flagChars": ["d", "n", "o"],
+    "flags": [
+      "active",
+      "api-version",
+      "consumer",
+      "developer-name",
+      "event-bus",
+      "event-category",
+      "event-name",
+      "flags-dir",
+      "force",
+      "json",
+      "label",
+      "matcher-rule",
+      "source-dir",
+      "synchronous",
+      "target-org",
+      "wait"
+    ],
     "plugin": "@simplysf/simply-aep"
   },
   {
