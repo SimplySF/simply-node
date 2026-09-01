@@ -88,7 +88,7 @@ EXAMPLES
   $ sf simply aep at4dx binding create --source-dir sfdx-source/core --type unit-of-work --developer-name Account_UOW --sobject Account --sequence 10
 ```
 
-_See code: [lib/commands/simply/aep/at4dx/binding/create.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.10.0/packages/simply-aep/lib/commands/simply/aep/at4dx/binding/create.js)_
+_See code: [lib/commands/simply/aep/at4dx/binding/create.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.11.3/packages/simply-aep/lib/commands/simply/aep/at4dx/binding/create.js)_
 
 ## `sf simply aep at4dx binding list`
 
@@ -144,7 +144,7 @@ FLAG DESCRIPTIONS
     Comma-separated list of binding types to include. If not specified, all four are included.
 ```
 
-_See code: [lib/commands/simply/aep/at4dx/binding/list.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.10.0/packages/simply-aep/lib/commands/simply/aep/at4dx/binding/list.js)_
+_See code: [lib/commands/simply/aep/at4dx/binding/list.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.11.3/packages/simply-aep/lib/commands/simply/aep/at4dx/binding/list.js)_
 
 ## `sf simply aep at4dx binding update`
 
@@ -217,7 +217,7 @@ EXAMPLES
   $ sf simply aep at4dx binding update --target-org myOrg --type unit-of-work --developer-name Account_UOW --sequence 20
 ```
 
-_See code: [lib/commands/simply/aep/at4dx/binding/update.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.10.0/packages/simply-aep/lib/commands/simply/aep/at4dx/binding/update.js)_
+_See code: [lib/commands/simply/aep/at4dx/binding/update.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.11.3/packages/simply-aep/lib/commands/simply/aep/at4dx/binding/update.js)_
 
 ## `sf simply aep at4dx binding validate`
 
@@ -273,7 +273,7 @@ FLAG DESCRIPTIONS
     Comma-separated list of binding types to include. If not specified, all four are included.
 ```
 
-_See code: [lib/commands/simply/aep/at4dx/binding/validate.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.10.0/packages/simply-aep/lib/commands/simply/aep/at4dx/binding/validate.js)_
+_See code: [lib/commands/simply/aep/at4dx/binding/validate.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.11.3/packages/simply-aep/lib/commands/simply/aep/at4dx/binding/validate.js)_
 
 ## `sf simply aep at4dx domain-process-binding create`
 
@@ -354,7 +354,7 @@ EXAMPLES
   $ sf simply aep at4dx domain-process-binding create --source-dir sfdx-source/core --developer-name ServiceResource_Before_Update_Sync --sobject ServiceResource --sobject-alternate --process-context TriggerExecution --trigger-operation Before_Update --type Action --class-to-inject ServiceResourceSyncAction --order 10
 ```
 
-_See code: [lib/commands/simply/aep/at4dx/domain-process-binding/create.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.10.0/packages/simply-aep/lib/commands/simply/aep/at4dx/domain-process-binding/create.js)_
+_See code: [lib/commands/simply/aep/at4dx/domain-process-binding/create.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.11.3/packages/simply-aep/lib/commands/simply/aep/at4dx/domain-process-binding/create.js)_
 
 ## `sf simply aep at4dx domain-process-binding list`
 
@@ -400,7 +400,7 @@ EXAMPLES
   $ sf simply aep at4dx domain-process-binding list --target-org myOrg --active-only --json
 ```
 
-_See code: [lib/commands/simply/aep/at4dx/domain-process-binding/list.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.10.0/packages/simply-aep/lib/commands/simply/aep/at4dx/domain-process-binding/list.js)_
+_See code: [lib/commands/simply/aep/at4dx/domain-process-binding/list.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.11.3/packages/simply-aep/lib/commands/simply/aep/at4dx/domain-process-binding/list.js)_
 
 ## `sf simply aep at4dx domain-process-binding update`
 
@@ -479,7 +479,7 @@ EXAMPLES
   $ sf simply aep at4dx domain-process-binding update --target-org myOrg --developer-name Account_Before_Insert_Assign_Owner --class-to-inject AccountAssignOwnerActionV2
 ```
 
-_See code: [lib/commands/simply/aep/at4dx/domain-process-binding/update.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.10.0/packages/simply-aep/lib/commands/simply/aep/at4dx/domain-process-binding/update.js)_
+_See code: [lib/commands/simply/aep/at4dx/domain-process-binding/update.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.11.3/packages/simply-aep/lib/commands/simply/aep/at4dx/domain-process-binding/update.js)_
 
 ## `sf simply aep at4dx domain-process-binding validate`
 
@@ -532,7 +532,7 @@ EXAMPLES
   $ sf simply aep at4dx domain-process-binding validate --target-org myOrg --json
 ```
 
-_See code: [lib/commands/simply/aep/at4dx/domain-process-binding/validate.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.10.0/packages/simply-aep/lib/commands/simply/aep/at4dx/domain-process-binding/validate.js)_
+_See code: [lib/commands/simply/aep/at4dx/domain-process-binding/validate.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.11.3/packages/simply-aep/lib/commands/simply/aep/at4dx/domain-process-binding/validate.js)_
 
 ## `sf simply aep at4dx field-set-inclusion create`
 
@@ -590,7 +590,7 @@ EXAMPLES
   $ sf simply aep at4dx field-set-inclusion create --target-org myOrg --developer-name ServiceResource_Skills --sobject ServiceResource --sobject-alternate --fieldset-name SkillFields
 ```
 
-_See code: [lib/commands/simply/aep/at4dx/field-set-inclusion/create.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.10.0/packages/simply-aep/lib/commands/simply/aep/at4dx/field-set-inclusion/create.js)_
+_See code: [lib/commands/simply/aep/at4dx/field-set-inclusion/create.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.11.3/packages/simply-aep/lib/commands/simply/aep/at4dx/field-set-inclusion/create.js)_
 
 ## `sf simply aep at4dx field-set-inclusion list`
 
@@ -628,7 +628,7 @@ EXAMPLES
   $ sf simply aep at4dx field-set-inclusion list --target-org myOrg --json
 ```
 
-_See code: [lib/commands/simply/aep/at4dx/field-set-inclusion/list.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.10.0/packages/simply-aep/lib/commands/simply/aep/at4dx/field-set-inclusion/list.js)_
+_See code: [lib/commands/simply/aep/at4dx/field-set-inclusion/list.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.11.3/packages/simply-aep/lib/commands/simply/aep/at4dx/field-set-inclusion/list.js)_
 
 ## `sf simply aep at4dx field-set-inclusion update`
 
@@ -685,7 +685,7 @@ EXAMPLES
   $ sf simply aep at4dx field-set-inclusion update --target-org myOrg --developer-name Account_Contact_Fields --fieldset-name ContactRelatedFieldsV2
 ```
 
-_See code: [lib/commands/simply/aep/at4dx/field-set-inclusion/update.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.10.0/packages/simply-aep/lib/commands/simply/aep/at4dx/field-set-inclusion/update.js)_
+_See code: [lib/commands/simply/aep/at4dx/field-set-inclusion/update.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.11.3/packages/simply-aep/lib/commands/simply/aep/at4dx/field-set-inclusion/update.js)_
 
 ## `sf simply aep at4dx field-set-inclusion validate`
 
@@ -729,4 +729,91 @@ EXAMPLES
   $ sf simply aep at4dx field-set-inclusion validate --target-org myOrg --json
 ```
 
-_See code: [lib/commands/simply/aep/at4dx/field-set-inclusion/validate.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.10.0/packages/simply-aep/lib/commands/simply/aep/at4dx/field-set-inclusion/validate.js)_
+_See code: [lib/commands/simply/aep/at4dx/field-set-inclusion/validate.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.11.3/packages/simply-aep/lib/commands/simply/aep/at4dx/field-set-inclusion/validate.js)_
+
+## `sf simply aep at4dx platform-event-subscription list`
+
+List the AT4DX Platform Event Distributor subscriptions configured in an org or local source.
+
+```
+USAGE
+  $ sf simply aep at4dx platform-event-subscription list [--json] [--flags-dir <value>] [-o <value>] [--api-version
+  <value>] [-d <value>...]
+
+FLAGS
+  -d, --source-dir=<value>...  One or more paths to directories containing Salesforce DX source. Use this for
+                               local-source discovery.
+  -o, --target-org=<value>     Username or alias of the org to read platform event subscriptions from. Use this for
+                               live-org discovery.
+      --api-version=<value>    Override the api version used for api requests made by this command
+
+GLOBAL FLAGS
+  --flags-dir=<value>  Import flag values from a directory.
+  --json               Format output as json.
+
+DESCRIPTION
+  List the AT4DX Platform Event Distributor subscriptions configured in an org or local source.
+
+  Reads `PlatformEvents_Subscription__mdt` — either from a live org or from local Salesforce DX source — and lists every
+  record found, grouped by event bus then category. Unlike `simply aep at4dx binding list`, there's no priority/winner
+  concept: every `IsActive__c: true` subscription for a matching event is invoked by the distributor, so this is a flat
+  table, not a resolved one. Exactly one of `--target-org` or `--source-dir` must be specified.
+
+EXAMPLES
+  $ sf simply aep at4dx platform-event-subscription list --target-org myOrg
+
+  $ sf simply aep at4dx platform-event-subscription list --source-dir sfdx-source/core --source-dir sfdx-source/app
+
+  $ sf simply aep at4dx platform-event-subscription list --target-org myOrg --json
+```
+
+_See code: [lib/commands/simply/aep/at4dx/platform-event-subscription/list.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.11.3/packages/simply-aep/lib/commands/simply/aep/at4dx/platform-event-subscription/list.js)_
+
+## `sf simply aep at4dx platform-event-subscription validate`
+
+Validate the AT4DX Platform Event Distributor subscriptions configured in an org or local source, failing when a wiring problem is found.
+
+```
+USAGE
+  $ sf simply aep at4dx platform-event-subscription validate [--json] [--flags-dir <value>] [-o <value>] [--api-version
+  <value>] [-d <value>...]
+
+FLAGS
+  -d, --source-dir=<value>...  One or more paths to directories containing Salesforce DX source. Use this for
+                               local-source discovery.
+  -o, --target-org=<value>     Username or alias of the org to read platform event subscriptions from. Use this for
+                               live-org discovery.
+      --api-version=<value>    Override the api version used for api requests made by this command
+
+GLOBAL FLAGS
+  --flags-dir=<value>  Import flag values from a directory.
+  --json               Format output as json.
+
+DESCRIPTION
+  Validate the AT4DX Platform Event Distributor subscriptions configured in an org or local source, failing when a
+  wiring problem is found.
+
+  Reads `PlatformEvents_Subscription__mdt` — either from a live org or from local Salesforce DX source — and checks them
+  for problems `simply aep at4dx platform-event-subscription list` doesn't fail on: a blank or unrecognized
+  EventBus__c/Consumer__c/MatcherRule__c, a matcher rule that dereferences a blank match field (a real
+  NullPointerException risk at runtime), a MatchEventBus record the distributor's own pre-filter can never admit, an
+  event bus missing fields the distributor reads (only checked for a bus this command can see the field list of), two
+  records sharing a Consumer__c value (unique org-wide), and the same DeveloperName defined more than once. Exactly one
+  of `--target-org` or `--source-dir` must be specified.
+
+  Several of these problems fail silently at runtime in a real org — PlatformEventDistributor's consumer construction
+  only logs to System.debug on failure, and one malformed record can take down every subscription's DI module. Catching
+  them here, before deploy, is the whole point of this command.
+
+  Prints a table of every issue found. Exits non-zero when any issue is an error (a warning alone doesn't fail the
+  command) — use this in CI to gate on AT4DX platform event subscription wiring problems before they reach an org.
+
+EXAMPLES
+  $ sf simply aep at4dx platform-event-subscription validate --target-org myOrg
+
+  $ sf simply aep at4dx platform-event-subscription validate --source-dir sfdx-source/core --source-dir sfdx-source/app
+
+  $ sf simply aep at4dx platform-event-subscription validate --target-org myOrg --json
+```
+
+_See code: [lib/commands/simply/aep/at4dx/platform-event-subscription/validate.js](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.11.3/packages/simply-aep/lib/commands/simply/aep/at4dx/platform-event-subscription/validate.js)_

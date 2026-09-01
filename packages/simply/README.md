@@ -32,6 +32,8 @@ This package is part of the [`@simplysf/simply`](https://github.com/SimplySF/sim
 - [`sf simply aep at4dx field-set-inclusion list`](#sf-simply-aep-at4dx-field-set-inclusion-list)
 - [`sf simply aep at4dx field-set-inclusion update`](#sf-simply-aep-at4dx-field-set-inclusion-update)
 - [`sf simply aep at4dx field-set-inclusion validate`](#sf-simply-aep-at4dx-field-set-inclusion-validate)
+- [`sf simply aep at4dx platform-event-subscription list`](#sf-simply-aep-at4dx-platform-event-subscription-list)
+- [`sf simply aep at4dx platform-event-subscription validate`](#sf-simply-aep-at4dx-platform-event-subscription-validate)
 - [`sf simply apex execute`](#sf-simply-apex-execute)
 - [`sf simply apex logs purge`](#sf-simply-apex-logs-purge)
 - [`sf simply apex test-suite generate`](#sf-simply-apex-test-suite-generate)
@@ -782,6 +784,93 @@ EXAMPLES
 
 _See code: [@simplysf/simply-aep](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.11.3/packages/simply-aep/lib/commands/simply/aep/at4dx/field-set-inclusion/validate.js)_
 
+## `sf simply aep at4dx platform-event-subscription list`
+
+List the AT4DX Platform Event Distributor subscriptions configured in an org or local source.
+
+```
+USAGE
+  $ sf simply aep at4dx platform-event-subscription list [--json] [--flags-dir <value>] [-o <value>] [--api-version
+  <value>] [-d <value>...]
+
+FLAGS
+  -d, --source-dir=<value>...  One or more paths to directories containing Salesforce DX source. Use this for
+                               local-source discovery.
+  -o, --target-org=<value>     Username or alias of the org to read platform event subscriptions from. Use this for
+                               live-org discovery.
+      --api-version=<value>    Override the api version used for api requests made by this command
+
+GLOBAL FLAGS
+  --flags-dir=<value>  Import flag values from a directory.
+  --json               Format output as json.
+
+DESCRIPTION
+  List the AT4DX Platform Event Distributor subscriptions configured in an org or local source.
+
+  Reads `PlatformEvents_Subscription__mdt` — either from a live org or from local Salesforce DX source — and lists every
+  record found, grouped by event bus then category. Unlike `simply aep at4dx binding list`, there's no priority/winner
+  concept: every `IsActive__c: true` subscription for a matching event is invoked by the distributor, so this is a flat
+  table, not a resolved one. Exactly one of `--target-org` or `--source-dir` must be specified.
+
+EXAMPLES
+  $ sf simply aep at4dx platform-event-subscription list --target-org myOrg
+
+  $ sf simply aep at4dx platform-event-subscription list --source-dir sfdx-source/core --source-dir sfdx-source/app
+
+  $ sf simply aep at4dx platform-event-subscription list --target-org myOrg --json
+```
+
+_See code: [@simplysf/simply-aep](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.11.3/packages/simply-aep/lib/commands/simply/aep/at4dx/platform-event-subscription/list.js)_
+
+## `sf simply aep at4dx platform-event-subscription validate`
+
+Validate the AT4DX Platform Event Distributor subscriptions configured in an org or local source, failing when a wiring problem is found.
+
+```
+USAGE
+  $ sf simply aep at4dx platform-event-subscription validate [--json] [--flags-dir <value>] [-o <value>] [--api-version
+  <value>] [-d <value>...]
+
+FLAGS
+  -d, --source-dir=<value>...  One or more paths to directories containing Salesforce DX source. Use this for
+                               local-source discovery.
+  -o, --target-org=<value>     Username or alias of the org to read platform event subscriptions from. Use this for
+                               live-org discovery.
+      --api-version=<value>    Override the api version used for api requests made by this command
+
+GLOBAL FLAGS
+  --flags-dir=<value>  Import flag values from a directory.
+  --json               Format output as json.
+
+DESCRIPTION
+  Validate the AT4DX Platform Event Distributor subscriptions configured in an org or local source, failing when a
+  wiring problem is found.
+
+  Reads `PlatformEvents_Subscription__mdt` — either from a live org or from local Salesforce DX source — and checks them
+  for problems `simply aep at4dx platform-event-subscription list` doesn't fail on: a blank or unrecognized
+  EventBus__c/Consumer__c/MatcherRule__c, a matcher rule that dereferences a blank match field (a real
+  NullPointerException risk at runtime), a MatchEventBus record the distributor's own pre-filter can never admit, an
+  event bus missing fields the distributor reads (only checked for a bus this command can see the field list of), two
+  records sharing a Consumer__c value (unique org-wide), and the same DeveloperName defined more than once. Exactly one
+  of `--target-org` or `--source-dir` must be specified.
+
+  Several of these problems fail silently at runtime in a real org — PlatformEventDistributor's consumer construction
+  only logs to System.debug on failure, and one malformed record can take down every subscription's DI module. Catching
+  them here, before deploy, is the whole point of this command.
+
+  Prints a table of every issue found. Exits non-zero when any issue is an error (a warning alone doesn't fail the
+  command) — use this in CI to gate on AT4DX platform event subscription wiring problems before they reach an org.
+
+EXAMPLES
+  $ sf simply aep at4dx platform-event-subscription validate --target-org myOrg
+
+  $ sf simply aep at4dx platform-event-subscription validate --source-dir sfdx-source/core --source-dir sfdx-source/app
+
+  $ sf simply aep at4dx platform-event-subscription validate --target-org myOrg --json
+```
+
+_See code: [@simplysf/simply-aep](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.11.3/packages/simply-aep/lib/commands/simply/aep/at4dx/platform-event-subscription/validate.js)_
+
 ## `sf simply apex execute`
 
 Execute anonymous Apex code.
@@ -815,7 +904,7 @@ FLAG DESCRIPTIONS
     The path to the local .apex file containing the anonymous Apex code to execute.
 ```
 
-_See code: [@simplysf/simply-apex](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-apex@1.6.10/packages/simply-apex/lib/commands/simply/apex/execute.js)_
+_See code: [@simplysf/simply-apex](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-apex@1.8.0/packages/simply-apex/lib/commands/simply/apex/execute.js)_
 
 ## `sf simply apex logs purge`
 
@@ -871,7 +960,7 @@ FLAG DESCRIPTIONS
     elapses, then throws.
 ```
 
-_See code: [@simplysf/simply-apex](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-apex@1.6.10/packages/simply-apex/lib/commands/simply/apex/logs/purge.js)_
+_See code: [@simplysf/simply-apex](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-apex@1.8.0/packages/simply-apex/lib/commands/simply/apex/logs/purge.js)_
 
 ## `sf simply apex test-suite generate`
 
@@ -919,7 +1008,7 @@ FLAG DESCRIPTIONS
     pass that directory explicitly, e.g. force-app/main/default/testSuites.
 ```
 
-_See code: [@simplysf/simply-apex](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-apex@1.6.10/packages/simply-apex/lib/commands/simply/apex/test-suite/generate.js)_
+_See code: [@simplysf/simply-apex](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-apex@1.8.0/packages/simply-apex/lib/commands/simply/apex/test-suite/generate.js)_
 
 ## `sf simply apex trace setup`
 
@@ -979,7 +1068,7 @@ FLAG DESCRIPTIONS
     Defaults to the current date/time.
 ```
 
-_See code: [@simplysf/simply-apex](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-apex@1.6.10/packages/simply-apex/lib/commands/simply/apex/trace/setup.js)_
+_See code: [@simplysf/simply-apex](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-apex@1.8.0/packages/simply-apex/lib/commands/simply/apex/trace/setup.js)_
 
 ## `sf simply apex trace silence`
 
@@ -1043,7 +1132,7 @@ FLAG DESCRIPTIONS
     Adds di_Binding, di_Module, di_PlatformCache, and di_Injector to the classes to silence.
 ```
 
-_See code: [@simplysf/simply-apex](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-apex@1.6.10/packages/simply-apex/lib/commands/simply/apex/trace/silence.js)_
+_See code: [@simplysf/simply-apex](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-apex@1.8.0/packages/simply-apex/lib/commands/simply/apex/trace/silence.js)_
 
 ## `sf simply community publish`
 

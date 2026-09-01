@@ -71,6 +71,13 @@ it('exports the expected set of runtime values', () => {
       'validateFieldSetInclusions',
       'createFieldSetInclusion',
       'updateFieldSetInclusion',
+      'ALL_MATCHER_RULES',
+      'PLATFORM_EVENT_SUBSCRIPTION_OBJECT',
+      'PLATFORM_EVENT_SUBSCRIPTION_LOCAL_OBJECT_NAME',
+      'PLATFORM_EVENT_SUBSCRIPTION_RULES',
+      'scanLocalPlatformEventSubscriptions',
+      'scanOrgPlatformEventSubscriptions',
+      'validatePlatformEventSubscriptions',
     ].sort(),
   );
 });
