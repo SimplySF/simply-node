@@ -147,7 +147,7 @@ If your change only affects one package, scope the commit to it, e.g. `feat(simp
 
 - Keep pull requests focused on a single change where possible.
 - If the change has a design document in [`docs/design/`](docs/design/README.md), update it to match what actually shipped, including its `Status` line and its row in the index. A design doc that quietly disagrees with the code is worse than none.
-- Make sure `pnpm run build` and `pnpm test` pass before opening the PR — the same checks run in CI and as a pre-push hook.
+- Make sure `pnpm run build` and `pnpm test` pass before opening the PR. CI runs both across every package; the pre-push hook runs the same checks but scoped to packages changed since the last release tag (see [Git Hooks](#git-hooks)), so a passing push doesn't guarantee a passing PR if your branch touches a root-level config file (e.g. `tsconfig.json`, `eslint.config.mjs`) that no single package's directory reflects.
 - Aim for high test coverage on new code.
 - Update the relevant package's README/command docs if you changed a command's flags or behavior. `packages/simply-data` regenerates its README command docs automatically on version bump (`oclif readme` runs from its `version` script); every other plugin package requires running `pnpm run readme` manually in that package and committing the result.
 - `command-snapshot.json` (used to flag accidental breaking changes to commands/flags) regenerates automatically as part of each package's `pnpm run build` — just commit whatever changes. CI re-verifies with `git diff --exit-code` after `pnpm run build`, so a stale, uncommitted snapshot fails the build. This includes `packages/simply`'s own `command-snapshot.json` when you change a plugin bundled into `@simplysf/simply` (see the orchestrator's `oclif.plugins` list): its wireit `command-snapshot` task cross-depends on every bundled plugin's `compile` task, so a root `pnpm run build` (or `pnpm run build` from within `packages/simply`) picks up dependency flag changes and regenerates it without any extra step.
@@ -183,11 +183,15 @@ If a version was tagged and released but npm publish failed for one or more pack
 
 ## Git Hooks
 
-| Hook         | Command                                                 |
-| ------------ | ------------------------------------------------------- |
-| `pre-commit` | `lint-staged` — runs `prettier --write` on staged files |
-| `commit-msg` | `commitlint` — enforces conventional commit format      |
-| `pre-push`   | `pnpm run build && pnpm test`                           |
+| Hook         | Command                                                                                       |
+| ------------ | --------------------------------------------------------------------------------------------- |
+| `pre-commit` | `lint-staged` — runs `prettier --write` on staged files                                       |
+| `commit-msg` | `commitlint` — enforces conventional commit format                                            |
+| `pre-push`   | `lerna run build --since --include-dependents && lerna run test --since --include-dependents` |
+
+`pre-push` only builds/tests packages changed since the last release tag (plus their transitive
+dependents) to keep the hook fast locally — CI (`test.yml`) always runs `pnpm run build` + `pnpm test`
+across every package, so nothing changed here reduces what actually gates a merge.
 
 Hooks are installed automatically on `pnpm install` via the `prepare: husky` script.
 

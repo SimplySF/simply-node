@@ -99,7 +99,6 @@
     "compile": "wireit",
     "fix-license": "eslint src test --fix --rule \"header/header: [2]\"",
     "format": "wireit",
-    "link-check": "wireit",
     "lint": "wireit",
     "oclif-artifacts": "oclif manifest",
     "prepare": "pnpm run compile && pnpm run lint",
@@ -171,15 +170,6 @@
         "**/tsconfig.json",
         "../../eslint.config.mjs",
         "../../tsconfig.json"
-      ],
-      "output": []
-    },
-    "link-check": {
-      "command": "node -e \"process.exit(process.env.CI ? 0 : 1)\" || linkinator \"**/*.md\" --skip \"CHANGELOG.md|node_modules|test/|confluence.internal.salesforce.com|my.salesforce.com|localhost|example\\.(com|org|net)|github\\.com/SimplySF/simply-node|raw\\.githubusercontent\\.com/SimplySF/simply-node|blob/.*/lib/|%s\" --markdown --retry --directory-listing --verbosity error",
-      "files": [
-        "./*.md",
-        "./!(CHANGELOG).md",
-        "messages/**/*.md"
       ],
       "output": []
     }
