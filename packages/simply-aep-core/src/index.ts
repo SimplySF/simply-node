@@ -144,10 +144,10 @@ export { scanOrgFieldSetInclusions, type FieldSetInclusionOrgScanResult } from '
 export { validateFieldSetInclusions } from './at4dxFieldSetInclusionResolve.js';
 export { createFieldSetInclusion, updateFieldSetInclusion } from './at4dxFieldSetInclusionWrite.js';
 
-// AT4DX Platform Event Subscription (docs/design/0025) — Stage 1 (read): Types, LocalScan, OrgScan,
-// and validatePlatformEventSubscriptions. Stage 3 (write) lands here too: BuildXml, Write, and the
-// CreatePlatformEventSubscription*/UpdatePlatformEventSubscription* types. The simulator
-// (resolvePlatformEventDistribution, Stage 2) lands in a separate PR — see 0025's Implementation plan.
+// AT4DX Platform Event Subscription (docs/design/0025) — all three stages land here: Types, LocalScan,
+// OrgScan, validatePlatformEventSubscriptions (Stage 1); resolvePlatformEventDistribution (Stage 2);
+// BuildXml, Write, and the CreatePlatformEventSubscription*/UpdatePlatformEventSubscription* types
+// (Stage 3). See 0025's Implementation plan.
 export {
   ALL_MATCHER_RULES,
   PLATFORM_EVENT_SUBSCRIPTION_OBJECT,
@@ -157,6 +157,11 @@ export {
   type MatcherRule,
   type RawPlatformEventSubscriptionRecord,
   type MalformedPlatformEventSubscriptionRecord,
+  type PlatformEventDistributionInput,
+  type PlatformEventDistributionMatch,
+  type PlatformEventDistributionMiss,
+  type PlatformEventDistributionMissReason,
+  type PlatformEventDistributionResult,
   type PlatformEventSubscriptionIssue,
   type PlatformEventSubscriptionIssueRule,
   type PlatformEventSubscriptionIssueScope,
@@ -186,7 +191,11 @@ export {
   scanOrgPlatformEventSubscriptions,
   type PlatformEventSubscriptionOrgScanResult,
 } from './at4dxPlatformEventSubscriptionOrgScan.js';
-export { validatePlatformEventSubscriptions, type EventBusFields } from './at4dxPlatformEventSubscriptionResolve.js';
+export {
+  resolvePlatformEventDistribution,
+  validatePlatformEventSubscriptions,
+  type EventBusFields,
+} from './at4dxPlatformEventSubscriptionResolve.js';
 export {
   createPlatformEventSubscription,
   updatePlatformEventSubscription,

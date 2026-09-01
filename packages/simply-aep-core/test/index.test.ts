@@ -79,6 +79,7 @@ it('exports the expected set of runtime values', () => {
       'buildPlatformEventSubscriptionXml',
       'scanLocalPlatformEventSubscriptions',
       'scanOrgPlatformEventSubscriptions',
+      'resolvePlatformEventDistribution',
       'validatePlatformEventSubscriptions',
       'createPlatformEventSubscription',
       'updatePlatformEventSubscription',

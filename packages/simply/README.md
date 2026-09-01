@@ -34,6 +34,7 @@ This package is part of the [`@simplysf/simply`](https://github.com/SimplySF/sim
 - [`sf simply aep at4dx field-set-inclusion validate`](#sf-simply-aep-at4dx-field-set-inclusion-validate)
 - [`sf simply aep at4dx platform-event-subscription create`](#sf-simply-aep-at4dx-platform-event-subscription-create)
 - [`sf simply aep at4dx platform-event-subscription list`](#sf-simply-aep-at4dx-platform-event-subscription-list)
+- [`sf simply aep at4dx platform-event-subscription simulate`](#sf-simply-aep-at4dx-platform-event-subscription-simulate)
 - [`sf simply aep at4dx platform-event-subscription update`](#sf-simply-aep-at4dx-platform-event-subscription-update)
 - [`sf simply aep at4dx platform-event-subscription validate`](#sf-simply-aep-at4dx-platform-event-subscription-validate)
 - [`sf simply apex execute`](#sf-simply-apex-execute)
@@ -893,6 +894,62 @@ EXAMPLES
 ```
 
 _See code: [@simplysf/simply-aep](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.12.0/packages/simply-aep/lib/commands/simply/aep/at4dx/platform-event-subscription/list.js)_
+
+## `sf simply aep at4dx platform-event-subscription simulate`
+
+Simulate the AT4DX Platform Event Distributor's consumer resolution for a hypothetical event, and show which subscriptions would receive it and why the rest wouldn't.
+
+```
+USAGE
+  $ sf simply aep at4dx platform-event-subscription simulate --event-bus <value> [--json] [--flags-dir <value>] [-o <value>] [--api-version <value>] [-d
+    <value>...] [--category <value>] [--event-name <value>]
+
+FLAGS
+  -d, --source-dir=<value>...  One or more paths to directories containing Salesforce DX source. Use this for
+                               local-source discovery.
+  -o, --target-org=<value>     Username or alias of the org to read platform event subscriptions from. Use this for
+                               live-org discovery.
+      --api-version=<value>    Override the api version used for api requests made by this command
+      --category=<value>       The hypothetical event's Category__c value. Omit to simulate an event with no category.
+      --event-bus=<value>      (required) The platform event object API name (EventBus__c) of the hypothetical event to
+                               simulate, e.g. My_Event__e.
+      --event-name=<value>     The hypothetical event's EventName__c value. Omit to simulate an event with no event
+                               name.
+
+GLOBAL FLAGS
+  --flags-dir=<value>  Import flag values from a directory.
+  --json               Format output as json.
+
+DESCRIPTION
+  Simulate the AT4DX Platform Event Distributor's consumer resolution for a hypothetical event, and show which
+  subscriptions would receive it and why the rest wouldn't.
+
+  Reads `PlatformEvents_Subscription__mdt` — either from a live org or from local Salesforce DX source — and
+  reimplements `PlatformEventDistributor`'s decision sequence against a hypothetical event you describe with
+  `--event-bus`, `--category`, and `--event-name`: restrict to subscriptions on that bus, drop inactive records the
+  distributor's own query never loads, apply `triggerHandler`'s pre-filter, then each record's `MatcherRule__c` branch.
+  Exactly one of `--target-org` or `--source-dir` must be specified.
+
+  Prints the exact consumer set the distributor would build, in order, tagged synchronous or asynchronous from
+  `Execute_Synchronous__c`, plus every subscription on that bus that would _not_ receive the event and the structured
+  reason why: `inactive`, `prefiltered` (the pre-filter rejected it before any matcher rule ran),
+  `matcher-rule-missing-field` (the matcher rule dereferences a blank match field — a real NullPointerException in the
+  org), or `no-match` (every field the matcher rule needs is present, but the values don't match this event).
+
+  This is the same evaluation `simply aep at4dx platform-event-subscription validate` uses to derive
+  `matcher-rule-missing-field` and `unreachable-subscription` — running it here against a concrete hypothetical event is
+  how you confirm a subscription actually receives what you expect it to, beyond what `validate`'s static checks can
+  tell you.
+
+EXAMPLES
+  $ sf simply aep at4dx platform-event-subscription simulate --target-org myOrg --event-bus Account_Change__e --category Finance --event-name AccountUpdated
+
+  $ sf simply aep at4dx platform-event-subscription simulate --source-dir sfdx-source/core --event-bus Account_Change__e --event-name AccountUpdated
+
+  $ sf simply aep at4dx platform-event-subscription simulate --target-org myOrg --event-bus Account_Change__e --json
+```
+
+_See code: [@simplysf/simply-aep](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.12.0/packages/simply-aep/lib/commands/simply/aep/at4dx/platform-event-subscription/simulate.js)_
 
 ## `sf simply aep at4dx platform-event-subscription update`
 

@@ -16,6 +16,7 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+  resolvePlatformEventDistribution,
   validatePlatformEventSubscriptions,
   type EventBusFields,
 } from '../src/at4dxPlatformEventSubscriptionResolve.js';
@@ -240,5 +241,107 @@ describe('validatePlatformEventSubscriptions', () => {
       const dupIssues = issues.filter((i) => i.rule === 'duplicate-developer-name');
       expect(dupIssues).toHaveLength(2);
     });
+  });
+});
+
+describe('resolvePlatformEventDistribution', () => {
+  const input = { eventBus: 'Account_Change__e', category: 'Finance', eventName: 'AccountUpdated' };
+
+  it('excludes records on a different event bus entirely — not even as a miss', () => {
+    const result = resolvePlatformEventDistribution(input, [record({ eventBus: 'Other_Bus__e' })]);
+    expect(result.matches).toEqual([]);
+    expect(result.misses).toEqual([]);
+  });
+
+  it('misses an inactive record with reason "inactive", ahead of every other check', () => {
+    const result = resolvePlatformEventDistribution(input, [
+      record({ isActive: false, matcherRule: 'MatchEventBus', eventCategory: 'Finance' }),
+    ]);
+    expect(result.matches).toEqual([]);
+    expect(result.misses).toEqual([expect.objectContaining({ reason: 'inactive' })]);
+  });
+
+  it('misses a record the pre-filter rejects before any matcher rule runs, with reason "prefiltered"', () => {
+    const result = resolvePlatformEventDistribution(input, [
+      record({ matcherRule: 'MatchEventBus', eventCategory: 'Unrelated', event: undefined }),
+    ]);
+    expect(result.matches).toEqual([]);
+    expect(result.misses).toEqual([expect.objectContaining({ reason: 'prefiltered' })]);
+  });
+
+  it('passes the pre-filter via Event__c while MatcherRule__c needs the blank EventCategory__c — "matcher-rule-missing-field", not "prefiltered"', () => {
+    const result = resolvePlatformEventDistribution(input, [
+      record({ matcherRule: 'MatchCategory', eventCategory: undefined, event: 'AccountUpdated' }),
+    ]);
+    expect(result.matches).toEqual([]);
+    expect(result.misses).toEqual([expect.objectContaining({ reason: 'matcher-rule-missing-field' })]);
+  });
+
+  it('misses a record whose matcher rule fields are present but don\'t match the event, with reason "no-match"', () => {
+    const result = resolvePlatformEventDistribution(input, [
+      record({ matcherRule: 'MatchCategory', eventCategory: 'Finance', event: 'AccountUpdated' }),
+    ]);
+    // eventCategory matches the pre-filter and MatchCategory's own field, but flip it to a mismatch:
+    const mismatch = resolvePlatformEventDistribution(input, [
+      record({ matcherRule: 'MatchCategory', eventCategory: 'Other', event: 'AccountUpdated' }),
+    ]);
+    expect(result.matches).toHaveLength(1);
+    expect(mismatch.matches).toEqual([]);
+    expect(mismatch.misses).toEqual([expect.objectContaining({ reason: 'no-match' })]);
+  });
+
+  describe('the four matcher rules', () => {
+    it("MatchEventBus matches once it passes the pre-filter, regardless of the event's own values", () => {
+      const result = resolvePlatformEventDistribution(input, [
+        record({ matcherRule: 'MatchEventBus', eventCategory: 'Finance', event: undefined }),
+      ]);
+      expect(result.matches).toHaveLength(1);
+    });
+
+    it('MatchCategory matches on EventCategory__c, case-insensitively', () => {
+      const result = resolvePlatformEventDistribution(input, [
+        record({ matcherRule: 'MatchCategory', eventCategory: 'FINANCE', event: undefined }),
+      ]);
+      expect(result.matches).toHaveLength(1);
+    });
+
+    it('MatchEvent matches on Event__c, case-insensitively', () => {
+      const result = resolvePlatformEventDistribution(input, [
+        record({ matcherRule: 'MatchEvent', eventCategory: undefined, event: 'accountupdated' }),
+      ]);
+      expect(result.matches).toHaveLength(1);
+    });
+
+    it('MatchCategoryAndEvent requires both to match', () => {
+      const both = resolvePlatformEventDistribution(input, [
+        record({ matcherRule: 'MatchCategoryAndEvent', eventCategory: 'Finance', event: 'AccountUpdated' }),
+      ]);
+      const onlyOne = resolvePlatformEventDistribution(input, [
+        record({ matcherRule: 'MatchCategoryAndEvent', eventCategory: 'Finance', event: 'Other' }),
+      ]);
+      expect(both.matches).toHaveLength(1);
+      expect(onlyOne.matches).toEqual([]);
+      expect(onlyOne.misses).toEqual([expect.objectContaining({ reason: 'no-match' })]);
+    });
+  });
+
+  it('reads sync/async from Execute_Synchronous__c on a match', () => {
+    const result = resolvePlatformEventDistribution(input, [
+      record({ matcherRule: 'MatchEventBus', eventCategory: 'Finance', executeSynchronous: true }),
+    ]);
+    expect(result.matches).toEqual([expect.objectContaining({ executeSynchronous: true })]);
+  });
+
+  it('returns matches in scan order — no priority/winner concept for this family', () => {
+    const result = resolvePlatformEventDistribution(input, [
+      record({ developerName: 'Second', matcherRule: 'MatchEventBus', eventCategory: 'Finance' }),
+      record({ developerName: 'First', matcherRule: 'MatchEventBus', eventCategory: 'Finance' }),
+    ]);
+    expect(result.matches.map((m) => m.developerName)).toEqual(['Second', 'First']);
+  });
+
+  it('echoes the input back on the result envelope', () => {
+    const result = resolvePlatformEventDistribution(input, []);
+    expect(result.input).toEqual(input);
   });
 });
