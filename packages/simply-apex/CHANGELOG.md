@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.8.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-apex%401.7.0...%40simplysf%2Fsimply-apex%401.8.0) (2026-09-01)
+
+### Features
+
+- **simply-apex:** add simply apex test-suite generate ([a1f0839](https://github.com/SimplySF/simply-node/commit/a1f0839f143a7a1be424e7765236ec06df72c548))
+
 # [1.7.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-apex%401.6.10...%40simplysf%2Fsimply-apex%401.7.0) (2026-09-01)
 
 ### Features
