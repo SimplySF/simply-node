@@ -34,36 +34,36 @@ export type PackageVersionCleanupResult = {
   SubscriberPackageVersionId: string;
 };
 
-/** A parsed, validated MAJOR.MINOR.PATCH matcher. */
-type ParsedMatcher = {
+/** A parsed, validated MAJOR.MINOR.PATCH selector. */
+type ParsedSelector = {
   major: string;
   minor: string;
   patch: string;
 };
 
 /**
- * Parse and validate a MAJOR.MINOR.PATCH matcher string.
+ * Parse and validate a MAJOR.MINOR.PATCH selector string.
  *
- * @param matcher - The raw `--matcher`/`--exclude-matcher` flag value.
- * @returns The matcher's parsed major/minor/patch components.
- * @throws {SfError} If `matcher` isn't in MAJOR.MINOR.PATCH format.
+ * @param selector - One raw `--selector`/`--selector-exclude` value.
+ * @returns The selector's parsed major/minor/patch components.
+ * @throws {SfError} If `selector` isn't in MAJOR.MINOR.PATCH format.
  */
-function parseMatcher(matcher: string): ParsedMatcher {
-  const matcherRegex = new RegExp(/^\d+\.\d+\.\d+$/);
+function parseSelector(selector: string): ParsedSelector {
+  const selectorRegex = new RegExp(/^\d+\.\d+\.\d+$/);
 
-  if (!matcherRegex.test(matcher)) {
-    throw messages.createError('errors.matcherFormatMismatch');
+  if (!selectorRegex.test(selector)) {
+    throw messages.createError('errors.selectorFormatMismatch', [selector]);
   }
 
-  const [major, minor, patch] = matcher.split('.');
+  const [major, minor, patch] = selector.split('.');
 
   return { major, minor, patch };
 }
 
 /**
- * Deletes package versions for a given package matching a MAJOR.MINOR.PATCH matcher, or - if an
- * exclusion matcher is provided instead - every unreleased version that does *not* match it.
- * Does not delete released package versions.
+ * Deletes package versions for a given package matching one or more MAJOR.MINOR.PATCH selectors,
+ * or - if exclusion selectors are provided instead - every unreleased version that does *not*
+ * match any of them. Does not delete released package versions.
  */
 export default class PackageVersionCleanup extends SfCommand<PackageVersionCleanupResult[]> {
   public static readonly summary = messages.getMessage('summary');
@@ -76,17 +76,19 @@ export default class PackageVersionCleanup extends SfCommand<PackageVersionClean
   public static readonly flags = {
     ...SfCommand.baseFlags,
     'api-version': Flags.orgApiVersion(),
-    matcher: Flags.string({
-      summary: messages.getMessage('flags.matcher.summary'),
-      description: messages.getMessage('flags.matcher.description'),
+    selector: Flags.string({
+      summary: messages.getMessage('flags.selector.summary'),
+      description: messages.getMessage('flags.selector.description'),
       char: 's',
-      exclusive: ['exclude-matcher'],
+      multiple: true,
+      exclusive: ['selector-exclude'],
     }),
-    'exclude-matcher': Flags.string({
-      summary: messages.getMessage('flags.exclude-matcher.summary'),
-      description: messages.getMessage('flags.exclude-matcher.description'),
+    'selector-exclude': Flags.string({
+      summary: messages.getMessage('flags.selector-exclude.summary'),
+      description: messages.getMessage('flags.selector-exclude.description'),
       char: 'x',
-      exclusive: ['matcher'],
+      multiple: true,
+      exclusive: ['selector'],
     }),
     package: Flags.string({
       summary: messages.getMessage('flags.package.summary'),
@@ -98,8 +100,8 @@ export default class PackageVersionCleanup extends SfCommand<PackageVersionClean
   };
 
   /**
-   * @returns The delete outcome for every unreleased version matching `--matcher`, or every
-   * unreleased version *not* matching `--exclude-matcher`.
+   * @returns The delete outcome for every unreleased version matching any `--selector`, or every
+   * unreleased version matching none of `--selector-exclude`.
    */
   public async run(): Promise<PackageVersionCleanupResult[]> {
     const log = await Logger.child(this.ctor.name);
@@ -113,19 +115,17 @@ export default class PackageVersionCleanup extends SfCommand<PackageVersionClean
       throw messages.createError('errors.connectionFailed');
     }
 
-    if (!flags.matcher && !flags['exclude-matcher']) {
-      throw messages.createError('errors.matcherRequired');
+    if (!flags.selector && !flags['selector-exclude']) {
+      throw messages.createError('errors.selectorRequired');
     }
 
-    const isExclusion = Boolean(flags['exclude-matcher']);
-    const {
-      major: majorMatcher,
-      minor: minorMatcher,
-      patch: patchMatcher,
-    } = parseMatcher((flags.matcher ?? flags['exclude-matcher'])!);
+    const isExclusion = Boolean(flags['selector-exclude']);
+    const parsedSelectors = (flags.selector ?? flags['selector-exclude'])!.map(parseSelector);
 
     log.info(
-      `${isExclusion ? 'Exclude' : 'Include'} Matcher - Major: ${majorMatcher} Minor: ${minorMatcher} Patch: ${patchMatcher}`,
+      `${isExclusion ? 'Exclude' : 'Include'} Selectors - ${parsedSelectors
+        .map((selector) => `${selector.major}.${selector.minor}.${selector.patch}`)
+        .join(', ')}`,
     );
 
     const packageVersionListOptions: PackageVersionListOptions = {
@@ -147,12 +147,14 @@ export default class PackageVersionCleanup extends SfCommand<PackageVersionClean
         return false;
       }
 
-      const matchesMatcher =
-        packageVersion.MajorVersion.toString() === majorMatcher &&
-        packageVersion.MinorVersion.toString() === minorMatcher &&
-        packageVersion.PatchVersion.toString() === patchMatcher;
+      const matchesAnySelector = parsedSelectors.some(
+        (selector) =>
+          packageVersion.MajorVersion.toString() === selector.major &&
+          packageVersion.MinorVersion.toString() === selector.minor &&
+          packageVersion.PatchVersion.toString() === selector.patch,
+      );
 
-      return isExclusion ? !matchesMatcher : matchesMatcher;
+      return isExclusion ? !matchesAnySelector : matchesAnySelector;
     });
 
     const packageVersionDeletePromiseRequests: Array<Promise<PackageSaveResult>> = [];

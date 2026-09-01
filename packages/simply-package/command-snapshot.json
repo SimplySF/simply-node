@@ -40,7 +40,7 @@
     "command": "simply:package:version:cleanup",
     "flagAliases": [],
     "flagChars": ["p", "s", "v", "x"],
-    "flags": ["api-version", "exclude-matcher", "flags-dir", "json", "matcher", "package", "target-dev-hub"],
+    "flags": ["api-version", "flags-dir", "json", "package", "selector", "selector-exclude", "target-dev-hub"],
     "plugin": "@simplysf/simply-package"
   },
   {
