@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [6.0.1](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply%406.0.0...%40simplysf%2Fsimply%406.0.1) (2026-09-01)
+
+**Note:** Version bump only for package @simplysf/simply
+
 # [6.0.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply%405.0.3...%40simplysf%2Fsimply%406.0.0) (2026-09-01)
 
 - feat(simply-package)!: rename version cleanup matcher flags to selector, allow multiple values ([fec1365](https://github.com/SimplySF/simply-node/commit/fec13658424b89cf6c0bdc7b7bfa8a27159d68b4))
