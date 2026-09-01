@@ -73,14 +73,22 @@ function escapeXmlText(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+/** @returns `value` with regex-significant characters escaped, so it can be spliced into a `RegExp` source as a literal match. */
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/** @returns The `<value>` element markup for one entry — `entry.field` is ignored (the caller places it in `<field>` separately). Shared by `buildValuesXml` (a full document) and `patchCustomMetadataXml` (an in-place patch), so the two can never render an entry differently. */
+function valueMarkup(entry: Pick<CustomMetadataValueInput, 'value' | 'type'>): string {
+  return entry.value === undefined
+    ? '<value xsi:nil="true"/>'
+    : `<value xsi:type="xsd:${entry.type ?? 'string'}">${escapeXmlText(entry.value)}</value>`;
+}
+
 /** @returns The `<values>` blocks for `entries`, in the same shape `extractValues` parses back. */
 export function buildValuesXml(entries: CustomMetadataValueInput[]): string {
   return entries
-    .map(({ field, value, type }) =>
-      value === undefined
-        ? `  <values><field>${field}</field><value xsi:nil="true"/></values>`
-        : `  <values><field>${field}</field><value xsi:type="xsd:${type ?? 'string'}">${escapeXmlText(value)}</value></values>`,
-    )
+    .map(({ field, ...entry }) => `  <values><field>${field}</field>${valueMarkup(entry)}</values>`)
     .join('\n');
 }
 
@@ -94,4 +102,99 @@ export function buildCustomMetadataXml(label: string, valuesXml: string): string
     `${valuesXml}\n` +
     '</CustomMetadata>\n'
   );
+}
+
+/** @returns Only the entries in `after` whose `field`/`value`/`type` differ from `before`'s entry at the same position — `before`/`after` must come from the same deterministic entry-builder (same fields, same order) called on the existing vs. merged record, so a positional compare is safe. */
+export function diffValueEntries(
+  before: CustomMetadataValueInput[],
+  after: CustomMetadataValueInput[],
+): CustomMetadataValueInput[] {
+  return after.filter((entry, index) => {
+    const previous = before[index];
+    return previous?.field !== entry.field || previous?.value !== entry.value || previous?.type !== entry.type;
+  });
+}
+
+/** Thrown by `patchCustomMetadataXml` when an entry's `<values>` block exists but its `<value>` element isn't in a shape the patcher recognizes (self-closing or not, on one line or several) — the caller is expected to catch this and fall back to full-document generation for just that file. See docs/design/0022-at4dx-update-xml-shape-preservation.md. */
+export class UnpatchableValueShapeError extends Error {
+  public readonly field: string;
+
+  public constructor(field: string) {
+    super(`The <value> element for field "${field}" isn't in a shape this patcher recognizes.`);
+    this.name = 'UnpatchableValueShapeError';
+    this.field = field;
+  }
+}
+
+/** @returns The leading whitespace an existing `<values>` line in `xml` uses, or `'  '` (this module's own convention) if `xml` has no `<values>` line to sample. */
+function detectValuesIndent(xml: string): string {
+  const match = /^([ \t]*)<values>/m.exec(xml);
+  return match ? match[1] : '  ';
+}
+
+/** Matches one field's `<values>` block, split into the part before its `<value>` element (through the `<field>` marker and following whitespace), the `<value>` element itself, and the part after (through `</values>`) — a replace can then swap only the middle group. */
+function valuesBlockRegex(field: string): RegExp {
+  const escapedField = escapeRegExp(field);
+  return new RegExp(
+    `(<values>\\s*<field>${escapedField}</field>\\s*)(<value\\b[^>]*?(?:/>|>[\\s\\S]*?</value>))(\\s*</values>)`,
+  );
+}
+
+/**
+ * Patch an existing `.md-meta.xml` document's `<label>` and/or specific `<values>` entries in
+ * place, touching only the spans that actually need to change — every other byte (untouched
+ * fields' exact `<value>` markup, field order, indentation, comments, the XML declaration,
+ * `<protected>`) passes through unmodified. The in-place counterpart to `buildCustomMetadataXml`,
+ * used by `update*` (never `create*`, which has no existing document to preserve) when writing to
+ * local source. See docs/design/0022-at4dx-update-xml-shape-preservation.md.
+ *
+ * @param existingXml - The file's current contents.
+ * @param label - The label to write. Left untouched if it already matches (byte-for-byte, once escaped).
+ * @param changedEntries - Only the entries whose value actually changed — see `diffValueEntries`. An
+ * entry not in this list is never touched, even if `buildValuesXml` would render it identically to
+ * what's already there.
+ * @returns The patched document text.
+ * @throws {UnpatchableValueShapeError} If an entry's `<values>` block exists but its `<value>`
+ * element isn't in a shape this patcher recognizes.
+ */
+export function patchCustomMetadataXml(
+  existingXml: string,
+  label: string,
+  changedEntries: CustomMetadataValueInput[],
+): string {
+  let xml = existingXml;
+
+  const escapedLabel = escapeXmlText(label);
+  const labelRegex = /(<label>)([\s\S]*?)(<\/label>)/;
+  if (labelRegex.test(xml)) {
+    xml = xml.replace(labelRegex, (match, open: string, current: string, close: string) =>
+      current === escapedLabel ? match : `${open}${escapedLabel}${close}`,
+    );
+  } else {
+    xml = xml.replace(/<CustomMetadata\b[^>]*>\s*/, (match) => `${match}  <label>${escapedLabel}</label>\n`);
+  }
+
+  for (const entry of changedEntries) {
+    const escapedField = escapeRegExp(entry.field);
+    const markerRegex = new RegExp(`<values>\\s*<field>${escapedField}</field>`);
+    const blockRegex = valuesBlockRegex(entry.field);
+
+    if (!markerRegex.test(xml)) {
+      const indent = detectValuesIndent(xml);
+      const newBlock = `${indent}<values><field>${entry.field}</field>${valueMarkup(entry)}</values>\n`;
+      xml = xml.replace(/<\/CustomMetadata>/, `${newBlock}</CustomMetadata>`);
+      continue;
+    }
+
+    if (!blockRegex.test(xml)) {
+      throw new UnpatchableValueShapeError(entry.field);
+    }
+
+    xml = xml.replace(
+      blockRegex,
+      (_match, before: string, _valueEl: string, after: string) => `${before}${valueMarkup(entry)}${after}`,
+    );
+  }
+
+  return xml;
 }

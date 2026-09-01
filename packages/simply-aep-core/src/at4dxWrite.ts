@@ -37,11 +37,12 @@ import {
   type UpdateBindingTarget,
   type WritableBindingType,
 } from './at4dxBindingTypes.js';
-import { buildBindingXml } from './at4dxBuildXml.js';
+import { buildBindingXml, patchBindingXml } from './at4dxBuildXml.js';
 import { deployMetadataFile } from './at4dxDomainProcessDeploy.js';
 import { scanLocalBindings } from './at4dxLocalScan.js';
 import { scanOrgBindings } from './at4dxOrgScan.js';
 import { validateBindings } from './at4dxValidate.js';
+import { UnpatchableValueShapeError } from './customMetadataXml.js';
 
 const DEVELOPER_NAME_PATTERN = /^[A-Za-z][A-Za-z0-9_]*$/;
 const DEFAULT_WAIT = Duration.minutes(33);
@@ -432,17 +433,21 @@ export async function updateBinding(
   checkValidation(issues, input.force);
 
   const localObjectName = AT4DX_BINDING_LOCAL_OBJECT_NAMES[input.bindingType];
-  const xml = buildBindingXml(
-    {
-      bindingType: input.bindingType,
-      key: merged.key,
-      keyField: merged.keyField,
-      to: merged.to,
-      priority: merged.priority,
-      sequence: merged.sequence,
-    },
-    { label: merged.label },
-  );
+
+  let xml: string;
+  if (scan.isLocal) {
+    const existingXml = await fs.readFile(existing.filePath!, 'utf-8');
+    try {
+      xml = patchBindingXml(existingXml, existing, merged, { label: merged.label });
+    } catch (err) {
+      if (!(err instanceof UnpatchableValueShapeError)) {
+        throw err;
+      }
+      xml = buildBindingXml(merged, { label: merged.label });
+    }
+  } else {
+    xml = buildBindingXml(merged, { label: merged.label });
+  }
 
   return writeAndDeploy({
     developerName: input.developerName,

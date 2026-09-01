@@ -19,7 +19,7 @@ import os from 'node:os';
 import path from 'node:path';
 import type { Connection } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
-import { buildFieldSetInclusionXml } from './at4dxFieldSetInclusionBuildXml.js';
+import { buildFieldSetInclusionXml, patchFieldSetInclusionXml } from './at4dxFieldSetInclusionBuildXml.js';
 import {
   FIELD_SET_INCLUSION_LOCAL_OBJECT_NAME,
   FieldSetInclusionWriteError,
@@ -38,6 +38,7 @@ import { deployMetadataFile } from './at4dxDomainProcessDeploy.js';
 import { scanLocalFieldSetInclusions } from './at4dxFieldSetInclusionLocalScan.js';
 import { scanOrgFieldSetInclusions } from './at4dxFieldSetInclusionOrgScan.js';
 import { validateFieldSetInclusions } from './at4dxFieldSetInclusionResolve.js';
+import { UnpatchableValueShapeError } from './customMetadataXml.js';
 
 const DEVELOPER_NAME_PATTERN = /^[A-Za-z][A-Za-z0-9_]*$/;
 const DEFAULT_WAIT = Duration.minutes(33);
@@ -354,7 +355,20 @@ export async function updateFieldSetInclusion(
   });
   checkValidation(issues, input.force);
 
-  const xml = buildFieldSetInclusionXml(merged, { label: merged.label });
+  let xml: string;
+  if (scan.isLocal) {
+    const existingXml = await fs.readFile(existing.filePath!, 'utf-8');
+    try {
+      xml = patchFieldSetInclusionXml(existingXml, existing, merged, { label: merged.label });
+    } catch (err) {
+      if (!(err instanceof UnpatchableValueShapeError)) {
+        throw err;
+      }
+      xml = buildFieldSetInclusionXml(merged, { label: merged.label });
+    }
+  } else {
+    xml = buildFieldSetInclusionXml(merged, { label: merged.label });
+  }
 
   return writeAndDeploy({
     developerName: input.developerName,

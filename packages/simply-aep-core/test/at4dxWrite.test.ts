@@ -391,6 +391,87 @@ describe('updateBinding', () => {
       updateBinding({ bindingType: 'Selector', developerName: 'Anything', priority: 1 }, { sourceDirs: [tmpDir] }),
     ).rejects.toThrow(expect.objectContaining({ code: 'at4dx-not-detected' }) as Error);
   });
+
+  it("preserves an existing local file's shape (field order, indentation, comment) when only one field changes", async () => {
+    const customMetadataDir = path.join(tmpDir, 'customMetadata');
+    await fsp.mkdir(customMetadataDir, { recursive: true });
+    const filePath = path.join(customMetadataDir, 'ApplicationFactory_SelectorBinding.Account_Selector.md-meta.xml');
+    const existingXml = `<?xml version="1.0" encoding="UTF-8"?>
+<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <label>Account Selector</label>
+    <protected>false</protected>
+    <!-- hand-authored, non-canonical field order and indentation -->
+    <values>
+        <field>To__c</field>
+        <value xsi:type="xsd:string">AccountsSelector</value>
+    </values>
+    <values>
+        <field>Priority__c</field>
+        <value xsi:type="xsd:double">1</value>
+    </values>
+    <values>
+        <field>BindingSObject__c</field>
+        <value xsi:type="xsd:string">Account</value>
+    </values>
+    <values>
+        <field>BindingSObjectAlternate__c</field>
+        <value xsi:nil="true"/>
+    </values>
+</CustomMetadata>
+`;
+    await fsp.writeFile(filePath, existingXml, 'utf-8');
+
+    const result = await updateBinding(
+      { bindingType: 'Selector', developerName: 'Account_Selector', priority: 5 },
+      { sourceDirs: [tmpDir] },
+    );
+
+    expect(result.issues).toEqual([]);
+    const writtenXml = await fsp.readFile(filePath, 'utf-8');
+    expect(writtenXml).toBe(
+      existingXml.replace('<value xsi:type="xsd:double">1</value>', '<value xsi:type="xsd:double">5</value>'),
+    );
+  });
+
+  it('falls back to full-document generation for a file whose <value> element is in an unrecognized shape', async () => {
+    const customMetadataDir = path.join(tmpDir, 'customMetadata');
+    await fsp.mkdir(customMetadataDir, { recursive: true });
+    const filePath = path.join(customMetadataDir, 'ApplicationFactory_SelectorBinding.Account_Selector.md-meta.xml');
+    const existingXml = `<?xml version="1.0" encoding="UTF-8"?>
+<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <label>Account Selector</label>
+  <protected>false</protected>
+  <values>
+    <field>To__c</field>
+    <!-- not a <value> element at all -->
+  </values>
+  <values>
+    <field>Priority__c</field>
+    <value xsi:type="xsd:double">1</value>
+  </values>
+  <values>
+    <field>BindingSObject__c</field>
+    <value xsi:type="xsd:string">Account</value>
+  </values>
+  <values>
+    <field>BindingSObjectAlternate__c</field>
+    <value xsi:nil="true"/>
+  </values>
+</CustomMetadata>
+`;
+    await fsp.writeFile(filePath, existingXml, 'utf-8');
+
+    // Changes `to` specifically — the field whose <value> element is the unrecognized one, so this
+    // update can only succeed by falling back to full-document generation.
+    const result = await updateBinding(
+      { bindingType: 'Selector', developerName: 'Account_Selector', to: 'NewAccountsSelector' },
+      { sourceDirs: [tmpDir] },
+    );
+
+    expect(result.issues).toEqual([]);
+    const { records } = scanLocalBindings([tmpDir], ['Selector']);
+    expect(records[0]).toMatchObject({ key: 'Account', to: 'NewAccountsSelector', priority: 1 });
+  });
 });
 
 describe('org-connected create/update', () => {

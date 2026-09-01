@@ -15,33 +15,33 @@
  */
 
 import type { RawBindingRecord, WritableBindingType } from './at4dxBindingTypes.js';
-import { buildCustomMetadataXml, buildValuesXml, type CustomMetadataValueInput } from './customMetadataXml.js';
+import {
+  buildCustomMetadataXml,
+  buildValuesXml,
+  diffValueEntries,
+  patchCustomMetadataXml,
+  type CustomMetadataValueInput,
+} from './customMetadataXml.js';
 
 export type BindingXmlFields = Pick<RawBindingRecord, 'key' | 'keyField' | 'to' | 'priority' | 'sequence'> & {
   bindingType: WritableBindingType;
 };
 
 /**
- * Builds a full `.md-meta.xml` document for an Application Factory binding record — the write-side
- * counterpart to `scanLocalBindings`'s parsing, byte-shape-compatible with it (a re-scan of this output
- * reproduces `record`). Branches on `bindingType` for which fields exist at all: Service has
+ * The `<values>` entries for a binding record — the single source of truth `buildBindingXml`
+ * (a full document) and `patchBindingXml` (an in-place patch) both build on, so they can never
+ * disagree on field order/type. Branches on `bindingType` for which fields exist at all: Service has
  * `BindingInterface__c` and no SObject reference; Selector has both SObject-reference fields and
  * `Priority__c`; Domain has both SObject-reference fields but no `Priority__c`; UnitOfWork has both
  * SObject-reference fields and `BindingSequence__c`, but no `To__c`/`Priority__c` at all — see
  * docs/design/0017-at4dx-binding-unit-of-work-write-support.md for the confirmed schema.
  *
- * Like `buildDomainProcessBindingXml`, always writes both `BindingSObject__c` and
+ * Like `domainProcessBindingValueEntries`, always includes both `BindingSObject__c` and
  * `BindingSObjectAlternate__c` for Selector/Domain/UnitOfWork — exactly one populated per
  * `record.keyField`, the other explicitly `xsi:nil`, so a re-scan never sees both fields set (which
- * `validateBindings` flags as `ambiguous-sobject-reference`). `DeveloperName` isn't part of the body —
- * it's carried by the file name (`<LocalObjectName>.<DeveloperName>.md-meta.xml`), not this function's
- * concern.
- *
- * @param record - The field values to serialize.
- * @param meta - Presentation-only metadata not read back by any scanner.
- * @returns The full XML document text, ready to write to a `.md-meta.xml` file.
+ * `validateBindings` flags as `ambiguous-sobject-reference`).
  */
-export function buildBindingXml(record: BindingXmlFields, meta: { label: string }): string {
+export function bindingValueEntries(record: BindingXmlFields): CustomMetadataValueInput[] {
   const entries: CustomMetadataValueInput[] = [];
 
   if (record.bindingType === 'Service') {
@@ -71,5 +71,45 @@ export function buildBindingXml(record: BindingXmlFields, meta: { label: string 
     }
   }
 
-  return buildCustomMetadataXml(meta.label, buildValuesXml(entries));
+  return entries;
+}
+
+/**
+ * Builds a full `.md-meta.xml` document for an Application Factory binding record — the write-side
+ * counterpart to `scanLocalBindings`'s parsing, byte-shape-compatible with it (a re-scan of this
+ * output reproduces `record`). `DeveloperName` isn't part of the body — it's carried by the file name
+ * (`<LocalObjectName>.<DeveloperName>.md-meta.xml`), not this function's concern. Used by
+ * `createBinding`, and by `updateBinding` when there's no existing local file to preserve the shape
+ * of (an org-only update) — see `patchBindingXml` for the local-file case.
+ *
+ * @param record - The field values to serialize.
+ * @param meta - Presentation-only metadata not read back by any scanner.
+ * @returns The full XML document text, ready to write to a `.md-meta.xml` file.
+ */
+export function buildBindingXml(record: BindingXmlFields, meta: { label: string }): string {
+  return buildCustomMetadataXml(meta.label, buildValuesXml(bindingValueEntries(record)));
+}
+
+/**
+ * Patches an existing binding `.md-meta.xml` document in place: only the fields that actually
+ * changed between `existing` and `merged` get their `<values>` entry touched, and `<label>` only if
+ * it changed — every other byte (untouched fields' exact markup, field order, indentation, comments)
+ * passes through unmodified. `updateBinding`'s local-file write path — see
+ * docs/design/0022-at4dx-update-xml-shape-preservation.md.
+ *
+ * @param existingXml - The file's current contents.
+ * @param existing - The record as scanned, before this update's changes.
+ * @param merged - The record after this update's changes are merged in.
+ * @param meta - Presentation-only metadata not read back by any scanner.
+ * @returns The patched document text.
+ * @throws {UnpatchableValueShapeError} See `patchCustomMetadataXml`.
+ */
+export function patchBindingXml(
+  existingXml: string,
+  existing: BindingXmlFields,
+  merged: BindingXmlFields,
+  meta: { label: string },
+): string {
+  const changedEntries = diffValueEntries(bindingValueEntries(existing), bindingValueEntries(merged));
+  return patchCustomMetadataXml(existingXml, meta.label, changedEntries);
 }
