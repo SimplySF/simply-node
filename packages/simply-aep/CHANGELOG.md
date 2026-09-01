@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.14.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-aep%400.13.0...%40simplysf%2Fsimply-aep%400.14.0) (2026-09-01)
+
+### Features
+
+- **simply-aep:** add AT4DX platform-event-subscription create/update (Stage 3) ([19e3c39](https://github.com/SimplySF/simply-node/commit/19e3c39b93bf1676dfc6f1631cfcf3e8d2035472))
+
 # [0.13.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-aep%400.12.0...%40simplysf%2Fsimply-aep%400.13.0) (2026-09-01)
 
 ### Features
