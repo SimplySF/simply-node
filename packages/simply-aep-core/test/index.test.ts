@@ -75,9 +75,13 @@ it('exports the expected set of runtime values', () => {
       'PLATFORM_EVENT_SUBSCRIPTION_OBJECT',
       'PLATFORM_EVENT_SUBSCRIPTION_LOCAL_OBJECT_NAME',
       'PLATFORM_EVENT_SUBSCRIPTION_RULES',
+      'PlatformEventSubscriptionWriteError',
+      'buildPlatformEventSubscriptionXml',
       'scanLocalPlatformEventSubscriptions',
       'scanOrgPlatformEventSubscriptions',
       'validatePlatformEventSubscriptions',
+      'createPlatformEventSubscription',
+      'updatePlatformEventSubscription',
     ].sort(),
   );
 });

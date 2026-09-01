@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+import type { Connection } from '@salesforce/core';
+import type { Duration } from '@salesforce/kit';
+
 /** The Custom Metadata Type API name AT4DX's Platform Event Distributor stores subscriptions in. */
 export const PLATFORM_EVENT_SUBSCRIPTION_OBJECT = 'PlatformEvents_Subscription__mdt';
 
@@ -194,3 +197,89 @@ export type At4dxPlatformEventSubscriptionValidateResult = {
   recordCount: number;
   issues: PlatformEventSubscriptionIssue[];
 };
+
+/** The fields `createPlatformEventSubscription`/`updatePlatformEventSubscription` accept, shared between create's full-record shape and update's partial one. */
+export type PlatformEventSubscriptionFieldsInput = {
+  label?: string;
+  eventBus?: string;
+  consumer?: string;
+  eventCategory?: string;
+  event?: string;
+  matcherRule?: MatcherRule;
+  isActive?: boolean;
+  executeSynchronous?: boolean;
+};
+
+/** Where a write reads its validation context from and, when writing locally, where the file goes. Exactly one of `sourceDir`/`connection` is required; both may be given. */
+export type CreatePlatformEventSubscriptionTarget = {
+  /** The package directory `customMetadata/PlatformEvents_Subscription.<name>.md-meta.xml` is created under. */
+  sourceDir?: string;
+  connection?: Connection;
+  /** Deploy poll timeout. Only meaningful when `connection` is given. */
+  wait?: Duration;
+};
+
+/** Same shape as `CreatePlatformEventSubscriptionTarget`, but `sourceDirs` is a search scope (one or more roots) rather than a single destination, since `update` locates an existing file instead of choosing where to create one. */
+export type UpdatePlatformEventSubscriptionTarget = {
+  sourceDirs?: string[];
+  connection?: Connection;
+  wait?: Duration;
+};
+
+export type CreatePlatformEventSubscriptionInput = PlatformEventSubscriptionFieldsInput & {
+  developerName: string;
+  eventBus: string;
+  consumer: string;
+  matcherRule: MatcherRule;
+  /** Write/deploy even if validation finds an `error`-severity issue. The issue still appears in the result. */
+  force?: boolean;
+};
+
+export type UpdatePlatformEventSubscriptionInput = PlatformEventSubscriptionFieldsInput & {
+  developerName: string;
+  force?: boolean;
+};
+
+/** The error conditions `createPlatformEventSubscription`/`updatePlatformEventSubscription` signal structurally (via `code`) rather than by message text, so a `Messages`-based caller (the CLI) can map each one to its own error key without string-matching. Errors outside this list (a scan/deploy I/O failure) are rethrown as the underlying error. Same code list as `FieldSetInclusionWriteErrorCode` — see docs/design/0025's Behavior section. */
+export type PlatformEventSubscriptionWriteErrorCode =
+  | 'source-or-target-required'
+  | 'invalid-developer-name'
+  | 'label-too-long'
+  | 'developer-name-already-exists'
+  | 'developer-name-not-found'
+  | 'no-fields-to-update'
+  | 'at4dx-not-detected'
+  | 'validation-failed'
+  | 'deploy-failed';
+
+export class PlatformEventSubscriptionWriteError extends Error {
+  public readonly code: PlatformEventSubscriptionWriteErrorCode;
+  /** Populated only for `code: 'validation-failed'` — the blocking issues, so a caller can display them without re-running validation. Can carry `matcher-rule-missing-field`, catching the common authoring mistake at write time. */
+  public readonly issues?: PlatformEventSubscriptionIssue[];
+
+  public constructor(
+    code: PlatformEventSubscriptionWriteErrorCode,
+    message: string,
+    issues?: PlatformEventSubscriptionIssue[],
+  ) {
+    super(message);
+    this.name = 'PlatformEventSubscriptionWriteError';
+    this.code = code;
+    this.issues = issues;
+  }
+}
+
+export type At4dxPlatformEventSubscriptionWriteResult = {
+  developerName: string;
+  eventBus: string;
+  consumer: string;
+  /** Absent when written only to a temp directory for a `connection`-only (org-direct) run. */
+  filePath?: string;
+  /** Absent when no `connection` was given. */
+  deploy?: { id: string; status: string; success: boolean };
+  /** The full validation result, even when `force` was used to write past a blocking issue. */
+  issues: PlatformEventSubscriptionIssue[];
+};
+
+export type At4dxPlatformEventSubscriptionCreateResult = At4dxPlatformEventSubscriptionWriteResult;
+export type At4dxPlatformEventSubscriptionUpdateResult = At4dxPlatformEventSubscriptionWriteResult;

@@ -219,7 +219,23 @@ names; see the code comment in `at4dxPlatformEventSubscriptionTypes.ts`.
 from the shared rule-evaluation helper this stage introduces, so there is one implementation of the
 distributor's logic rather than two.
 
-**Stage 3 — write.** `BuildXml`, `Write`, `create`/`update` commands, `PlatformEventSubscriptionWriteError`.
+**Stage 3 — write. Landed.** `BuildXml`, `Write`, `create`/`update` commands,
+`PlatformEventSubscriptionWriteError`. Mirrors `field-set-inclusion`'s write path exactly: same error
+code list (`source-or-target-required`, `invalid-developer-name`, `label-too-long`,
+`developer-name-already-exists`, `developer-name-not-found`, `no-fields-to-update`, `at4dx-not-detected`,
+`validation-failed`, `deploy-failed`), same `writeAndDeploy` shape, same
+create-writes-full-document/update-patches-in-place split via `patchPlatformEventSubscriptionXml`. As
+this doc's Behavior section anticipated: `validation-failed` on `create`/`update` can carry
+`matcher-rule-missing-field` (in addition to the family's other five rules), and `update` treats
+`Consumer__c` as an ordinary value change — `DeveloperName`, unchangeable by this command, remains the
+actual key.
+
+`createPlatformEventSubscription`/`updatePlatformEventSubscription` call `validatePlatformEventSubscriptions`
+without an `eventBusFields` argument, same as `list`/`validate`/`simulate` — `non-conforming-event-bus`
+stays silent on every write, too, until the deferred local/org field-list lookup (see Stage 1's note
+above) lands. `At4dxPlatformEventSubscriptionWriteResult` carries both `eventBus` and `consumer` (unlike
+`field-set-inclusion`'s single `sobject`), since neither field alone identifies the record the way
+`sobject`/`bindingType` do for the other two write-capable families.
 
 File-by-file mechanics, full type sketches, the rule table's exact display copy, and message
 templates aren't specified at that level of detail in this doc (see the caveat at the top) — the

@@ -144,14 +144,16 @@ export { scanOrgFieldSetInclusions, type FieldSetInclusionOrgScanResult } from '
 export { validateFieldSetInclusions } from './at4dxFieldSetInclusionResolve.js';
 export { createFieldSetInclusion, updateFieldSetInclusion } from './at4dxFieldSetInclusionWrite.js';
 
-// AT4DX Platform Event Subscription (docs/design/0025) — Stage 1 (read) only: Types, LocalScan,
-// OrgScan, and validatePlatformEventSubscriptions. The simulator (resolvePlatformEventDistribution,
-// Stage 2) and write path (Stage 3) land in follow-up doc updates/PRs — see 0025's Implementation plan.
+// AT4DX Platform Event Subscription (docs/design/0025) — Stage 1 (read): Types, LocalScan, OrgScan,
+// and validatePlatformEventSubscriptions. Stage 3 (write) lands here too: BuildXml, Write, and the
+// CreatePlatformEventSubscription*/UpdatePlatformEventSubscription* types. The simulator
+// (resolvePlatformEventDistribution, Stage 2) lands in a separate PR — see 0025's Implementation plan.
 export {
   ALL_MATCHER_RULES,
   PLATFORM_EVENT_SUBSCRIPTION_OBJECT,
   PLATFORM_EVENT_SUBSCRIPTION_LOCAL_OBJECT_NAME,
   PLATFORM_EVENT_SUBSCRIPTION_RULES,
+  PlatformEventSubscriptionWriteError,
   type MatcherRule,
   type RawPlatformEventSubscriptionRecord,
   type MalformedPlatformEventSubscriptionRecord,
@@ -160,9 +162,22 @@ export {
   type PlatformEventSubscriptionIssueScope,
   type PlatformEventSubscriptionIssueSeverity,
   type PlatformEventSubscriptionRuleInfo,
+  type PlatformEventSubscriptionFieldsInput,
+  type CreatePlatformEventSubscriptionInput,
+  type CreatePlatformEventSubscriptionTarget,
+  type UpdatePlatformEventSubscriptionInput,
+  type UpdatePlatformEventSubscriptionTarget,
+  type PlatformEventSubscriptionWriteErrorCode,
   type At4dxPlatformEventSubscriptionListResult,
   type At4dxPlatformEventSubscriptionValidateResult,
+  type At4dxPlatformEventSubscriptionWriteResult,
+  type At4dxPlatformEventSubscriptionCreateResult,
+  type At4dxPlatformEventSubscriptionUpdateResult,
 } from './at4dxPlatformEventSubscriptionTypes.js';
+export {
+  buildPlatformEventSubscriptionXml,
+  type PlatformEventSubscriptionXmlFields,
+} from './at4dxPlatformEventSubscriptionBuildXml.js';
 export {
   scanLocalPlatformEventSubscriptions,
   type PlatformEventSubscriptionLocalScanResult,
@@ -172,3 +187,7 @@ export {
   type PlatformEventSubscriptionOrgScanResult,
 } from './at4dxPlatformEventSubscriptionOrgScan.js';
 export { validatePlatformEventSubscriptions, type EventBusFields } from './at4dxPlatformEventSubscriptionResolve.js';
+export {
+  createPlatformEventSubscription,
+  updatePlatformEventSubscription,
+} from './at4dxPlatformEventSubscriptionWrite.js';
