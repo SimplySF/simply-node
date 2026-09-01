@@ -1,6 +1,6 @@
 # 0024 — `simply apex test-suite generate`
 
-**Status:** Draft
+**Status:** Implemented (PR #162)
 **Package:** `packages/simply-apex-core`, `packages/simply-apex`
 **Date:** 2026-09-01
 
