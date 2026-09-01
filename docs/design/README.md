@@ -58,6 +58,7 @@ refactors that keep the public surface identical (though a short doc is welcome 
 | [0020](0020-simply-document-core.md)                                 | Splitting `simply-document-core` out of `simply-document`                     | Implemented           |
 | [0021](0021-package-version-cleanup-multi-selector.md)               | `package version cleanup`: `--selector`/`--selector-exclude`, multiple values | Implemented           |
 | [0022](0022-at4dx-update-xml-shape-preservation.md)                  | AT4DX `update` commands preserve existing `.md-meta.xml` shape                | Implemented           |
+| [0023](0023-simply-apex-core.md)                                     | Splitting `simply-apex-core` out of `simply-apex`                             | Draft                 |
 
 ## Template
 
