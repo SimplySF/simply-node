@@ -107,7 +107,7 @@ importers:
         specifier: workspace:^0.11.3
         version: link:../simply-aep
       '@simplysf/simply-apex':
-        specifier: workspace:^1.8.0
+        specifier: workspace:^1.8.2
         version: link:../simply-apex
       '@simplysf/simply-community':
         specifier: workspace:^0.6.5
@@ -215,7 +215,7 @@ importers:
         specifier: ^12.2.16
         version: 12.2.28(@types/node@26.4.0)
       '@simplysf/simply-apex-core':
-        specifier: workspace:^0.3.0
+        specifier: workspace:^0.3.2
         version: link:../simply-apex-core
       '@simplysf/simply-core':
         specifier: workspace:^1.5.1

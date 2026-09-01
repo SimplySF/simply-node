@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.3.2](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-apex-core%400.3.1...%40simplysf%2Fsimply-apex-core%400.3.2) (2026-09-01)
+
+### Bug Fixes
+
+- restore workspace link for simply-core in simply-apex-core ([c476511](https://github.com/SimplySF/simply-node/commit/c47651177ab8e6928ed6f0ec7ee56d9c20ee340f))
+
+## [0.3.1](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-apex-core%400.3.0...%40simplysf%2Fsimply-apex-core%400.3.1) (2026-09-01)
+
+### Bug Fixes
+
+- remove workspace link ([af23b8f](https://github.com/SimplySF/simply-node/commit/af23b8f183ec9678fc5e2bcfe68ce652d6740f67))
+
 # [0.3.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-apex-core%400.2.0...%40simplysf%2Fsimply-apex-core%400.3.0) (2026-09-01)
 
 ### Features

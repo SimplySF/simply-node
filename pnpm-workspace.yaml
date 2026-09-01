@@ -4,7 +4,7 @@ packages:
 onlyBuiltDependencies:
   - nx
 minimumReleaseAgeExclude:
-  - '@simplysf/simply-core@1.1.1'
+  - '@simplysf/simply-core@1.1.1 || 1.5.1'
   - '@simplysf/simply-data@2.3.4'
   - '@simplysf/simply-package@2.5.4'
   - eslint@10.9.0
