@@ -213,6 +213,14 @@
   },
   {
     "alias": [],
+    "command": "simply:aep:at4dx:platform-event-subscription:simulate",
+    "flagAliases": [],
+    "flagChars": ["d", "o"],
+    "flags": ["api-version", "category", "event-bus", "event-name", "flags-dir", "json", "source-dir", "target-org"],
+    "plugin": "@simplysf/simply-aep"
+  },
+  {
+    "alias": [],
     "command": "simply:aep:at4dx:platform-event-subscription:validate",
     "flagAliases": [],
     "flagChars": ["d", "o"],

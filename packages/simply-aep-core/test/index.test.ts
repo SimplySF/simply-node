@@ -77,6 +77,7 @@ it('exports the expected set of runtime values', () => {
       'PLATFORM_EVENT_SUBSCRIPTION_RULES',
       'scanLocalPlatformEventSubscriptions',
       'scanOrgPlatformEventSubscriptions',
+      'resolvePlatformEventDistribution',
       'validatePlatformEventSubscriptions',
     ].sort(),
   );
