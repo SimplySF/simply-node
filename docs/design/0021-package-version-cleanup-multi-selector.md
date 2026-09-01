@@ -1,6 +1,6 @@
 # 0021 — `package version cleanup`: `--selector`/`--selector-exclude`, multiple values
 
-**Status:** Draft
+**Status:** Implemented (PR #157)
 **Package:** `packages/simply-package`
 **Date:** 2026-09-01
 

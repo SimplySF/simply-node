@@ -56,7 +56,7 @@ refactors that keep the public surface identical (though a short doc is welcome 
 | [0018](0018-domain-process-binding-set-rename-to-update.md)          | Rename `domain-process-binding set` to `update`                               | Implemented           |
 | [0019](0019-plugin-core-library-extraction.md)                       | Extracting `-core` library packages from the other `simply-*` plugins         | Draft                 |
 | [0020](0020-simply-document-core.md)                                 | Splitting `simply-document-core` out of `simply-document`                     | Implemented           |
-| [0021](0021-package-version-cleanup-multi-selector.md)               | `package version cleanup`: `--selector`/`--selector-exclude`, multiple values | Draft                 |
+| [0021](0021-package-version-cleanup-multi-selector.md)               | `package version cleanup`: `--selector`/`--selector-exclude`, multiple values | Implemented           |
 
 ## Template
 
