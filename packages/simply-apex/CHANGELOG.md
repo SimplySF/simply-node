@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.7.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-apex%401.6.10...%40simplysf%2Fsimply-apex%401.7.0) (2026-09-01)
+
+### Features
+
+- **simply-apex-core:** split simply-apex-core out of simply-apex ([8a8a530](https://github.com/SimplySF/simply-node/commit/8a8a530659d6a6158c7157f3472751919613e713))
+
 ## [1.6.10](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-apex%401.6.9...%40simplysf%2Fsimply-apex%401.6.10) (2026-09-01)
 
 **Note:** Version bump only for package @simplysf/simply-apex
