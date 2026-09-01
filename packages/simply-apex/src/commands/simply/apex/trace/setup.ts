@@ -16,7 +16,6 @@
 
 import { Messages } from '@salesforce/core';
 import { Flags, SfCommand } from '@salesforce/sf-plugins-core';
-import { requireConnection, targetOrgFlags } from '@simplysf/simply-plugin-kit';
 import {
   ApexTraceSetupError,
   DATE_TIME_PATTERN,
@@ -24,12 +23,13 @@ import {
   setupApexTrace,
   type ApexTraceSetupResult,
   type OnBehalfOf,
-} from '../../../../common/apexTraceSetup.js';
+} from '@simplysf/simply-apex-core';
+import { requireConnection, targetOrgFlags } from '@simplysf/simply-plugin-kit';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('@simplysf/simply-apex', 'simply.apex.trace.setup');
 
-export type { ApexTraceSetupResult } from '../../../../common/apexTraceSetup.js';
+export type { ApexTraceSetupResult } from '@simplysf/simply-apex-core';
 
 /** Maps `ApexTraceSetupError`'s structural codes to this command's own `Messages` catalog. */
 function toCliError(error: ApexTraceSetupError): Error {

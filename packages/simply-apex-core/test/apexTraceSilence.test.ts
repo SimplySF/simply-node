@@ -24,7 +24,7 @@ import {
   FFLIB_CLASSES,
   FORCE_DI_CLASSES,
   resolveClasses,
-} from '../../src/common/apexTraceSilence.js';
+} from '../src/apexTraceSilence.js';
 
 describe('resolveClasses', () => {
   let tmpFile: string | undefined;

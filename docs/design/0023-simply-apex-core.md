@@ -1,6 +1,6 @@
 # 0023 — Splitting `simply-apex-core` out of `simply-apex`
 
-**Status:** Draft
+**Status:** Implemented (PR #161)
 **Package:** new `packages/simply-apex-core`; `packages/simply-apex` (CLI, slimmed)
 **Date:** 2026-09-01
 

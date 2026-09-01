@@ -65,16 +65,16 @@
   },
   "dependencies": {
     "@oclif/core": "^4.11.2",
-    "@salesforce/apex-node": "^8.4.39",
     "@salesforce/core": "^8.30.0",
     "@salesforce/kit": "^3.2.6",
     "@salesforce/sf-plugins-core": "^12.2.16",
+    "@simplysf/simply-apex-core": "workspace:^0.1.0",
     "@simplysf/simply-core": "workspace:^1.5.1",
-    "@simplysf/simply-plugin-kit": "workspace:^1.0.4",
-    "zod": "^4.1.12"
+    "@simplysf/simply-plugin-kit": "workspace:^1.0.4"
   },
   "devDependencies": {
     "@oclif/plugin-command-snapshot": "^5.4.0",
+    "@salesforce/apex-node": "^8.4.39",
     "@salesforce/plugin-command-reference": "^3.1.99",
     "@vitest/coverage-v8": "^4.1.10",
     "vitest": "^4.1.10"

@@ -14,7 +14,7 @@ Thanks for your interest in contributing to Simply! This document covers the rep
 
 ## Repository Structure
 
-This repository is a Lerna monorepo containing thirteen Salesforce CLI plugins, plus five internal libraries. Every package has its own `CONTRIBUTING.md` covering what's specific to it — read this file first, then that one.
+This repository is a Lerna monorepo containing thirteen Salesforce CLI plugins, plus six internal libraries. Every package has its own `CONTRIBUTING.md` covering what's specific to it — read this file first, then that one.
 
 | Package                                                           | Description                                                                                                                                              | Bundled into `simply`?    |
 | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
@@ -36,6 +36,7 @@ This repository is a Lerna monorepo containing thirteen Salesforce CLI plugins, 
 | [`@simplysf/simply-report`](packages/simply-report)               | Shared HTML report scaffolding — not a CLI plugin                                                                                                        | —                         |
 | [`@simplysf/simply-aep-core`](packages/simply-aep-core)           | AT4DX binding scan/resolve library — not a CLI plugin, and unlike the three libraries above, meant for direct use outside this monorepo too              | —                         |
 | [`@simplysf/simply-document-core`](packages/simply-document-core) | Change report/technical design document rendering library — not a CLI plugin, and like `simply-aep-core`, meant for direct use outside this monorepo too | —                         |
+| [`@simplysf/simply-apex-core`](packages/simply-apex-core)         | Apex execute/log-purge/trace-flag library — not a CLI plugin, and like `simply-aep-core`, meant for direct use outside this monorepo too                 | —                         |
 
 The "bundled" column matters when you change a flag: see [Pull Requests](#pull-requests) below.
 

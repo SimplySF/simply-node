@@ -15,7 +15,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { DATE_TIME_PATTERN, parseOnBehalfOf } from '../../src/common/apexTraceSetup.js';
+import { DATE_TIME_PATTERN, parseOnBehalfOf } from '../src/apexTraceSetup.js';
 
 describe('parseOnBehalfOf', () => {
   it('parses a Field:Value pair', () => {
