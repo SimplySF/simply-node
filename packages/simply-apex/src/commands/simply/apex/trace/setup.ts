@@ -17,33 +17,37 @@
 import { Messages } from '@salesforce/core';
 import { Flags, SfCommand } from '@salesforce/sf-plugins-core';
 import { requireConnection, targetOrgFlags } from '@simplysf/simply-plugin-kit';
-import { escapeSoqlLiteral } from '@simplysf/simply-core';
+import {
+  ApexTraceSetupError,
+  DATE_TIME_PATTERN,
+  parseOnBehalfOf,
+  setupApexTrace,
+  type ApexTraceSetupResult,
+  type OnBehalfOf,
+} from '../../../../common/apexTraceSetup.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('@simplysf/simply-apex', 'simply.apex.trace.setup');
 
-/** DeveloperName used for the FINEST/FINER debug level created for the Apex Replay Debugger. */
-const DEBUG_LEVEL_NAME = 'ReplayDebuggerLevels';
-/** How long a configured trace flag stays active before expiring, in milliseconds (24 hours). */
-const TRACE_DURATION_MS = 24 * 60 * 60 * 1000;
-/** Matches the ISO 8601 date-time format required by the `--start-date`/`--end-date` flags. */
-const DATE_TIME_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
-/**
- * Matches `Field:Value` for `--on-behalf-of`. The field name is restricted to safe SOQL
- * identifier characters since, unlike the value, it can't be quoted/escaped in the query.
- */
-const ON_BEHALF_OF_PATTERN = /^([A-Za-z_][A-Za-z0-9_]*):(.+)$/;
+export type { ApexTraceSetupResult } from '../../../../common/apexTraceSetup.js';
 
-/** A `Field:Value` pair identifying the user to configure the trace flag for. */
-type OnBehalfOf = { field: string; value: string };
-
-/** IDs of the debug level and trace flag configured for the target user, and when it expires. */
-export type ApexTraceSetupResult = {
-  userId: string;
-  debugLevelId: string;
-  traceFlagId: string;
-  expirationDate: string;
-};
+/** Maps `ApexTraceSetupError`'s structural codes to this command's own `Messages` catalog. */
+function toCliError(error: ApexTraceSetupError): Error {
+  switch (error.code) {
+    case 'user-not-found':
+      return messages.createError('error.userNotFound', error.args);
+    case 'ambiguous-on-behalf-of':
+      return messages.createError('error.ambiguousOnBehalfOf', error.args);
+    case 'debug-level-not-found':
+      return messages.createError('error.debugLevelNotFound', error.args);
+    case 'debug-level-create-failed':
+      return messages.createError('error.debugLevelCreateFailed', error.args);
+    case 'trace-flag-create-failed':
+      return messages.createError('error.traceFlagCreateFailed', error.args);
+    case 'invalid-date-range':
+      return messages.createError('error.invalidDateRange', error.args);
+  }
+}
 
 /**
  * Creates or updates a DEVELOPER_LOG trace flag for the target user. The target user is the one
@@ -63,14 +67,13 @@ export default class ApexTraceSetup extends SfCommand<ApexTraceSetupResult> {
     'on-behalf-of': Flags.custom<OnBehalfOf>({
       // eslint-disable-next-line @typescript-eslint/require-await
       parse: async (input) => {
-        const match = ON_BEHALF_OF_PATTERN.exec(input);
+        const onBehalfOf = parseOnBehalfOf(input);
 
-        if (!match) {
+        if (!onBehalfOf) {
           throw messages.createError('error.invalidOnBehalfOf', [input]);
         }
 
-        const [, field, value] = match;
-        return { field, value };
+        return onBehalfOf;
       },
     })({
       summary: messages.getMessage('flags.on-behalf-of.summary'),
@@ -113,103 +116,40 @@ export default class ApexTraceSetup extends SfCommand<ApexTraceSetupResult> {
 
     const targetOrgConnection = requireConnection(flags);
 
-    const onBehalfOf = flags['on-behalf-of'];
-    const userFilterField = onBehalfOf?.field ?? 'Username';
-    const userFilterValue = onBehalfOf?.value ?? targetOrgConnection.getUsername() ?? '';
-    const userIdentifier = onBehalfOf ? `${onBehalfOf.field}:${onBehalfOf.value}` : userFilterValue;
-
-    this.spinner.start(messages.getMessage('info.findingUser'));
-    const userQueryResult = await targetOrgConnection.query<{ Id: string }>(
-      `SELECT Id FROM User WHERE ${userFilterField} = '${escapeSoqlLiteral(userFilterValue)}' LIMIT 2`,
-    );
-
-    if (userQueryResult.records.length === 0) {
-      throw messages.createError('error.userNotFound', [userIdentifier]);
-    }
-
-    if (userQueryResult.records.length > 1) {
-      throw messages.createError('error.ambiguousOnBehalfOf', [userIdentifier]);
-    }
-
-    const userId = userQueryResult.records[0].Id;
-    this.spinner.stop();
-
-    const requestedLogLevel = flags['log-level'];
-    const debugLevelName = requestedLogLevel ?? DEBUG_LEVEL_NAME;
-
-    this.spinner.start(messages.getMessage('info.checkingDebugLevel'));
-    const debugLevelResult = await targetOrgConnection.tooling.query<{ Id: string }>(
-      `SELECT Id FROM DebugLevel WHERE DeveloperName = '${debugLevelName}'`,
-    );
-
-    let debugLevelId: string;
-
-    if (debugLevelResult.records.length > 0) {
-      debugLevelId = debugLevelResult.records[0].Id;
-    } else if (requestedLogLevel) {
-      throw messages.createError('error.debugLevelNotFound', [debugLevelName]);
-    } else {
-      const createResult = await targetOrgConnection.tooling.sobject('DebugLevel').create({
-        DeveloperName: DEBUG_LEVEL_NAME,
-        MasterLabel: DEBUG_LEVEL_NAME,
-        ApexCode: 'FINEST',
-        Visualforce: 'FINER',
-      });
-
-      if (!createResult.success) {
-        throw messages.createError('error.debugLevelCreateFailed', [
-          createResult.errors.map((e) => e.message).join(', '),
-        ]);
-      }
-
-      debugLevelId = createResult.id;
+    let result: ApexTraceSetupResult;
+    try {
+      result = await setupApexTrace(
+        targetOrgConnection,
+        {
+          onBehalfOf: flags['on-behalf-of'],
+          logLevel: flags['log-level'],
+          startDate: flags['start-date'],
+          endDate: flags['end-date'],
+        },
+        (phase) => {
+          switch (phase) {
+            case 'finding-user':
+              this.spinner.start(messages.getMessage('info.findingUser'));
+              break;
+            case 'checking-debug-level':
+              this.spinner.stop();
+              this.spinner.start(messages.getMessage('info.checkingDebugLevel'));
+              break;
+            case 'configuring-trace-flag':
+              this.spinner.stop();
+              this.spinner.start(messages.getMessage('info.configuringTraceFlag'));
+              break;
+          }
+        },
+      );
+    } catch (error) {
+      this.spinner.stop();
+      throw error instanceof ApexTraceSetupError ? toCliError(error) : error;
     }
     this.spinner.stop();
 
-    this.spinner.start(messages.getMessage('info.configuringTraceFlag'));
-    const traceFlagResult = await targetOrgConnection.tooling.query<{ Id: string }>(
-      `SELECT Id FROM TraceFlag WHERE LogType = 'DEVELOPER_LOG' AND TracedEntityId = '${userId}'`,
-    );
+    this.info(messages.getMessage('info.complete', [result.expirationDate]));
 
-    const startDate = flags['start-date'] ?? new Date().toISOString();
-    const expirationDate =
-      flags['end-date'] ?? new Date(new Date(startDate).getTime() + TRACE_DURATION_MS).toISOString();
-
-    if (new Date(expirationDate).getTime() <= new Date(startDate).getTime()) {
-      throw messages.createError('error.invalidDateRange', [expirationDate, startDate]);
-    }
-
-    let traceFlagId: string;
-
-    if (traceFlagResult.records.length > 0) {
-      traceFlagId = traceFlagResult.records[0].Id;
-      await targetOrgConnection.tooling.sobject('TraceFlag').update({
-        Id: traceFlagId,
-        DebugLevelId: debugLevelId,
-        StartDate: startDate,
-        ExpirationDate: expirationDate,
-      });
-    } else {
-      const createResult = await targetOrgConnection.tooling.sobject('TraceFlag').create({
-        TracedEntityId: userId,
-        LogType: 'DEVELOPER_LOG',
-        DebugLevelId: debugLevelId,
-        StartDate: startDate,
-        ExpirationDate: expirationDate,
-      });
-
-      if (!createResult.success) {
-        throw messages.createError('error.traceFlagCreateFailed', [
-          createResult.errors.map((e) => e.message).join(', '),
-        ]);
-      }
-
-      traceFlagId = createResult.id;
-    }
-    this.spinner.stop();
-
-    this.info(messages.getMessage('info.complete', [expirationDate]));
-
-    return { userId, debugLevelId, traceFlagId, expirationDate };
+    return result;
   }
 }

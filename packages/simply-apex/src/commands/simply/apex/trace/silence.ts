@@ -17,83 +17,18 @@
 import { Messages } from '@salesforce/core';
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { requireConnection, targetOrgFlags } from '@simplysf/simply-plugin-kit';
-import { loadJsonConfigSync } from '@simplysf/simply-core';
-import { ClassesToSilenceSchema } from '../../../../schemas/silence/classesToSilence.js';
+import {
+  ApexTraceSilenceError,
+  resolveClasses,
+  silenceApexClasses,
+  type ApexTraceSilenceOutcome,
+  type ApexTraceSilenceResult,
+} from '../../../../common/apexTraceSilence.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('@simplysf/simply-apex', 'simply.apex.trace.silence');
 
-/** DeveloperName used for the fully-suppressed (NONE) debug level created for class silencing. */
-const DEBUG_LEVEL_NAME = 'Silence';
-/** How long a configured trace flag stays active before expiring, in milliseconds (24 hours). */
-const TRACE_DURATION_MS = 24 * 60 * 60 * 1000;
-
-/** Classes silenced by the `--fflib` flag. */
-const FFLIB_CLASSES = ['fflib_SObjectDescribe', 'fflib_SObjectDomain'];
-/** Classes silenced by the `--at4dx` flag. */
-const AT4DX_CLASSES = ['ApplicationSObjectDomain'];
-/** Classes silenced by the `--force-di` flag. */
-const FORCE_DI_CLASSES = ['di_Binding', 'di_Module', 'di_PlatformCache', 'di_Injector'];
-
-/** The trace flag created to silence debug logs for a single Apex class. */
-export type ApexTraceSilenceResult = {
-  class: string;
-  classId: string;
-  traceFlagId: string;
-};
-
-/**
- * Resolve the list of Apex class names to silence from the `--classes` flag (a comma-separated
- * list), the `--classes-file` flag (a JSON config file matching {@link ClassesToSilenceSchema}),
- * and the `--fflib`, `--at4dx`, and `--force-di` preset flags. All sources are combined and
- * deduplicated.
- *
- * @param classesFlag - The raw `--classes` flag value, if provided.
- * @param classesFileFlag - The raw `--classes-file` flag value, if provided.
- * @param presetFlags - Which of the built-in class presets were requested.
- * @returns The resolved, trimmed, deduplicated list of Apex class names.
- * @throws {SfError} If `--classes-file` was provided but fails schema validation.
- */
-function resolveClasses(
-  classesFlag: string | undefined,
-  classesFileFlag: string | undefined,
-  presetFlags: { fflib: boolean; at4dx: boolean; forceDi: boolean },
-): string[] {
-  const classes: string[] = [];
-
-  if (classesFlag) {
-    classes.push(
-      ...classesFlag
-        .split(',')
-        .map((className) => className.trim())
-        .filter(Boolean),
-    );
-  }
-
-  if (classesFileFlag) {
-    const parsed = loadJsonConfigSync(classesFileFlag, ClassesToSilenceSchema);
-
-    if (!parsed.success) {
-      throw messages.createError('error.invalidClassesFile', [parsed.message]);
-    }
-
-    classes.push(...parsed.data.classes);
-  }
-
-  if (presetFlags.fflib) {
-    classes.push(...FFLIB_CLASSES);
-  }
-
-  if (presetFlags.at4dx) {
-    classes.push(...AT4DX_CLASSES);
-  }
-
-  if (presetFlags.forceDi) {
-    classes.push(...FORCE_DI_CLASSES);
-  }
-
-  return [...new Set(classes)];
-}
+export type { ApexTraceSilenceResult } from '../../../../common/apexTraceSilence.js';
 
 /**
  * Creates or updates a 24-hour CLASS_TRACING trace flag with a fully suppressed (NONE) debug
@@ -148,143 +83,73 @@ export default class ApexTraceSilence extends SfCommand<ApexTraceSilenceResult[]
 
     const targetOrgConnection = requireConnection(flags);
 
-    const classes = resolveClasses(flags.classes, flags['classes-file'], {
-      fflib: flags.fflib,
-      at4dx: flags.at4dx,
-      forceDi: flags['force-di'],
-    });
+    const classNames = flags.classes
+      ? flags.classes
+          .split(',')
+          .map((className) => className.trim())
+          .filter(Boolean)
+      : [];
+
+    let classes: string[];
+    try {
+      classes = resolveClasses(classNames, flags['classes-file'], {
+        fflib: flags.fflib,
+        at4dx: flags.at4dx,
+        forceDi: flags['force-di'],
+      });
+    } catch (error) {
+      if (error instanceof ApexTraceSilenceError && error.code === 'invalid-classes-file') {
+        throw messages.createError('error.invalidClassesFile', [error.message]);
+      }
+      throw error;
+    }
 
     if (classes.length === 0) {
       throw messages.createError('error.noClassesSpecified');
     }
 
-    this.spinner.start(messages.getMessage('info.checkingDebugLevel'));
-    const debugLevelResult = await targetOrgConnection.tooling.query<{ Id: string }>(
-      `SELECT Id FROM DebugLevel WHERE DeveloperName = '${DEBUG_LEVEL_NAME}'`,
-    );
-
-    let debugLevelId: string;
-
-    if (debugLevelResult.records.length > 0) {
-      debugLevelId = debugLevelResult.records[0].Id;
-    } else {
-      const createResult = await targetOrgConnection.tooling.sobject('DebugLevel').create({
-        DeveloperName: DEBUG_LEVEL_NAME,
-        MasterLabel: DEBUG_LEVEL_NAME,
-        ApexCode: 'NONE',
-        ApexProfiling: 'NONE',
-        Callout: 'NONE',
-        Database: 'NONE',
-        System: 'NONE',
-        Validation: 'NONE',
-        Visualforce: 'NONE',
-        Workflow: 'NONE',
+    let outcome: ApexTraceSilenceOutcome;
+    try {
+      outcome = await silenceApexClasses(targetOrgConnection, classes, (phase) => {
+        switch (phase) {
+          case 'checking-debug-level':
+            this.spinner.start(messages.getMessage('info.checkingDebugLevel'));
+            break;
+          case 'finding-classes':
+            this.spinner.stop();
+            this.spinner.start(messages.getMessage('info.findingClasses'));
+            break;
+          case 'creating-trace-flags':
+            this.spinner.stop();
+            this.spinner.start(messages.getMessage('info.creatingTraceFlags'));
+            break;
+        }
       });
-
-      if (!createResult.success) {
-        throw messages.createError('error.debugLevelCreateFailed', [
-          createResult.errors.map((e) => e.message).join(', '),
-        ]);
+    } catch (error) {
+      this.spinner.stop();
+      if (error instanceof ApexTraceSilenceError && error.code === 'debug-level-create-failed') {
+        throw messages.createError('error.debugLevelCreateFailed', [error.message]);
       }
-
-      debugLevelId = createResult.id;
+      throw error;
     }
     this.spinner.stop();
 
-    this.spinner.start(messages.getMessage('info.findingClasses'));
-    const classesClause = classes.map((className) => `'${className}'`).join(',');
-    const classResult = await targetOrgConnection.tooling.query<{ Id: string; Name: string }>(
-      `SELECT Id, Name FROM ApexClass WHERE Name IN (${classesClause})`,
-    );
-    this.spinner.stop();
-
-    if (classResult.records.length === 0) {
+    if (outcome.results.length === 0 && outcome.missingClassNames.length === classes.length) {
       this.warn(messages.getMessage('warning.noClassesFound'));
       return [];
     }
 
-    const foundNames = new Set(classResult.records.map((record) => record.Name));
-    const missingNames = classes.filter((className) => !foundNames.has(className));
-
-    if (missingNames.length > 0) {
-      this.warn(messages.getMessage('warning.someClassesNotFound', [missingNames.join(', ')]));
+    if (outcome.missingClassNames.length > 0) {
+      this.warn(messages.getMessage('warning.someClassesNotFound', [outcome.missingClassNames.join(', ')]));
     }
 
-    const now = new Date();
-    const expiration = new Date(now.getTime() + TRACE_DURATION_MS);
-    const startDate = now.toISOString();
-    const expirationDate = expiration.toISOString();
-
-    const classIdsClause = classResult.records.map((record) => `'${record.Id}'`).join(',');
-    const existingTraceFlagResult = await targetOrgConnection.tooling.query<{ Id: string; TracedEntityId: string }>(
-      `SELECT Id, TracedEntityId FROM TraceFlag WHERE LogType = 'CLASS_TRACING' AND TracedEntityId IN (${classIdsClause})`,
-    );
-    const existingTraceFlagIdByClassId = new Map(
-      existingTraceFlagResult.records.map((record) => [record.TracedEntityId, record.Id]),
-    );
-
-    const results: ApexTraceSilenceResult[] = [];
-
-    this.spinner.start(messages.getMessage('info.creatingTraceFlags'));
-    for (const classRecord of classResult.records) {
-      const existingTraceFlagId = existingTraceFlagIdByClassId.get(classRecord.Id);
-
-      if (existingTraceFlagId) {
-        // eslint-disable-next-line no-await-in-loop
-        const updateResult = await targetOrgConnection.tooling.sobject('TraceFlag').update({
-          Id: existingTraceFlagId,
-          DebugLevelId: debugLevelId,
-          StartDate: startDate,
-          ExpirationDate: expirationDate,
-        });
-
-        if (!updateResult.success) {
-          this.warn(
-            messages.getMessage('warning.traceFlagUpdateFailed', [
-              classRecord.Name,
-              updateResult.errors.map((e) => e.message).join(', '),
-            ]),
-          );
-          continue;
-        }
-
-        results.push({
-          class: classRecord.Name,
-          classId: classRecord.Id,
-          traceFlagId: existingTraceFlagId,
-        });
-        continue;
-      }
-
-      // eslint-disable-next-line no-await-in-loop
-      const createResult = await targetOrgConnection.tooling.sobject('TraceFlag').create({
-        StartDate: startDate,
-        ExpirationDate: expirationDate,
-        DebugLevelId: debugLevelId,
-        TracedEntityId: classRecord.Id,
-        LogType: 'CLASS_TRACING',
-      });
-
-      if (!createResult.success) {
-        this.warn(
-          messages.getMessage('warning.traceFlagCreateFailed', [
-            classRecord.Name,
-            createResult.errors.map((e) => e.message).join(', '),
-          ]),
-        );
-        continue;
-      }
-
-      results.push({
-        class: classRecord.Name,
-        classId: classRecord.Id,
-        traceFlagId: createResult.id,
-      });
+    for (const failure of outcome.failures) {
+      const key = failure.action === 'update' ? 'warning.traceFlagUpdateFailed' : 'warning.traceFlagCreateFailed';
+      this.warn(messages.getMessage(key, [failure.class, failure.error]));
     }
-    this.spinner.stop();
 
     this.table({
-      data: results,
+      data: outcome.results,
       columns: [
         { key: 'class', name: 'CLASS' },
         { key: 'classId', name: 'CLASS ID' },
@@ -292,6 +157,6 @@ export default class ApexTraceSilence extends SfCommand<ApexTraceSilenceResult[]
       ],
     });
 
-    return results;
+    return outcome.results;
   }
 }

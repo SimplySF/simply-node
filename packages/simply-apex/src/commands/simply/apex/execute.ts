@@ -15,25 +15,15 @@
  */
 
 import path from 'node:path';
-import { ExecuteService } from '@salesforce/apex-node';
 import { Messages } from '@salesforce/core';
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { requireConnection, targetOrgFlags } from '@simplysf/simply-plugin-kit';
+import { ApexExecuteError, executeApex, type ApexExecuteResult } from '../../../common/apexExecute.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('@simplysf/simply-apex', 'simply.apex.execute');
 
-/** Compile/execution outcome for an anonymous Apex execution, including any debug logs produced. */
-export type ApexExecuteResult = {
-  success: boolean;
-  compiled: boolean;
-  compileProblem: string;
-  exceptionMessage: string;
-  exceptionStackTrace: string;
-  line: number;
-  column: number;
-  logs?: string;
-};
+export type { ApexExecuteResult } from '../../../common/apexExecute.js';
 
 /**
  * Executes an anonymous block of Apex code from a local .apex file against a target org and
@@ -66,30 +56,23 @@ export default class ApexExecute extends SfCommand<ApexExecuteResult> {
 
     this.spinner.start(`Executing ${path.parse(flags.file).name}`);
 
-    const executeService = new ExecuteService(targetOrgConnection);
-    const response = await executeService.executeAnonymous({ apexFilePath: flags.file });
-
-    const diagnostic = response.diagnostic?.[0];
-
-    const result: ApexExecuteResult = {
-      success: response.success,
-      compiled: response.compiled,
-      compileProblem: diagnostic?.compileProblem ?? '',
-      exceptionMessage: diagnostic?.exceptionMessage ?? '',
-      exceptionStackTrace: diagnostic?.exceptionStackTrace ?? '',
-      line: diagnostic?.lineNumber ?? -1,
-      column: diagnostic?.columnNumber ?? -1,
-      logs: response.logs,
-    };
-
-    if (!response.compiled) {
+    let result: ApexExecuteResult;
+    try {
+      result = await executeApex(targetOrgConnection, flags.file);
+    } catch (error) {
       this.spinner.stop(messages.getMessage('info.failed'));
-      throw messages.createError('error.compileFailed', [result.line, result.column, result.compileProblem]);
-    }
 
-    if (!response.success) {
-      this.spinner.stop(messages.getMessage('info.failed'));
-      throw messages.createError('error.executeFailed', [result.exceptionMessage]);
+      if (error instanceof ApexExecuteError) {
+        if (error.code === 'compile-failed') {
+          throw messages.createError('error.compileFailed', [
+            error.result.line,
+            error.result.column,
+            error.result.compileProblem,
+          ]);
+        }
+        throw messages.createError('error.executeFailed', [error.result.exceptionMessage]);
+      }
+      throw error;
     }
 
     this.spinner.stop();
