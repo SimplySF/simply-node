@@ -6,7 +6,7 @@ description: Usage examples for @simplysf/simply-aep-core.
 Apex Enterprise Patterns ([fflib](https://github.com/apex-enterprise-patterns/fflib-apex-common),
 [force-di](https://github.com/apex-enterprise-patterns/force-di),
 [AT4DX](https://github.com/apex-enterprise-patterns/at4dx)) binding scan and resolution logic. Full
-signatures and types are in the [API reference](/api/simply-aep-core/).
+signatures and types are in the [API reference](/api/simply-aep-core/readme/).
 
 ```sh
 npm install @simplysf/simply-aep-core

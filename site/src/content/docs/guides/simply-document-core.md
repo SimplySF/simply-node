@@ -4,7 +4,7 @@ description: Usage examples for @simplysf/simply-document-core.
 ---
 
 Confluence-storage-format change report and technical design document rendering. Full signatures and
-types are in the [API reference](/api/simply-document-core/).
+types are in the [API reference](/api/simply-document-core/readme/).
 
 ```sh
 npm install @simplysf/simply-document-core
@@ -37,7 +37,7 @@ const html = buildChangeReportHtml(changes);
 
 `buildTechnicalDesignDocumentHtml` takes every metadata-type bucket the template supports (Apex
 classes/triggers, flows, objects, permission sets, and dozens more — see the
-[API reference](/api/simply-document-core/) for the full `TechnicalDesignDocumentData` shape) and
+[API reference](/api/simply-document-core/readme/) for the full `TechnicalDesignDocumentData` shape) and
 renders one HTML document:
 
 ```ts

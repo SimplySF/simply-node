@@ -5,7 +5,7 @@ description: Usage examples for @simplysf/simply-report.
 
 Shared HTML report scaffolding — the page shell, base stylesheet, and Handlebars environment behind
 every standalone HTML report the Simply plugins emit. Full signatures and types are in the
-[API reference](/api/simply-report/).
+[API reference](/api/simply-report/readme/).
 
 ```sh
 npm install @simplysf/simply-report

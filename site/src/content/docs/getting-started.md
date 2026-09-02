@@ -36,8 +36,8 @@ npm install @simplysf/simply-report
 Each package has its own guide with real usage examples, and a full API reference generated from its
 TypeScript source:
 
-- [simply-core guide](/guides/simply-core/) · [API](/api/simply-core/)
-- [simply-aep-core guide](/guides/simply-aep-core/) · [API](/api/simply-aep-core/)
-- [simply-apex-core guide](/guides/simply-apex-core/) · [API](/api/simply-apex-core/)
-- [simply-document-core guide](/guides/simply-document-core/) · [API](/api/simply-document-core/)
-- [simply-report guide](/guides/simply-report/) · [API](/api/simply-report/)
+- [simply-core guide](/guides/simply-core/) · [API](/api/simply-core/readme/)
+- [simply-aep-core guide](/guides/simply-aep-core/) · [API](/api/simply-aep-core/readme/)
+- [simply-apex-core guide](/guides/simply-apex-core/) · [API](/api/simply-apex-core/readme/)
+- [simply-document-core guide](/guides/simply-document-core/) · [API](/api/simply-document-core/readme/)
+- [simply-report guide](/guides/simply-report/) · [API](/api/simply-report/readme/)

@@ -4,7 +4,7 @@ description: Usage examples for @simplysf/simply-core.
 ---
 
 Querying, bulk export, CSV, and `sfdx-project.json` utilities — the everyday helpers that show up in
-almost any Salesforce automation script. Full signatures and types are in the [API reference](/api/simply-core/).
+almost any Salesforce automation script. Full signatures and types are in the [API reference](/api/simply-core/readme/).
 
 ```sh
 npm install @simplysf/simply-core

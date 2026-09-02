@@ -4,7 +4,7 @@ description: Usage examples for @simplysf/simply-apex-core.
 ---
 
 Apex execute, log-purge, and trace-flag logic. Full signatures and types are in the
-[API reference](/api/simply-apex-core/).
+[API reference](/api/simply-apex-core/readme/).
 
 ```sh
 npm install @simplysf/simply-apex-core
