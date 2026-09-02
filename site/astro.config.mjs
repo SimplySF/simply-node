@@ -13,6 +13,7 @@ const [simplyAepCore, simplyAepCoreSidebar] = createStarlightTypeDocPlugin();
 const [simplyApexCore, simplyApexCoreSidebar] = createStarlightTypeDocPlugin();
 const [simplyDocumentCore, simplyDocumentCoreSidebar] = createStarlightTypeDocPlugin();
 const [simplyReport, simplyReportSidebar] = createStarlightTypeDocPlugin();
+const [simplyDataCore, simplyDataCoreSidebar] = createStarlightTypeDocPlugin();
 
 function typeDocOptions(pkg) {
   return {
@@ -59,6 +60,7 @@ export default defineConfig({
         simplyApexCore(typeDocOptions('simply-apex-core')),
         simplyDocumentCore(typeDocOptions('simply-document-core')),
         simplyReport(typeDocOptions('simply-report')),
+        simplyDataCore(typeDocOptions('simply-data-core')),
       ],
       sidebar: [
         { label: 'Get Started', slug: 'getting-started' },
@@ -70,11 +72,19 @@ export default defineConfig({
             { label: 'simply-apex-core', slug: 'guides/simply-apex-core' },
             { label: 'simply-document-core', slug: 'guides/simply-document-core' },
             { label: 'simply-report', slug: 'guides/simply-report' },
+            { label: 'simply-data-core', slug: 'guides/simply-data-core' },
           ],
         },
         {
           label: 'API Reference',
-          items: [simplyCoreSidebar, simplyAepCoreSidebar, simplyApexCoreSidebar, simplyDocumentCoreSidebar, simplyReportSidebar],
+          items: [
+            simplyCoreSidebar,
+            simplyAepCoreSidebar,
+            simplyApexCoreSidebar,
+            simplyDocumentCoreSidebar,
+            simplyReportSidebar,
+            simplyDataCoreSidebar,
+          ],
         },
       ],
     }),
