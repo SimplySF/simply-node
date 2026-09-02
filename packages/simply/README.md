@@ -794,7 +794,7 @@ Create a new AT4DX Platform Event Distributor subscription (PlatformEvents_Subsc
 ```
 USAGE
   $ sf simply aep at4dx platform-event-subscription create -n <value> --event-bus <value> --consumer <value> --matcher-rule
-    MatchEventBus|MatchCategory|MatchEvent|MatchCategoryAndEvent [--json] [--flags-dir <value>] [-d <value>] [-o
+    MatchEventBus|MatchEventBusAndCategory|MatchEventBusAndEventName|MatchEventBusAndCategoryAndEventName [--json] [--flags-dir <value>] [-d <value>] [-o
     <value>] [--api-version <value>] [--wait <value>] [--label <value>] [--event-category <value>] [--event-name
     <value>] [--active] [--synchronous] [--force]
 
@@ -812,17 +812,17 @@ FLAGS
                                 org-wide across every subscription.
       --event-bus=<value>       (required) EventBus__c — the platform event object API name this subscription registers
                                 against, e.g. My_Event__e.
-      --event-category=<value>  EventCategory__c. Required when --matcher-rule is MatchCategory or MatchCategoryAndEvent
+      --event-category=<value>  EventCategory__c. Required when --matcher-rule is MatchEventBusAndCategory or MatchEventBusAndCategoryAndEventName
                                 — leaving it blank for those raises matcher-rule-missing-field.
-      --event-name=<value>      Event__c. Required when --matcher-rule is MatchEvent or MatchCategoryAndEvent — leaving
+      --event-name=<value>      Event__c. Required when --matcher-rule is MatchEventBusAndEventName or MatchEventBusAndCategoryAndEventName — leaving
                                 it blank for those raises matcher-rule-missing-field.
       --force                   Write (and deploy) even if validation finds an error-severity issue. Validation still
                                 runs and its issues are still printed and returned.
       --label=<value>           The record's label. Defaults to --developer-name. Must be 40 characters or fewer.
       --matcher-rule=<option>   (required) MatcherRule__c — which of --event-category/--event-name the distributor's
-                                matcher dereferences for this subscription. One of MatchEventBus, MatchCategory,
-                                MatchEvent, MatchCategoryAndEvent.
-                                <options: MatchEventBus|MatchCategory|MatchEvent|MatchCategoryAndEvent>
+                                matcher dereferences for this subscription. One of MatchEventBus, MatchEventBusAndCategory,
+                                MatchEventBusAndEventName, MatchEventBusAndCategoryAndEventName.
+                                <options: MatchEventBus|MatchEventBusAndCategory|MatchEventBusAndEventName|MatchEventBusAndCategoryAndEventName>
       --[no-]synchronous        Execute_Synchronous__c. Defaults to false. Pass --synchronous to have the distributor
                                 invoke this consumer synchronously.
       --wait=<value>            [default: 33] Deploy poll timeout, in minutes. Only meaningful with --target-org.
@@ -845,14 +845,14 @@ DESCRIPTION
   --matcher-rule controls which of --event-category/--event-name the distributor's matcher dereferences for this
   subscription: MatchEventBus dereferences neither (the whole bus matches, once a category or event name gets it past
   the distributor's pre-filter — see `simply aep at4dx platform-event-subscription validate`'s unreachable-subscription
-  rule for why at least one should usually be set anyway), MatchCategory requires --event-category, MatchEvent requires
-  --event-name, and MatchCategoryAndEvent requires both. Leaving the field a MatcherRule needs blank is exactly the
+  rule for why at least one should usually be set anyway), MatchEventBusAndCategory requires --event-category, MatchEventBusAndEventName requires
+  --event-name, and MatchEventBusAndCategoryAndEventName requires both. Leaving the field a MatcherRule needs blank is exactly the
   matcher-rule-missing-field hazard validation catches — see that command's description for why it matters at runtime.
 
 EXAMPLES
-  $ sf simply aep at4dx platform-event-subscription create --source-dir sfdx-source/core --developer-name Account_Change_Subscriber --event-bus Account_Change__e --consumer AccountChangeConsumer --matcher-rule MatchCategory --event-category Finance
+  $ sf simply aep at4dx platform-event-subscription create --source-dir sfdx-source/core --developer-name Account_Change_Subscriber --event-bus Account_Change__e --consumer AccountChangeConsumer --matcher-rule MatchEventBusAndCategory --event-category Finance
 
-  $ sf simply aep at4dx platform-event-subscription create --target-org myOrg --developer-name Account_Change_Subscriber --event-bus Account_Change__e --consumer AccountChangeConsumer --matcher-rule MatchCategoryAndEvent --event-category Finance --event-name AccountUpdated
+  $ sf simply aep at4dx platform-event-subscription create --target-org myOrg --developer-name Account_Change_Subscriber --event-bus Account_Change__e --consumer AccountChangeConsumer --matcher-rule MatchEventBusAndCategoryAndEventName --event-category Finance --event-name AccountUpdated
 ```
 
 _See code: [@simplysf/simply-aep](https://github.com/SimplySF/simply-node/blob/@simplysf/simply-aep@0.12.0/packages/simply-aep/lib/commands/simply/aep/at4dx/platform-event-subscription/create.js)_
@@ -959,7 +959,7 @@ Update an existing AT4DX Platform Event Distributor subscription (PlatformEvents
 USAGE
   $ sf simply aep at4dx platform-event-subscription update -n <value> [--json] [--flags-dir <value>] [-d <value>...] [-o <value>] [--api-version <value>]
     [--wait <value>] [--label <value>] [--event-bus <value>] [--consumer <value>] [--matcher-rule
-    MatchEventBus|MatchCategory|MatchEvent|MatchCategoryAndEvent] [--event-category <value>] [--event-name <value>]
+    MatchEventBus|MatchEventBusAndCategory|MatchEventBusAndEventName|MatchEventBusAndCategoryAndEventName] [--event-category <value>] [--event-name <value>]
     [--active] [--synchronous] [--force]
 
 FLAGS
@@ -973,17 +973,17 @@ FLAGS
                                 subscription.
       --event-bus=<value>       EventBus__c. If not given, the existing value is kept.
       --event-category=<value>  EventCategory__c. If not given, the existing value is kept. Required when the record's
-                                MatcherRule__c is MatchCategory or MatchCategoryAndEvent — leaving it blank for those
+                                MatcherRule__c is MatchEventBusAndCategory or MatchEventBusAndCategoryAndEventName — leaving it blank for those
                                 raises matcher-rule-missing-field.
       --event-name=<value>      Event__c. If not given, the existing value is kept. Required when the record's
-                                MatcherRule__c is MatchEvent or MatchCategoryAndEvent — leaving it blank for those
+                                MatcherRule__c is MatchEventBusAndEventName or MatchEventBusAndCategoryAndEventName — leaving it blank for those
                                 raises matcher-rule-missing-field.
       --force                   Write (and deploy) even if validation finds an error-severity issue. Validation still
                                 runs and its issues are still printed and returned.
       --label=<value>           The record's label. If not given, the existing label is kept.
       --matcher-rule=<option>   MatcherRule__c — which of --event-category/--event-name the distributor's matcher
                                 dereferences for this subscription. If not given, the existing value is kept.
-                                <options: MatchEventBus|MatchCategory|MatchEvent|MatchCategoryAndEvent>
+                                <options: MatchEventBus|MatchEventBusAndCategory|MatchEventBusAndEventName|MatchEventBusAndCategoryAndEventName>
       --[no-]synchronous        Execute_Synchronous__c. If not given, the existing value is kept. Pass --no-synchronous
                                 to have the distributor invoke this consumer asynchronously.
       --wait=<value>            [default: 33] Deploy poll timeout, in minutes. Only meaningful with --target-org.

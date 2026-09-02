@@ -83,7 +83,7 @@ describe('simply aep at4dx platform-event-subscription list', () => {
           Consumer__c: 'AccountChangeConsumer',
           EventCategory__c: 'Finance',
           Event__c: 'Updated',
-          MatcherRule__c: 'MatchCategoryAndEvent',
+          MatcherRule__c: 'MatchEventBusAndCategoryAndEventName',
           IsActive__c: true,
           Execute_Synchronous__c: false,
         },

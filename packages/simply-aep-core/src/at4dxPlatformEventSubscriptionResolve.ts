@@ -68,11 +68,11 @@ function isMissingMatcherField(record: RawPlatformEventSubscriptionRecord): bool
   switch (record.matcherRule) {
     case 'MatchEventBus':
       return false;
-    case 'MatchCategory':
+    case 'MatchEventBusAndCategory':
       return !record.eventCategory;
-    case 'MatchEvent':
+    case 'MatchEventBusAndEventName':
       return !record.event;
-    case 'MatchCategoryAndEvent':
+    case 'MatchEventBusAndCategoryAndEventName':
       return !record.eventCategory || !record.event;
   }
 }
@@ -342,11 +342,11 @@ function matcherRuleMatchesEvent(
   switch (record.matcherRule) {
     case 'MatchEventBus':
       return true;
-    case 'MatchCategory':
+    case 'MatchEventBusAndCategory':
       return equalsIgnoreCase(record.eventCategory, input.category);
-    case 'MatchEvent':
+    case 'MatchEventBusAndEventName':
       return equalsIgnoreCase(record.event, input.eventName);
-    case 'MatchCategoryAndEvent':
+    case 'MatchEventBusAndCategoryAndEventName':
       return equalsIgnoreCase(record.eventCategory, input.category) && equalsIgnoreCase(record.event, input.eventName);
   }
 }

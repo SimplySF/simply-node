@@ -32,7 +32,7 @@ const BASE_FLAGS = [
   '--consumer',
   'AccountChangeConsumer',
   '--matcher-rule',
-  'MatchCategory',
+  'MatchEventBusAndCategory',
   '--event-category',
   'Finance',
 ];
@@ -96,7 +96,7 @@ describe('simply aep at4dx platform-event-subscription create', () => {
       '--consumer',
       'BrokenConsumer',
       '--matcher-rule',
-      'MatchCategory',
+      'MatchEventBusAndCategory',
       '--json',
     ];
 

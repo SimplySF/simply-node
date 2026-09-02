@@ -29,18 +29,19 @@ export const PLATFORM_EVENT_SUBSCRIPTION_LOCAL_OBJECT_NAME = 'PlatformEvents_Sub
  * the other three dereference one or both — see docs/design/0025's Problem section for why that makes
  * `EventCategory__c`/`Event__c` being optional fields a real hazard.
  *
- * The exact API name spelling of the three non-`MatchEventBus` values isn't independently confirmed
- * against AT4DX's own picklist definition in this pass (see docs/design/0025's provenance caveat) —
- * treat these four as the working assumption, verified against a real org's picklist the first time
- * this module is exercised there.
+ * Confirmed against AT4DX's own picklist definition (`PlatformEvents_Subscription__mdt.MatcherRule__c`)
+ * and its `PlatformEventDistributor.MATCHER_RULES` enum in apex-enterprise-patterns/at4dx — the doc's
+ * provenance caveat's "working assumption" (`MatchCategory`/`MatchEvent`/`MatchCategoryAndEvent`) didn't
+ * match the source and caused every record using one of those three rules to be reported malformed.
  */
-export type MatcherRule = 'MatchEventBus' | 'MatchCategory' | 'MatchEvent' | 'MatchCategoryAndEvent';
+export type MatcherRule =
+  'MatchEventBus' | 'MatchEventBusAndCategory' | 'MatchEventBusAndEventName' | 'MatchEventBusAndCategoryAndEventName';
 
 export const ALL_MATCHER_RULES: MatcherRule[] = [
   'MatchEventBus',
-  'MatchCategory',
-  'MatchEvent',
-  'MatchCategoryAndEvent',
+  'MatchEventBusAndCategory',
+  'MatchEventBusAndEventName',
+  'MatchEventBusAndCategoryAndEventName',
 ];
 
 /**
@@ -58,9 +59,9 @@ export type RawPlatformEventSubscriptionRecord = {
   eventBus: string;
   /** `Consumer__c` — the `IEventsConsumer`-implementing Apex class name. `unique: true` on this CMDT; see `duplicate-consumer`. */
   consumer: string;
-  /** `EventCategory__c`. Optional — dereferenced (unguarded) by the `MatchCategory`/`MatchCategoryAndEvent` matcher rules. */
+  /** `EventCategory__c`. Optional — dereferenced (unguarded) by the `MatchEventBusAndCategory`/`MatchEventBusAndCategoryAndEventName` matcher rules. */
   eventCategory?: string;
-  /** `Event__c`. Optional — dereferenced (unguarded) by the `MatchEvent`/`MatchCategoryAndEvent` matcher rules. */
+  /** `Event__c`. Optional — dereferenced (unguarded) by the `MatchEventBusAndEventName`/`MatchEventBusAndCategoryAndEventName` matcher rules. */
   event?: string;
   matcherRule: MatcherRule;
   /** `IsActive__c`. Filtered out by the module's own static SOQL when `false` — not a validation concern, see docs/design/0025's Rules section. */
