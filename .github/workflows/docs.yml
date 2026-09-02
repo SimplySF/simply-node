@@ -41,6 +41,12 @@ jobs:
 
       - run: pnpm install --frozen-lockfile --ignore-scripts
 
+      # TypeDoc resolves cross-package imports (e.g. simply-apex-core's `import ... from
+      # '@simplysf/simply-core'`) through node module resolution, same as any other consumer -
+      # that means each package's compiled `lib/*.d.ts` output, not its `src/`. Build every
+      # package first so those types exist before the site tries to generate API docs from them.
+      - run: pnpm run build
+
       - run: pnpm --filter site run build
 
       - name: Check for broken internal links
