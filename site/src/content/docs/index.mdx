@@ -1,0 +1,69 @@
+---
+title: Simply Node
+description: Framework-independent Node/TypeScript libraries for working with Salesforce, built by SimplySF.
+template: splash
+hero:
+  tagline: Framework-independent Node/TypeScript libraries for working with Salesforce — install what you need, call it directly from a script, an editor extension, a CI job, or any other Node codebase.
+  image:
+    alt: Simply SF logo — a stylized cloud
+    light: ../../assets/logo-full.png
+    dark: ../../assets/logo-full-dark.png
+  # Hero actions are plain frontmatter, not markdown body content, so the
+  # remark-base-links plugin can't rewrite them — the /simply-node prefix
+  # here must be kept in sync with `base` in astro.config.mjs by hand.
+  actions:
+    - text: Get Started
+      link: /simply-node/getting-started/
+      icon: right-arrow
+      variant: primary
+    - text: Browse the API
+      link: /simply-node/api/simply-core/
+      icon: puzzle
+      variant: secondary
+    - text: View on GitHub
+      link: https://github.com/SimplySF/simply-node
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## Packages
+
+<CardGrid>
+  <Card title="simply-core" icon="rocket">
+    Querying, bulk export, CSV, and `sfdx-project.json` utilities. [Guide](/guides/simply-core/) ·
+    [API](/api/simply-core/)
+  </Card>
+  <Card title="simply-aep-core" icon="puzzle">
+    Apex Enterprise Patterns (fflib, force-di, AT4DX) binding scan and resolution logic.
+    [Guide](/guides/simply-aep-core/) · [API](/api/simply-aep-core/)
+  </Card>
+  <Card title="simply-apex-core" icon="setting">
+    Apex execute, log-purge, and trace-flag logic. [Guide](/guides/simply-apex-core/) · [API](/api/simply-apex-core/)
+  </Card>
+  <Card title="simply-document-core" icon="document">
+    Confluence-storage-format change report and technical design document rendering.
+    [Guide](/guides/simply-document-core/) · [API](/api/simply-document-core/)
+  </Card>
+  <Card title="simply-report" icon="magnifier">
+    Shared HTML report scaffolding — page shell, base stylesheet, Handlebars environment.
+    [Guide](/guides/simply-report/) · [API](/api/simply-report/)
+  </Card>
+</CardGrid>
+
+## Install
+
+Each package is independent — install only what you need:
+
+```sh
+npm install @simplysf/simply-core
+npm install @simplysf/simply-aep-core
+npm install @simplysf/simply-apex-core
+npm install @simplysf/simply-document-core
+npm install @simplysf/simply-report
+```
+
+## Related
+
+These libraries are also what power [SimplySF's Salesforce CLI plugins](https://github.com/SimplySF/simply-plugins) — but they don't depend on the CLI framework, so nothing here requires it.

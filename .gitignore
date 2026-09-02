@@ -102,6 +102,10 @@ dist
 # vuepress v2.x temp directory
 .temp
 
+# starlight-typedoc output: regenerated from packages/*/src on every `astro build`/`dev`,
+# never hand-edited - see site/README's Documentation Site section.
+site/src/content/docs/api/
+
 # Sveltekit cache directory
 .svelte-kit/
 

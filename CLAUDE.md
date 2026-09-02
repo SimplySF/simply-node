@@ -26,6 +26,9 @@ See `CONTRIBUTING.md`'s "Pull Requests" checklist in full — it's not optional.
 to get skipped, because nothing forces it locally the way `pnpm test` forces test failures:
 
 - **Update the package's README** (public API surface, examples) to describe the new/changed export.
+- **Update its docs-site guide** (`site/src/content/docs/guides/<package>.md`) if the change affects
+  an example shown there — the API reference under `site/src/content/docs/api/` regenerates
+  automatically from JSDoc at build time, but the hand-written guides don't.
 - **Check for a `simply-plugins` consumer.** Every package here except purely-internal changes to
   `simply-core`/`simply-report` is depended on by at least one plugin in the sibling
   [`simply-plugins`](https://github.com/SimplySF/simply-plugins) repo (see the table in
