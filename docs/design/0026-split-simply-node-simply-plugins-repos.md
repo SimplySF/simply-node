@@ -199,3 +199,18 @@ This doc covers planning only; the split itself is a separate, later change. In 
   `pnpm-lock.yaml`. It should land (or be dropped) before the split, or be re-pointed at
   `simply-plugins` afterward — it touches nothing in `simply-node`, so either way it's a
   simply-plugins-side concern.
+- **Release tags** (2026-09-02): Lerna's independent-mode conventional-commits versioning finds each
+  package's last release via `git describe --match '@simplysf/<pkg>@*'`, so `simply-plugins` needed
+  the moved packages' existing tags, not just their commit history — without them, the next `lerna
+publish` there would have no anchor and could recompute the wrong bump. Migrated all 436 tags
+  (across the 14 moved packages) by matching each tag's original commit to its `git subtree split`
+  equivalent by content (the rewritten commit's root tree equals `<original commit>:packages/<pkg>`,
+  since subtree split doesn't touch trees, messages, or dates) rather than by position — a first pass
+  using positional correspondence silently mismatched two packages (`simply-cicd`, `simply-schema`)
+  whose history includes merges that Git's default path-log simplification handles differently from
+  `git subtree split`'s own walk. All 436 tags verified reachable from `simply-plugins:main` and
+  pushed. Also had to clean up: the initial `git fetch <simply-node-path>` (no refspec) pulled every
+  branch, not just the `split/*` ones, which made Git auto-follow-fetch all 498 of `simply-node`'s
+  original tags pointing at pre-split (and, for `simply-plugins`, unreachable) commits — those were
+  deleted before the correct 436 were created, and `git gc --prune=now` reclaimed the now-unreachable
+  objects (`.git` dropped from 6.6M to 3.2M).
