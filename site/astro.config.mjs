@@ -13,6 +13,9 @@ const [simplyAepCore, simplyAepCoreSidebar] = createStarlightTypeDocPlugin();
 const [simplyApexCore, simplyApexCoreSidebar] = createStarlightTypeDocPlugin();
 const [simplyDocumentCore, simplyDocumentCoreSidebar] = createStarlightTypeDocPlugin();
 const [simplyReport, simplyReportSidebar] = createStarlightTypeDocPlugin();
+const [simplyPermissionsCore, simplyPermissionsCoreSidebar] = createStarlightTypeDocPlugin();
+const [simplySobjectCore, simplySobjectCoreSidebar] = createStarlightTypeDocPlugin();
+const [simplyCommunityCore, simplyCommunityCoreSidebar] = createStarlightTypeDocPlugin();
 const [simplyDataCore, simplyDataCoreSidebar] = createStarlightTypeDocPlugin();
 const [simplyPackageCore, simplyPackageCoreSidebar] = createStarlightTypeDocPlugin();
 const [simplySchemaCore, simplySchemaCoreSidebar] = createStarlightTypeDocPlugin();
@@ -45,7 +48,7 @@ export default defineConfig({
     starlight({
       title: 'Simply Node',
       description:
-        'Framework-independent Node/TypeScript libraries for working with Salesforce, built by SimplySF: querying and bulk data, AT4DX binding scan/resolution, Apex execute/log/trace tooling, technical design document rendering, and shared HTML report scaffolding.',
+        'Framework-independent Node/TypeScript libraries for working with Salesforce, built by SimplySF: querying and bulk data, AT4DX binding scan/resolution, Apex tooling, permission set/schema/package/community/sobject logic, document/report rendering, and more.',
       logo: {
         light: './src/assets/logo-icon.png',
         dark: './src/assets/logo-icon-dark.png',
@@ -62,6 +65,9 @@ export default defineConfig({
         simplyApexCore(typeDocOptions('simply-apex-core')),
         simplyDocumentCore(typeDocOptions('simply-document-core')),
         simplyReport(typeDocOptions('simply-report')),
+        simplyPermissionsCore(typeDocOptions('simply-permissions-core')),
+        simplySobjectCore(typeDocOptions('simply-sobject-core')),
+        simplyCommunityCore(typeDocOptions('simply-community-core')),
         simplyDataCore(typeDocOptions('simply-data-core')),
         simplyPackageCore(typeDocOptions('simply-package-core')),
         simplySchemaCore(typeDocOptions('simply-schema-core')),
@@ -76,6 +82,9 @@ export default defineConfig({
             { label: 'simply-apex-core', slug: 'guides/simply-apex-core' },
             { label: 'simply-document-core', slug: 'guides/simply-document-core' },
             { label: 'simply-report', slug: 'guides/simply-report' },
+            { label: 'simply-permissions-core', slug: 'guides/simply-permissions-core' },
+            { label: 'simply-sobject-core', slug: 'guides/simply-sobject-core' },
+            { label: 'simply-community-core', slug: 'guides/simply-community-core' },
             { label: 'simply-data-core', slug: 'guides/simply-data-core' },
             { label: 'simply-package-core', slug: 'guides/simply-package-core' },
             { label: 'simply-schema-core', slug: 'guides/simply-schema-core' },
@@ -89,6 +98,9 @@ export default defineConfig({
             simplyApexCoreSidebar,
             simplyDocumentCoreSidebar,
             simplyReportSidebar,
+            simplyPermissionsCoreSidebar,
+            simplySobjectCoreSidebar,
+            simplyCommunityCoreSidebar,
             simplyDataCoreSidebar,
             simplyPackageCoreSidebar,
             simplySchemaCoreSidebar,

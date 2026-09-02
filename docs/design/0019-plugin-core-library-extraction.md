@@ -1,6 +1,8 @@
 # 0019 — Extracting `-core` library packages from the other `simply-*` plugins
 
-**Status:** Draft
+**Status:** Implemented — steps 1–3 of the Implementation plan are complete (0020, 0023, then round 1
+via [0027](0027-core-extraction-round-1-post-split.md)/0028–0033); step 4 (`simply-cicd`) remains
+deferred to its own scoping doc, per this doc's own Decision
 **Package:** policy doc; concrete new packages are `packages/simply-*-core` per the phased plan below, each
 introduced by its own follow-up design doc
 **Date:** 2026-08-30

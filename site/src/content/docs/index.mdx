@@ -35,21 +35,45 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
     Querying, bulk export, CSV, and `sfdx-project.json` utilities. [Guide](/guides/simply-core/) ·
     [API](/api/simply-core/readme/)
   </Card>
+  <Card title="simply-report" icon="magnifier">
+    Shared HTML report scaffolding — page shell, base stylesheet, Handlebars environment.
+    [Guide](/guides/simply-report/) · [API](/api/simply-report/readme/)
+  </Card>
   <Card title="simply-aep-core" icon="puzzle">
     Apex Enterprise Patterns (fflib, force-di, AT4DX) binding scan and resolution logic.
     [Guide](/guides/simply-aep-core/) · [API](/api/simply-aep-core/readme/)
-  </Card>
-  <Card title="simply-apex-core" icon="setting">
-    Apex execute, log-purge, and trace-flag logic. [Guide](/guides/simply-apex-core/) ·
-    [API](/api/simply-apex-core/readme/)
   </Card>
   <Card title="simply-document-core" icon="document">
     Confluence-storage-format change report and technical design document rendering.
     [Guide](/guides/simply-document-core/) · [API](/api/simply-document-core/readme/)
   </Card>
-  <Card title="simply-report" icon="magnifier">
-    Shared HTML report scaffolding — page shell, base stylesheet, Handlebars environment.
-    [Guide](/guides/simply-report/) · [API](/api/simply-report/readme/)
+  <Card title="simply-apex-core" icon="setting">
+    Apex execute, log-purge, and trace-flag logic. [Guide](/guides/simply-apex-core/) ·
+    [API](/api/simply-apex-core/readme/)
+  </Card>
+  <Card title="simply-permissions-core" icon="approve-check">
+    Permission set XML and permissions report rendering. [Guide](/guides/simply-permissions-core/) ·
+    [API](/api/simply-permissions-core/readme/)
+  </Card>
+  <Card title="simply-sobject-core" icon="database">
+    Field history object derivation/filtering and relationship-field discovery. [Guide](/guides/simply-sobject-core/) ·
+    [API](/api/simply-sobject-core/readme/)
+  </Card>
+  <Card title="simply-community-core" icon="open-book">
+    Community publish/deploy/domain-verification logic and site-file discovery. [Guide](/guides/simply-community-core/)
+    · [API](/api/simply-community-core/readme/)
+  </Card>
+  <Card title="simply-data-core" icon="add-document">
+    Content Version upload/download and CSV row counting logic. [Guide](/guides/simply-data-core/) ·
+    [API](/api/simply-data-core/readme/)
+  </Card>
+  <Card title="simply-package-core" icon="cloud-download">
+    Package/package-version alias resolution, `sfdx-project.json` dependency management, and Dev Hub version lookup.
+    [Guide](/guides/simply-package-core/) · [API](/api/simply-package-core/readme/)
+  </Card>
+  <Card title="simply-schema-core" icon="list-format">
+    sObject schema generation (CSV/Excel parsing, field/object normalization) and interactive schema-report rendering.
+    [Guide](/guides/simply-schema-core/) · [API](/api/simply-schema-core/readme/)
   </Card>
 </CardGrid>
 
@@ -59,10 +83,16 @@ Each package is independent — install only what you need:
 
 ```sh
 npm install @simplysf/simply-core
-npm install @simplysf/simply-aep-core
-npm install @simplysf/simply-apex-core
-npm install @simplysf/simply-document-core
 npm install @simplysf/simply-report
+npm install @simplysf/simply-aep-core
+npm install @simplysf/simply-document-core
+npm install @simplysf/simply-apex-core
+npm install @simplysf/simply-permissions-core
+npm install @simplysf/simply-sobject-core
+npm install @simplysf/simply-community-core
+npm install @simplysf/simply-data-core
+npm install @simplysf/simply-package-core
+npm install @simplysf/simply-schema-core
 ```
 
 ## Related

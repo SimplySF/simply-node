@@ -1,6 +1,8 @@
 # 0027 — Continuing the `-core` extraction under the two-repo split (round 1, excludes `simply-cicd`)
 
-**Status:** Draft
+**Status:** Implemented — `simply-node` side. All six packages merged and published (PRs #173–#178;
+see each package's own doc). `simply-plugins`' companion PRs (repointing each plugin's imports at
+the new published packages, per Behavior step 6) have not been opened yet — deliberately deferred.
 **Package:** repo-wide across `simply-node` and `simply-plugins`; concrete new packages are
 `packages/simply-permissions-core`, `packages/simply-sobject-core`, `packages/simply-community-core`,
 `packages/simply-data-core`, `packages/simply-package-core`, `packages/simply-schema-core` in

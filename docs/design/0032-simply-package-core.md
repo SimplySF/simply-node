@@ -1,6 +1,7 @@
 # 0032 — Splitting `simply-package-core` out of `simply-package`
 
-**Status:** Draft
+**Status:** Implemented (PR #177) — published as `0.1.0` via `pnpm publish`. `simply-plugins`'
+companion PR is not yet open.
 **Package:** new `packages/simply-package-core` (in `simply-node`); `packages/simply-package` (CLI,
 slimmed, in `simply-plugins`)
 **Date:** 2026-09-02
