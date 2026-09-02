@@ -17,7 +17,7 @@
 import { Connection } from '@salesforce/core';
 import { SfProject } from '@salesforce/core';
 import { Package, Package2Fields, PackageVersionListResult, PackagingSObjects } from '@salesforce/packaging';
-import { ParsedDependency } from '../schemas/manage/parsedDependency.js';
+import { ParsedDependency } from './schemas/manage/parsedDependency.js';
 
 /** A single selectable entry in an interactive package-version prompt. */
 export type VersionChoice = {

@@ -16,7 +16,7 @@
 
 import { NamedPackageDir } from '@salesforce/core';
 import { PackagingSObjects } from '@salesforce/packaging';
-import { BasePackageDirWithDependencies } from '../schemas/sfdx-project/packageDirs.js';
+import { BasePackageDirWithDependencies } from './schemas/sfdx-project/packageDirs.js';
 
 type PackageInstallRequest = PackagingSObjects.PackageInstallRequest;
 

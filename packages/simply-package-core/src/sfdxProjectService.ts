@@ -15,8 +15,8 @@
  */
 
 import { SfProject, isNamedPackagingDirectory } from '@salesforce/core';
-import { DependencyChange } from '../schemas/manage/dependencyChange.js';
-import { ParsedDependency, parseDependency } from '../schemas/manage/parsedDependency.js';
+import { DependencyChange } from './schemas/manage/dependencyChange.js';
+import { ParsedDependency, parseDependency } from './schemas/manage/parsedDependency.js';
 import { PACKAGE_PREFIX_SUBSCRIBER_PACKAGE_VERSION } from './packageUtils.js';
 
 /** Read/write access to an SFDX project's package dependencies and related plugin config. */

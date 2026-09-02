@@ -92,15 +92,25 @@ following 0028–0031's recipe (0027's corrected cross-repo mechanics). `package
 3. **Flatten `common/`'s four files up to `src/`**; keep `schemas/manage/` and
    `schemas/sfdx-project/` as their own subdirectories under `src/` (matching 0029's precedent of
    keeping a schema in its own subdir rather than flattening it in with everything else).
-4. **No relative-import fix needed** for `common/` → `common/`-internal imports (none exist — each
-   `common/` file's only sibling import is to another `common/` file that also flattens, e.g.
-   `packageVersionLookup.ts`'s `./packageUtils.js`, unaffected). **One import needs a path fix**:
-   `schemas/manage/parsedDependency.ts`'s `../../common/packageUtils.js` becomes `../packageUtils.js`
-   once `packageUtils.ts` flattens from `common/` to `src/` directly (schemas/manage/ is one level
-   under src/, so reaching a flattened src/-level file is `../`, not `../../`). Every other
-   cross-reference (`common/*.ts` → `schemas/manage/*.js`, `common/packageUtils.ts` →
-   `schemas/sfdx-project/packageDirs.js`) already used a `../schemas/...` path that is unaffected by
-   flattening `common/`.
+4. **Correction, caught by hand-tracing every import after the move (not by a build failure this
+   time — both directions of this mistake still type-check and only fail at module resolution, so
+   double-checking each path by counting directory levels mattered more than in 0029):** flattening
+   `common/`'s four files up to `src/` breaks every one of _their_ imports that reached into
+   `schemas/` with a `../` prefix — that prefix was correct while they lived one level down in
+   `common/`, but now that they're siblings of `schemas/` directly under `src/`, the same target
+   needs `./`, not `../`. Three fixes, not the one originally guessed here: `packageUtils.ts`'s
+   `../schemas/sfdx-project/packageDirs.js` → `./schemas/sfdx-project/packageDirs.js`;
+   `packageVersionService.ts`'s `../schemas/manage/parsedDependency.js` →
+   `./schemas/manage/parsedDependency.js`; `sfdxProjectService.ts`'s two schemas imports, same
+   fix. The other direction — `schemas/manage/parsedDependency.ts`'s import of `packageUtils.ts` —
+   moves the opposite way: it was `../../common/packageUtils.js` (two levels up from
+   `schemas/manage/` to `src/`, then into `common/`), and stays two levels up since neither
+   `schemas/manage/`'s own depth nor the "two levels up" part changed — only the final segment
+   drops `common/`, becoming `../../packageUtils.js` (an early edit here mistakenly wrote
+   `../packageUtils.js`, one level short; caught before committing by re-deriving the directory
+   distance rather than trusting the first guess). `packageVersionLookup.ts`'s `./packageUtils.js`
+   and `schemas/manage/dependencyChange.ts`'s `./parsedDependency.js` are genuinely unaffected
+   (same-directory siblings both before and after).
 5. **`packages/simply-package-core/src/index.ts`** — new barrel, re-exporting everything each moved
    file already exports as public.
 6. **`simply-package` (in `simply-plugins`) depends on `simply-package-core`** as a real semver
@@ -199,9 +209,10 @@ No `oclif` block, no `bin/`, no `@oclif/core`, no `@salesforce/sf-plugins-core`,
 
 ### Public-API test (in `simply-package-core`)
 
-`test/index.test.ts` asserts `Object.keys(api).sort()` against the runtime (non-type) exports:
-`['PACKAGE_PREFIX_PACKAGE2', 'PACKAGE_PREFIX_PACKAGE2_VERSION', 'PACKAGE_PREFIX_SUBSCRIBER_PACKAGE', 'PACKAGE_PREFIX_SUBSCRIBER_PACKAGE_VERSION', 'BasePackageDirWithDependenciesSchema', 'buildProjectService', 'buildVersionService', 'findPackageVersions', 'isDependenciesPackagingDirectory', 'isPackage2Id', 'isPackage2VersionId', 'isSubscriberPackageId', 'isSubscriberPackageVersionId', 'parseDependency', 'reducePackageInstallRequestErrors', 'splitPackageAlias']`
-(exact sorted order confirmed at implementation time against the real barrel).
+`test/index.test.ts` asserts `Object.keys(api).sort()` against the runtime (non-type) exports, in
+the order `Array.prototype.sort()`'s default (code-unit, uppercase-before-lowercase) comparison
+actually produces:
+`['BasePackageDirWithDependenciesSchema', 'PACKAGE_PREFIX_PACKAGE2', 'PACKAGE_PREFIX_PACKAGE2_VERSION', 'PACKAGE_PREFIX_SUBSCRIBER_PACKAGE', 'PACKAGE_PREFIX_SUBSCRIBER_PACKAGE_VERSION', 'buildProjectService', 'buildVersionService', 'findPackageVersions', 'isDependenciesPackagingDirectory', 'isPackage2Id', 'isPackage2VersionId', 'isSubscriberPackageId', 'isSubscriberPackageVersionId', 'parseDependency', 'reducePackageInstallRequestErrors', 'splitPackageAlias']`.
 
 ## Alternatives considered
 
@@ -276,8 +287,12 @@ Per 0027's cross-repo recipe, using `simply-package`'s pre-merge tip
   `knowsAboutVersion`/`knowsAboutPackage`/`getPackage2IdForVersion`/`getVersionAlias`/`getPackageAlias`/
   `findVersionById` against seeded fixture data; `enrichDependency` (fills in from a known
   `subscriberPackageVersionId`, no-ops when already enriched or unknown); `buildInteractiveChoices`/
-  `buildReleasedChoices`/`buildLatestChoices` against a small multi-branch/multi-version fixture,
-  asserting choice order and dedup (`seen`).
+  `buildReleasedChoices`/`buildLatestChoices` against a small single-branch, three-version fixture
+  (a released build, a newer unreleased build at the same minor, and a newer unreleased minor),
+  asserting choice order and dedup (`seen`) by hand-tracing the ranking logic against that fixture.
+  The branch dimension (`findLatestForBranch`'s feature-branch/`branchesWithReleased` loops) isn't
+  separately exercised — the ranking logic there is the same function called with a different
+  branch argument, not new logic.
 - `schemas/manage/parsedDependency.ts`: `parseDependency` (subscriber-version-ID input, Package2Id +
   numeric version, Package2Id + `X.Y.Z.LATEST`/`X.Y.Z-LATEST`, unrecognized prefix).
 

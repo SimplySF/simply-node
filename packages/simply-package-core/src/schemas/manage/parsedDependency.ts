@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { PACKAGE_PREFIX_PACKAGE2, PACKAGE_PREFIX_SUBSCRIBER_PACKAGE_VERSION } from '../../common/packageUtils.js';
+import { PACKAGE_PREFIX_PACKAGE2, PACKAGE_PREFIX_SUBSCRIBER_PACKAGE_VERSION } from '../../packageUtils.js';
 
 /**
  * A `sfdx-project.json` package dependency entry, resolved and broken down into its component
