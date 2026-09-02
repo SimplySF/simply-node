@@ -33,7 +33,7 @@ published npm dependency — there is no workspace-protocol link between the two
 public API here (a new export, a changed function signature, a changed return shape) is effectively
 a cross-repo contract change: see [Pull Requests](#pull-requests) below.
 
-There's also a top-level [`site/`](site) directory — the [Astro Starlight](https://starlight.astro.build/) documentation site, deployed to GitHub Pages. It's part of the pnpm workspace (so `pnpm install` at the root sets it up too), but it's not a `packages/*` entry, so Lerna never versions, publishes, or runs `build`/`test`/`lint` scripts against it. See [`site/README` conventions below](#documentation-site) for how to work on it.
+There's also a top-level [`site/`](site) directory — the [Astro Starlight](https://starlight.astro.build/) documentation site, deployed to GitHub Pages. It's part of the pnpm workspace (so `pnpm install` at the root sets it up too), but it's not a `packages/*` entry, so Lerna never versions, publishes, or runs `build`/`test`/`lint` scripts against it. See [Documentation Site](#documentation-site) below for how to work on it.
 
 Tooling:
 
@@ -106,6 +106,29 @@ To add a root-level devDependency (e.g., a shared build tool):
 pnpm add -w -D <package>
 ```
 
+## Documentation Site
+
+The [docs site](https://simplysf.github.io/simply-node/) lives in [`site/`](site) — an [Astro Starlight](https://starlight.astro.build/) site, deployed to GitHub Pages by `.github/workflows/docs.yml` on every push to `main` that touches `site/**` or any package's `src/`, `README.md`, or `package.json`.
+
+```sh
+pnpm --filter site run dev     # local preview at http://localhost:4321/simply-node/
+pnpm --filter site run build   # production build to site/dist, run before opening a PR that touches site/
+```
+
+Every page under `site/src/content/docs/api/` is generated at build time by the
+[`starlight-typedoc`](https://www.npmjs.com/package/starlight-typedoc) integration configured in
+`site/astro.config.mjs` — one instance per package, each pointed at that package's `src/index.ts` and
+`tsconfig.json`. Nothing under `api/` is hand-edited or committed; if a page is wrong, fix the
+exported function/type's JSDoc comment in the package's `src/`, not the generated page. Adding a
+sixth package means adding a sixth `createStarlightTypeDocPlugin()` instance (with its own
+non-overlapping `output` path) in `astro.config.mjs`.
+
+Everything under `site/src/content/docs/guides/` is hand-authored — one file per package, with
+realistic usage examples pulled from real call sites (in this repo's own tests, or in
+[`simply-plugins`](https://github.com/SimplySF/simply-plugins), which consumes every package here).
+Keep a guide in sync with a package's public API when you change it: an example that no longer
+compiles is worse than no example.
+
 ## Commit Messages
 
 Commits must follow [Conventional Commits](https://www.conventionalcommits.org/) (enforced by commitlint on commit). This matters beyond style: Lerna uses your commit types during release to decide which packages get versioned and how their `CHANGELOG.md` is generated.
@@ -156,10 +179,11 @@ If a version was tagged and released but npm publish failed for one or more pack
 
 ## CI
 
-| Workflow      | Trigger                                               | What it does                                                                                                                                                                            |
-| ------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `test.yml`    | Push to non-main branches                             | Runs `pnpm run build` + `pnpm test` on Linux (lts/_, lts/-1) and Windows (lts/_)                                                                                                        |
-| `release.yml` | Push to `main` or `prerelease/**`, or manual dispatch | Runs `pnpm run build` + `pnpm test`, then bumps versions, tags, creates GitHub releases, and publishes to npm in one step (see [Versioning and Publishing](#versioning-and-publishing)) |
+| Workflow      | Trigger                                                                                        | What it does                                                                                                                                                                            |
+| ------------- | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `test.yml`    | Push to non-main branches                                                                      | Runs `pnpm run build` + `pnpm test` on Linux (lts/_, lts/-1) and Windows (lts/_)                                                                                                        |
+| `release.yml` | Push to `main` or `prerelease/**`, or manual dispatch                                          | Runs `pnpm run build` + `pnpm test`, then bumps versions, tags, creates GitHub releases, and publishes to npm in one step (see [Versioning and Publishing](#versioning-and-publishing)) |
+| `docs.yml`    | Push/PR touching `site/**` or a package's `src`/`README.md`/`package.json`, or manual dispatch | Builds the docs site, checks for broken internal links, and deploys to GitHub Pages on `main`                                                                                           |
 
 ## Git Hooks
 
