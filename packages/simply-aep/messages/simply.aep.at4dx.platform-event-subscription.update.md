@@ -44,11 +44,11 @@ MatcherRule__c — which of --event-category/--event-name the distributor's matc
 
 # flags.event-category.summary
 
-EventCategory__c. If not given, the existing value is kept. Required when the record's MatcherRule__c is MatchCategory or MatchCategoryAndEvent — leaving it blank for those raises matcher-rule-missing-field.
+EventCategory__c. If not given, the existing value is kept. Required when the record's MatcherRule__c is MatchEventBusAndCategory or MatchEventBusAndCategoryAndEventName — leaving it blank for those raises matcher-rule-missing-field.
 
 # flags.event-name.summary
 
-Event__c. If not given, the existing value is kept. Required when the record's MatcherRule__c is MatchEvent or MatchCategoryAndEvent — leaving it blank for those raises matcher-rule-missing-field.
+Event__c. If not given, the existing value is kept. Required when the record's MatcherRule__c is MatchEventBusAndEventName or MatchEventBusAndCategoryAndEventName — leaving it blank for those raises matcher-rule-missing-field.
 
 # flags.active.summary
 

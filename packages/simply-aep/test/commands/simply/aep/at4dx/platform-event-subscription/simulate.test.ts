@@ -184,7 +184,7 @@ describe('simply aep at4dx platform-event-subscription simulate', () => {
       [
         '  <values><field>EventBus__c</field><value xsi:type="xsd:string">Account_Change__e</value></values>',
         '  <values><field>Consumer__c</field><value xsi:type="xsd:string">BrokenConsumer</value></values>',
-        '  <values><field>MatcherRule__c</field><value xsi:type="xsd:string">MatchCategory</value></values>',
+        '  <values><field>MatcherRule__c</field><value xsi:type="xsd:string">MatchEventBusAndCategory</value></values>',
         '  <values><field>Event__c</field><value xsi:type="xsd:string">AccountUpdated</value></values>',
       ].join('\n'),
     );

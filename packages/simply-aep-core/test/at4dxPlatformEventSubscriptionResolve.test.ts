@@ -97,47 +97,53 @@ describe('validatePlatformEventSubscriptions', () => {
       expect(issues.filter((i) => i.rule === 'matcher-rule-missing-field')).toEqual([]);
     });
 
-    it('flags MatchCategory when eventCategory is blank', () => {
+    it('flags MatchEventBusAndCategory when eventCategory is blank', () => {
       const issues = validatePlatformEventSubscriptions({
-        records: [record({ matcherRule: 'MatchCategory', eventCategory: undefined })],
+        records: [record({ matcherRule: 'MatchEventBusAndCategory', eventCategory: undefined })],
         malformed: noMalformed,
       });
       expect(issues).toEqual([expect.objectContaining({ rule: 'matcher-rule-missing-field', severity: 'error' })]);
     });
 
-    it('does not flag MatchCategory when eventCategory is set', () => {
+    it('does not flag MatchEventBusAndCategory when eventCategory is set', () => {
       const issues = validatePlatformEventSubscriptions({
-        records: [record({ matcherRule: 'MatchCategory', eventCategory: 'Finance' })],
+        records: [record({ matcherRule: 'MatchEventBusAndCategory', eventCategory: 'Finance' })],
         malformed: noMalformed,
       });
       expect(issues.filter((i) => i.rule === 'matcher-rule-missing-field')).toEqual([]);
     });
 
-    it('flags MatchEvent when event is blank', () => {
+    it('flags MatchEventBusAndEventName when event is blank', () => {
       const issues = validatePlatformEventSubscriptions({
-        records: [record({ matcherRule: 'MatchEvent', event: undefined })],
+        records: [record({ matcherRule: 'MatchEventBusAndEventName', event: undefined })],
         malformed: noMalformed,
       });
       expect(issues).toEqual([expect.objectContaining({ rule: 'matcher-rule-missing-field', severity: 'error' })]);
     });
 
-    it('flags MatchCategoryAndEvent when either field is blank', () => {
+    it('flags MatchEventBusAndCategoryAndEventName when either field is blank', () => {
       const onlyCategory = validatePlatformEventSubscriptions({
-        records: [record({ matcherRule: 'MatchCategoryAndEvent', eventCategory: 'Finance', event: undefined })],
+        records: [
+          record({ matcherRule: 'MatchEventBusAndCategoryAndEventName', eventCategory: 'Finance', event: undefined }),
+        ],
         malformed: noMalformed,
       });
       expect(onlyCategory).toEqual([expect.objectContaining({ rule: 'matcher-rule-missing-field' })]);
 
       const onlyEvent = validatePlatformEventSubscriptions({
-        records: [record({ matcherRule: 'MatchCategoryAndEvent', eventCategory: undefined, event: 'Updated' })],
+        records: [
+          record({ matcherRule: 'MatchEventBusAndCategoryAndEventName', eventCategory: undefined, event: 'Updated' }),
+        ],
         malformed: noMalformed,
       });
       expect(onlyEvent).toEqual([expect.objectContaining({ rule: 'matcher-rule-missing-field' })]);
     });
 
-    it('does not flag MatchCategoryAndEvent when both fields are set', () => {
+    it('does not flag MatchEventBusAndCategoryAndEventName when both fields are set', () => {
       const issues = validatePlatformEventSubscriptions({
-        records: [record({ matcherRule: 'MatchCategoryAndEvent', eventCategory: 'Finance', event: 'Updated' })],
+        records: [
+          record({ matcherRule: 'MatchEventBusAndCategoryAndEventName', eventCategory: 'Finance', event: 'Updated' }),
+        ],
         malformed: noMalformed,
       });
       expect(issues.filter((i) => i.rule === 'matcher-rule-missing-field')).toEqual([]);
@@ -163,7 +169,9 @@ describe('validatePlatformEventSubscriptions', () => {
 
     it('does not flag a non-MatchEventBus record with both match fields blank (matcher-rule-missing-field covers it instead)', () => {
       const issues = validatePlatformEventSubscriptions({
-        records: [record({ matcherRule: 'MatchCategoryAndEvent', eventCategory: undefined, event: undefined })],
+        records: [
+          record({ matcherRule: 'MatchEventBusAndCategoryAndEventName', eventCategory: undefined, event: undefined }),
+        ],
         malformed: noMalformed,
       });
       expect(issues.filter((i) => i.rule === 'unreachable-subscription')).toEqual([]);
@@ -271,7 +279,7 @@ describe('resolvePlatformEventDistribution', () => {
 
   it('passes the pre-filter via Event__c while MatcherRule__c needs the blank EventCategory__c — "matcher-rule-missing-field", not "prefiltered"', () => {
     const result = resolvePlatformEventDistribution(input, [
-      record({ matcherRule: 'MatchCategory', eventCategory: undefined, event: 'AccountUpdated' }),
+      record({ matcherRule: 'MatchEventBusAndCategory', eventCategory: undefined, event: 'AccountUpdated' }),
     ]);
     expect(result.matches).toEqual([]);
     expect(result.misses).toEqual([expect.objectContaining({ reason: 'matcher-rule-missing-field' })]);
@@ -279,11 +287,11 @@ describe('resolvePlatformEventDistribution', () => {
 
   it('misses a record whose matcher rule fields are present but don\'t match the event, with reason "no-match"', () => {
     const result = resolvePlatformEventDistribution(input, [
-      record({ matcherRule: 'MatchCategory', eventCategory: 'Finance', event: 'AccountUpdated' }),
+      record({ matcherRule: 'MatchEventBusAndCategory', eventCategory: 'Finance', event: 'AccountUpdated' }),
     ]);
-    // eventCategory matches the pre-filter and MatchCategory's own field, but flip it to a mismatch:
+    // eventCategory matches the pre-filter and MatchEventBusAndCategory's own field, but flip it to a mismatch:
     const mismatch = resolvePlatformEventDistribution(input, [
-      record({ matcherRule: 'MatchCategory', eventCategory: 'Other', event: 'AccountUpdated' }),
+      record({ matcherRule: 'MatchEventBusAndCategory', eventCategory: 'Other', event: 'AccountUpdated' }),
     ]);
     expect(result.matches).toHaveLength(1);
     expect(mismatch.matches).toEqual([]);
@@ -298,26 +306,30 @@ describe('resolvePlatformEventDistribution', () => {
       expect(result.matches).toHaveLength(1);
     });
 
-    it('MatchCategory matches on EventCategory__c, case-insensitively', () => {
+    it('MatchEventBusAndCategory matches on EventCategory__c, case-insensitively', () => {
       const result = resolvePlatformEventDistribution(input, [
-        record({ matcherRule: 'MatchCategory', eventCategory: 'FINANCE', event: undefined }),
+        record({ matcherRule: 'MatchEventBusAndCategory', eventCategory: 'FINANCE', event: undefined }),
       ]);
       expect(result.matches).toHaveLength(1);
     });
 
-    it('MatchEvent matches on Event__c, case-insensitively', () => {
+    it('MatchEventBusAndEventName matches on Event__c, case-insensitively', () => {
       const result = resolvePlatformEventDistribution(input, [
-        record({ matcherRule: 'MatchEvent', eventCategory: undefined, event: 'accountupdated' }),
+        record({ matcherRule: 'MatchEventBusAndEventName', eventCategory: undefined, event: 'accountupdated' }),
       ]);
       expect(result.matches).toHaveLength(1);
     });
 
-    it('MatchCategoryAndEvent requires both to match', () => {
+    it('MatchEventBusAndCategoryAndEventName requires both to match', () => {
       const both = resolvePlatformEventDistribution(input, [
-        record({ matcherRule: 'MatchCategoryAndEvent', eventCategory: 'Finance', event: 'AccountUpdated' }),
+        record({
+          matcherRule: 'MatchEventBusAndCategoryAndEventName',
+          eventCategory: 'Finance',
+          event: 'AccountUpdated',
+        }),
       ]);
       const onlyOne = resolvePlatformEventDistribution(input, [
-        record({ matcherRule: 'MatchCategoryAndEvent', eventCategory: 'Finance', event: 'Other' }),
+        record({ matcherRule: 'MatchEventBusAndCategoryAndEventName', eventCategory: 'Finance', event: 'Other' }),
       ]);
       expect(both.matches).toHaveLength(1);
       expect(onlyOne.matches).toEqual([]);

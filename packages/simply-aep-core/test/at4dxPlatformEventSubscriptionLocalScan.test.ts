@@ -61,7 +61,7 @@ describe('scanLocalPlatformEventSubscriptions', () => {
         { field: 'Consumer__c', value: 'AccountChangeConsumer' },
         { field: 'EventCategory__c', value: 'Finance' },
         { field: 'Event__c', value: 'Updated' },
-        { field: 'MatcherRule__c', value: 'MatchCategoryAndEvent' },
+        { field: 'MatcherRule__c', value: 'MatchEventBusAndCategoryAndEventName' },
         { field: 'IsActive__c', value: 'true', type: 'boolean' },
         { field: 'Execute_Synchronous__c', value: 'true', type: 'boolean' },
       ])}\n</CustomMetadata>\n`,
@@ -77,7 +77,7 @@ describe('scanLocalPlatformEventSubscriptions', () => {
         consumer: 'AccountChangeConsumer',
         eventCategory: 'Finance',
         event: 'Updated',
-        matcherRule: 'MatchCategoryAndEvent',
+        matcherRule: 'MatchEventBusAndCategoryAndEventName',
         isActive: true,
         executeSynchronous: true,
         source: 'my-project',
@@ -108,25 +108,27 @@ describe('scanLocalPlatformEventSubscriptions', () => {
     expect(records[0].event).toBeUndefined();
   });
 
-  it.each(['MatchEventBus', 'MatchCategory', 'MatchEvent', 'MatchCategoryAndEvent'])(
-    'round-trips MatcherRule__c value %s',
-    (matcherRule) => {
-      const projectDir = path.join(tmpDir, 'my-project');
-      writeCustomMetadata(
-        projectDir,
-        'PlatformEvents_Subscription.RuleTest.md-meta.xml',
-        `${XML_HEADER}\n  <label>RuleTest</label>\n  <protected>false</protected>\n${values([
-          { field: 'EventBus__c', value: 'Account_Change__e' },
-          { field: 'Consumer__c', value: 'RuleTestConsumer' },
-          { field: 'MatcherRule__c', value: matcherRule },
-        ])}\n</CustomMetadata>\n`,
-      );
+  it.each([
+    'MatchEventBus',
+    'MatchEventBusAndCategory',
+    'MatchEventBusAndEventName',
+    'MatchEventBusAndCategoryAndEventName',
+  ])('round-trips MatcherRule__c value %s', (matcherRule) => {
+    const projectDir = path.join(tmpDir, 'my-project');
+    writeCustomMetadata(
+      projectDir,
+      'PlatformEvents_Subscription.RuleTest.md-meta.xml',
+      `${XML_HEADER}\n  <label>RuleTest</label>\n  <protected>false</protected>\n${values([
+        { field: 'EventBus__c', value: 'Account_Change__e' },
+        { field: 'Consumer__c', value: 'RuleTestConsumer' },
+        { field: 'MatcherRule__c', value: matcherRule },
+      ])}\n</CustomMetadata>\n`,
+    );
 
-      const { records } = scanLocalPlatformEventSubscriptions([tmpDir]);
+    const { records } = scanLocalPlatformEventSubscriptions([tmpDir]);
 
-      expect(records[0].matcherRule).toBe(matcherRule);
-    },
-  );
+    expect(records[0].matcherRule).toBe(matcherRule);
+  });
 
   it('ignores CustomMetadata components for other object types', () => {
     const projectDir = path.join(tmpDir, 'my-project');

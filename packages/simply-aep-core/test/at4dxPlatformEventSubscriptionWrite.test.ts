@@ -107,7 +107,7 @@ describe('createPlatformEventSubscription', () => {
   });
 
   it('rejects a matcher-rule-missing-field without force, and includes the issue with force', async () => {
-    const candidate = baseCreateInput({ matcherRule: 'MatchCategory', eventCategory: undefined });
+    const candidate = baseCreateInput({ matcherRule: 'MatchEventBusAndCategory', eventCategory: undefined });
 
     let thrown: PlatformEventSubscriptionWriteError | undefined;
     try {

@@ -209,10 +209,14 @@ command populates `eventBusFields` yet — the local `objects/<Bus>__e/fields/` 
 currently silent on every real invocation. `missing-event-bus-or-consumer`'s `scope` was set to
 `'record'` per Open question 1 below, matching [0011](0011-domain-process-binding-issue-scoping.md)'s
 own definition rather than `field-set-inclusion`'s `'scan'` precedent for the comparable rule. The
-`MatcherRule__c` picklist's four values (`MatchEventBus`, `MatchCategory`, `MatchEvent`,
-`MatchCategoryAndEvent`) are implemented as specified in this doc, but — per the missing-reference-
-material caveat at the top — weren't independently confirmed against the source material's exact API
-names; see the code comment in `at4dxPlatformEventSubscriptionTypes.ts`.
+`MatcherRule__c` picklist's four values were initially implemented as `MatchEventBus`, `MatchCategory`,
+`MatchEvent`, `MatchCategoryAndEvent` — an assumption this doc flagged as unconfirmed per the
+missing-reference-material caveat at the top. That assumption was wrong: apex-enterprise-patterns/at4dx's
+actual picklist (and `PlatformEventDistributor.MATCHER_RULES`) uses `MatchEventBus`,
+`MatchEventBusAndCategory`, `MatchEventBusAndEventName`, `MatchEventBusAndCategoryAndEventName`. Every
+record using one of the three non-`MatchEventBus` rules was reported `malformed` by `LocalScan` as a
+result, since `parseMatcherRule` rejected the real value. Fixed by matching the confirmed spellings; see
+the code comment in `at4dxPlatformEventSubscriptionTypes.ts`.
 
 **Stage 2 — simulate. Landed.** `resolvePlatformEventDistribution` in the same `Resolve` module, and the
 `simulate` command. `matcher-rule-missing-field` and `unreachable-subscription` are refactored onto two
@@ -226,8 +230,8 @@ The evaluation order this stage settled on, in the absence of source material to
 the real trigger's own query scopes to one bus; (2) `IsActive__c: false` misses with reason `inactive`,
 ahead of everything else, since the distributor's own static SOQL never loads it; (3) `triggerHandler`'s
 pre-filter runs _before_ the matcher rule and independently of which fields that record's `MatcherRule__c`
-needs — so a record can pass the pre-filter via `Event__c` while its matcher rule is `MatchCategory` and
-`EventCategory__c` is blank, which is how `matcher-rule-missing-field` actually manifests in a real org:
+needs — so a record can pass the pre-filter via `Event__c` while its matcher rule is `MatchEventBusAndCategory`
+and `EventCategory__c` is blank, which is how `matcher-rule-missing-field` actually manifests in a real org:
 the pre-filter doesn't know or care which field the matcher rule dereferences. A miss from this step is
 tagged `prefiltered`. (4) Only once a record has passed the pre-filter does a blank required field become
 the `matcher-rule-missing-field` hazard — modeled as a miss rather than a thrown exception, since this is

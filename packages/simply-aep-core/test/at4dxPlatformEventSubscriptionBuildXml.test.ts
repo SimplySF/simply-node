@@ -86,7 +86,7 @@ describe('buildPlatformEventSubscriptionXml', () => {
   it('round-trips a record using both EventCategory__c and Event__c', () => {
     const input = record({
       developerName: 'Account_Category_And_Event',
-      matcherRule: 'MatchCategoryAndEvent',
+      matcherRule: 'MatchEventBusAndCategoryAndEventName',
       eventCategory: 'Finance',
       event: 'AccountUpdated',
       executeSynchronous: true,

@@ -45,7 +45,7 @@ describe('simply aep at4dx platform-event-subscription update', () => {
       '--consumer',
       'AccountChangeConsumer',
       '--matcher-rule',
-      'MatchCategory',
+      'MatchEventBusAndCategory',
       '--event-category',
       'Finance',
     ]);
@@ -139,7 +139,7 @@ describe('simply aep at4dx platform-event-subscription update', () => {
       '--consumer',
       'OtherConsumer',
       '--matcher-rule',
-      'MatchCategory',
+      'MatchEventBusAndCategory',
       '--event-category',
       'Finance',
     ]);
