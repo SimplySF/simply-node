@@ -168,3 +168,10 @@ export removal fails a test instead of shipping silently in a patch release.
 - **`simply-cicd`'s exact `alm/`/`vcs/` boundary** — deferred to that package's own doc, as noted above.
 - **Whether `simply-apex`/`simply-flow`/`simply-project` ever grow a `common/`** worth extracting — nothing
   to decide now; revisit if/when one of them factors logic out of its commands for its own reasons.
+
+**2026-09-02 update:** [0026](0026-split-simply-node-simply-plugins-repos.md) split this monorepo into
+`simply-node` and `simply-plugins` three days after this doc was written, which changes how every
+remaining extraction below actually happens — the `git mv`-based steps in this doc's Implementation plan
+no longer apply once source and destination are in different repos. The candidacy criteria, per-package
+survey, and sequencing above are all still correct and unchanged; [0027](0027-core-extraction-round-1-post-split.md)
+picks up from here with the cross-repo mechanics and locks in round 1's scope (excludes `simply-cicd`).
