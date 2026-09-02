@@ -15,6 +15,7 @@ const [simplyDocumentCore, simplyDocumentCoreSidebar] = createStarlightTypeDocPl
 const [simplyReport, simplyReportSidebar] = createStarlightTypeDocPlugin();
 const [simplyDataCore, simplyDataCoreSidebar] = createStarlightTypeDocPlugin();
 const [simplyPackageCore, simplyPackageCoreSidebar] = createStarlightTypeDocPlugin();
+const [simplySchemaCore, simplySchemaCoreSidebar] = createStarlightTypeDocPlugin();
 
 function typeDocOptions(pkg) {
   return {
@@ -63,6 +64,7 @@ export default defineConfig({
         simplyReport(typeDocOptions('simply-report')),
         simplyDataCore(typeDocOptions('simply-data-core')),
         simplyPackageCore(typeDocOptions('simply-package-core')),
+        simplySchemaCore(typeDocOptions('simply-schema-core')),
       ],
       sidebar: [
         { label: 'Get Started', slug: 'getting-started' },
@@ -76,6 +78,7 @@ export default defineConfig({
             { label: 'simply-report', slug: 'guides/simply-report' },
             { label: 'simply-data-core', slug: 'guides/simply-data-core' },
             { label: 'simply-package-core', slug: 'guides/simply-package-core' },
+            { label: 'simply-schema-core', slug: 'guides/simply-schema-core' },
           ],
         },
         {
@@ -88,6 +91,7 @@ export default defineConfig({
             simplyReportSidebar,
             simplyDataCoreSidebar,
             simplyPackageCoreSidebar,
+            simplySchemaCoreSidebar,
           ],
         },
       ],
