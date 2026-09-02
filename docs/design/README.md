@@ -66,6 +66,7 @@ with no `simply-core`/`-core` library involvement, so they now live only in that
 | [0029](0029-simply-sobject-core.md)                                  | Splitting `simply-sobject-core` out of `simply-sobject`                               | Draft       |
 | [0030](0030-simply-community-core.md)                                | Splitting `simply-community-core` out of `simply-community`                           | Draft       |
 | [0031](0031-simply-data-core.md)                                     | Splitting `simply-data-core` out of `simply-data`                                     | Draft       |
+| [0032](0032-simply-package-core.md)                                  | Splitting `simply-package-core` out of `simply-package`                               | Draft       |
 
 ## Template
 
