@@ -64,6 +64,7 @@ with no `simply-core`/`-core` library involvement, so they now live only in that
 | [0027](0027-core-extraction-round-1-post-split.md)                   | Continuing `-core` extraction under the two-repo split (round 1, excl. `simply-cicd`) | Draft       |
 | [0028](0028-simply-permissions-core.md)                              | Splitting `simply-permissions-core` out of `simply-permissions`                       | Draft       |
 | [0029](0029-simply-sobject-core.md)                                  | Splitting `simply-sobject-core` out of `simply-sobject`                               | Draft       |
+| [0030](0030-simply-community-core.md)                                | Splitting `simply-community-core` out of `simply-community`                           | Draft       |
 
 ## Template
 
