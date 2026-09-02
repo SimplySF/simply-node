@@ -175,6 +175,20 @@ This doc covers planning only; the split itself is a separate, later change. In 
 - **Design docs 0009/0019/0020/0023** (the `-core` library-extraction stories) are duplicated as-is
   into both repos' `docs/design/`, since each describes both sides of the boundary this split also
   concerns and each repo's design history should be self-contained.
+- **Design doc placement, corrected**: checking every doc's `Package:` line (not just the four
+  extraction stories above) turned up far more cross-boundary docs than expected — most of the AT4DX
+  design history (0010-0018, 0022, 0025) lists both `simply-aep-core` (stays) and `simply-aep`
+  (moves), and 0024 lists both `simply-apex-core` (stays) and `simply-apex` (moves). Since these
+  document the `-core` library's actual data model/behavior, not just the command surface, they stay
+  relevant to `simply-node` even though the plugin half moved out. Full disposition:
+  - **Removed from `simply-node`, present only in `simply-plugins`** (plugin-only, no `-core`
+    package involved): 0001, 0002, 0003, 0004, 0005, 0007, 0008, 0021.
+  - **Kept in `simply-node`, and duplicated into `simply-plugins`** (cross-boundary — reference a
+    `-core` package that stays as well as a plugin that moves, or are one of the four
+    extraction-story docs): 0006, 0009, 0010, 0011, 0012, 0013, 0014, 0015, 0016, 0017, 0018, 0019,
+    0020, 0022, 0023, 0024, 0025, plus this doc (0026).
+  - `simply-plugins` additionally keeps its own copies of the plugin-only docs removed from
+    `simply-node` above, so its design history is complete for everything that lives there.
 - **In-flight branch survey** (2026-09-02): every remote branch on `origin` except one is 0 commits
   ahead of `main` (already merged/stale refs — includes all `dependabot-*`, `feat/*`, `fix/*`,
   `docs/*` branches and the `worktree-fix+at4dx-matcher-rule-values` local worktree branch). The one
@@ -185,3 +199,18 @@ This doc covers planning only; the split itself is a separate, later change. In 
   `pnpm-lock.yaml`. It should land (or be dropped) before the split, or be re-pointed at
   `simply-plugins` afterward — it touches nothing in `simply-node`, so either way it's a
   simply-plugins-side concern.
+- **Release tags** (2026-09-02): Lerna's independent-mode conventional-commits versioning finds each
+  package's last release via `git describe --match '@simplysf/<pkg>@*'`, so `simply-plugins` needed
+  the moved packages' existing tags, not just their commit history — without them, the next `lerna
+publish` there would have no anchor and could recompute the wrong bump. Migrated all 436 tags
+  (across the 14 moved packages) by matching each tag's original commit to its `git subtree split`
+  equivalent by content (the rewritten commit's root tree equals `<original commit>:packages/<pkg>`,
+  since subtree split doesn't touch trees, messages, or dates) rather than by position — a first pass
+  using positional correspondence silently mismatched two packages (`simply-cicd`, `simply-schema`)
+  whose history includes merges that Git's default path-log simplification handles differently from
+  `git subtree split`'s own walk. All 436 tags verified reachable from `simply-plugins:main` and
+  pushed. Also had to clean up: the initial `git fetch <simply-node-path>` (no refspec) pulled every
+  branch, not just the `split/*` ones, which made Git auto-follow-fetch all 498 of `simply-node`'s
+  original tags pointing at pre-split (and, for `simply-plugins`, unreachable) commits — those were
+  deleted before the correct 436 were created, and `git gc --prune=now` reclaimed the now-unreachable
+  objects (`.git` dropped from 6.6M to 3.2M).
