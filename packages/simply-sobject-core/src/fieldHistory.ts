@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import type { FilterCondition, FilterGroup } from '../schemas/history/filterConfig.js';
+import type { FilterCondition, FilterGroup } from './schemas/history/filterConfig.js';
 
 /**
  * Derive the field history object's API name for an sobject. Opportunity is a special case —
