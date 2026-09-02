@@ -61,6 +61,7 @@ refactors that keep the public surface identical (though a short doc is welcome 
 | [0023](0023-simply-apex-core.md)                                     | Splitting `simply-apex-core` out of `simply-apex`                             | Implemented           |
 | [0024](0024-apex-test-suite-generate.md)                             | `simply apex test-suite generate`                                             | Implemented           |
 | [0025](0025-at4dx-platform-event-subscription-support.md)            | AT4DX Platform Event Subscription support                                     | Draft                 |
+| [0026](0026-split-simply-node-simply-plugins-repos.md)               | Splitting `simply-node` into `simply-node` + `simply-plugins` repos           | Draft                 |
 
 ## Template
 
