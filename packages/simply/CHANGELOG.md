@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [6.5.1](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply%406.5.0...%40simplysf%2Fsimply%406.5.1) (2026-09-02)
+
+### Bug Fixes
+
+- **simply-aep-core:** correct AT4DX MatcherRule__c enum values ([28589e7](https://github.com/SimplySF/simply-node/commit/28589e79e8923182fdd2c6fc3076609caac0d1f4))
+
 # [6.5.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply%406.4.0...%40simplysf%2Fsimply%406.5.0) (2026-09-01)
 
 ### Features
