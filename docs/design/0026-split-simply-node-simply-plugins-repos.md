@@ -1,6 +1,11 @@
 # 0026 — Splitting `simply-node` into `simply-node` + `simply-plugins`
 
-**Status:** Draft
+**Status:** Implemented — repo split, 436-tag migration, branch-protection parity, and the two
+post-split CI fixes (TypeDoc build ordering, doubled docs-site link prefixes) all landed. The npm
+publishing question resolved itself: `simply-plugins`' `release.yml` reaches its `Publish` step
+fine (the secret is provisioned), though its last two runs on `main` failed one step earlier
+(`lerna ERR! EUNCOMMIT`, an uncommitted `pnpm-workspace.yaml`/`pnpm-lock.yaml` pair left over from a
+manual push) — unrelated to this doc, tracked separately.
 **Package:** repo-wide (`pnpm-workspace.yaml`, `lerna.json`, `.github/`, every `packages/*`, `site/`)
 **Date:** 2026-09-02
 
@@ -161,17 +166,17 @@ This doc covers planning only; the split itself is a separate, later change. In 
 
 ## Open questions
 
-- **npm org/team access** for publishing from a second repo's CI — confirm the `NPM_TOKEN` secret
-  (or equivalent) is provisioned for `simply-plugins` before its `release.yml` is expected to
-  publish anything.
-- **GitHub repo settings** (branch protection, required status checks, issue labels) on the new
-  `simply-plugins` repo aren't covered here — needs a pass to mirror whatever's configured on
-  `simply-node` today.
 - **Existing open branches** against packages that are moving — see survey in Resolved below; only
   one needs action.
 
 ## Resolved
 
+- **GitHub repo settings**: branch-protection rulesets (`Main`, `Main Destructive`) copied from
+  `simply-node` to `simply-plugins`; both repos now carry identical rulesets (verified via `gh api
+repos/<owner>/<repo>/rulesets`).
+- **npm org/team access**: `simply-plugins`' `release.yml` reaches its `Publish` step (the
+  `NPM_TOKEN` secret is provisioned) — its last two `main` runs failed one step earlier instead
+  (`lerna ERR! EUNCOMMIT`), unrelated to token/access provisioning.
 - **Design docs 0009/0019/0020/0023** (the `-core` library-extraction stories) are duplicated as-is
   into both repos' `docs/design/`, since each describes both sides of the boundary this split also
   concerns and each repo's design history should be self-contained.

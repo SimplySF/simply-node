@@ -1,6 +1,9 @@
 # 0028 — Splitting `simply-permissions-core` out of `simply-permissions`
 
-**Status:** Draft
+**Status:** Implemented (PR #173) — published as `0.2.0`, then republished as `0.2.2` after the
+initial bootstrap publish went out via plain `npm publish` and didn't rewrite its `workspace:`
+dependency (see the package's own `CHANGELOG.md`). `simply-plugins`' companion PR (#8) is open,
+not yet merged.
 **Package:** new `packages/simply-permissions-core` (in `simply-node`); `packages/simply-permissions`
 (CLI, slimmed, in `simply-plugins`)
 **Date:** 2026-09-02

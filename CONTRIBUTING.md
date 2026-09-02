@@ -125,9 +125,10 @@ Every page under `site/src/content/docs/api/` is generated at build time by the
 [`starlight-typedoc`](https://www.npmjs.com/package/starlight-typedoc) integration configured in
 `site/astro.config.mjs` — one instance per package, each pointed at that package's `src/index.ts` and
 `tsconfig.json`. Nothing under `api/` is hand-edited or committed; if a page is wrong, fix the
-exported function/type's JSDoc comment in the package's `src/`, not the generated page. Adding a
-sixth package means adding a sixth `createStarlightTypeDocPlugin()` instance (with its own
-non-overlapping `output` path) in `astro.config.mjs`.
+exported function/type's JSDoc comment in the package's `src/`, not the generated page. Adding a new
+package means adding another `createStarlightTypeDocPlugin()` instance (with its own
+non-overlapping `output` path) in `astro.config.mjs`, plus a row in both its `sidebar.Guides` and
+`sidebar["API Reference"]` arrays.
 
 Everything under `site/src/content/docs/guides/` is hand-authored — one file per package, with
 realistic usage examples pulled from real call sites (in this repo's own tests, or in

@@ -1,6 +1,7 @@
 # 0030 — Splitting `simply-community-core` out of `simply-community`
 
-**Status:** Draft
+**Status:** Implemented (PR #175) — published as `0.1.0` via `pnpm publish` (the corrected bootstrap
+command; no `workspace:` rewrite issue this time). `simply-plugins`' companion PR is not yet open.
 **Package:** new `packages/simply-community-core` (in `simply-node`); `packages/simply-community`
 (CLI, slimmed, in `simply-plugins`)
 **Date:** 2026-09-02
