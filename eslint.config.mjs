@@ -57,6 +57,7 @@ const allPackages = [
   'packages/simply-document-core',
   'packages/simply-permissions-core',
   'packages/simply-report',
+  'packages/simply-sobject-core',
 ];
 
 // The shared libraries: plain packages consumed by the plugins, with no oclif commands of their own.
@@ -67,6 +68,7 @@ const libraryPackages = [
   'packages/simply-document-core',
   'packages/simply-permissions-core',
   'packages/simply-report',
+  'packages/simply-sobject-core',
 ];
 
 // sf-plugin's recommended rules only ever applied to the oclif command packages, not the libraries or simply.

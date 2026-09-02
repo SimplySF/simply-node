@@ -14,20 +14,21 @@ Thanks for your interest in contributing to Simply! This document covers the rep
 
 ## Repository Structure
 
-This repository is a Lerna monorepo containing six framework-independent libraries — no Salesforce
+This repository is a Lerna monorepo containing seven framework-independent libraries — no Salesforce
 CLI plugins live here anymore (see [`simply-plugins`](https://github.com/SimplySF/simply-plugins) for
 those, and [docs/design/0026](docs/design/0026-split-simply-node-simply-plugins-repos.md) for why).
 Every package has its own `CONTRIBUTING.md` covering what's specific to it — read this file first,
 then that one.
 
-| Package                                                                 | Description                                                                                                                        |
-| ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| [`@simplysf/simply-core`](packages/simply-core)                         | Shared internal library                                                                                                            |
-| [`@simplysf/simply-report`](packages/simply-report)                     | Shared HTML report scaffolding                                                                                                     |
-| [`@simplysf/simply-aep-core`](packages/simply-aep-core)                 | AT4DX binding scan/resolve library — meant for direct use outside this monorepo too                                                |
-| [`@simplysf/simply-document-core`](packages/simply-document-core)       | Change report/technical design document rendering library — like `simply-aep-core`, meant for direct use outside this monorepo too |
-| [`@simplysf/simply-apex-core`](packages/simply-apex-core)               | Apex execute/log-purge/trace-flag library — like `simply-aep-core`, meant for direct use outside this monorepo too                 |
-| [`@simplysf/simply-permissions-core`](packages/simply-permissions-core) | Permission set XML and permissions report rendering — like `simply-aep-core`, meant for direct use outside this monorepo too       |
+| Package                                                                 | Description                                                                                                                                         |
+| ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`@simplysf/simply-core`](packages/simply-core)                         | Shared internal library                                                                                                                             |
+| [`@simplysf/simply-report`](packages/simply-report)                     | Shared HTML report scaffolding                                                                                                                      |
+| [`@simplysf/simply-aep-core`](packages/simply-aep-core)                 | AT4DX binding scan/resolve library — meant for direct use outside this monorepo too                                                                 |
+| [`@simplysf/simply-document-core`](packages/simply-document-core)       | Change report/technical design document rendering library — like `simply-aep-core`, meant for direct use outside this monorepo too                  |
+| [`@simplysf/simply-apex-core`](packages/simply-apex-core)               | Apex execute/log-purge/trace-flag library — like `simply-aep-core`, meant for direct use outside this monorepo too                                  |
+| [`@simplysf/simply-permissions-core`](packages/simply-permissions-core) | Permission set XML and permissions report rendering — like `simply-aep-core`, meant for direct use outside this monorepo too                        |
+| [`@simplysf/simply-sobject-core`](packages/simply-sobject-core)         | Field history object derivation/filtering and relationship-field discovery — like `simply-aep-core`, meant for direct use outside this monorepo too |
 
 Every package here is consumed by one or more plugins over in `simply-plugins`, as an ordinary
 published npm dependency — there is no workspace-protocol link between the two repos. A change to a
