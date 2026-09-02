@@ -6,7 +6,7 @@ Shared HTML report scaffolding for [`@simplysf`](https://github.com/SimplySF/sim
 
 Several commands emit a standalone HTML report. This package holds the parts they all need — the page shell, the base stylesheet, and a Handlebars environment — so each report only has to supply its own body and any CSS specific to it.
 
-Currently consumed by [`@simplysf/simply-permissions`](https://github.com/SimplySF/simply-node/tree/main/packages/simply-permissions), [`@simplysf/simply-schema`](https://github.com/SimplySF/simply-node/tree/main/packages/simply-schema), and [`@simplysf/simply-sobject`](https://github.com/SimplySF/simply-node/tree/main/packages/simply-sobject).
+Currently consumed by [`@simplysf/simply-permissions`](https://github.com/SimplySF/simply-plugins/tree/main/packages/simply-permissions), [`@simplysf/simply-schema`](https://github.com/SimplySF/simply-plugins/tree/main/packages/simply-schema), and [`@simplysf/simply-sobject`](https://github.com/SimplySF/simply-plugins/tree/main/packages/simply-sobject).
 
 ## Install
 

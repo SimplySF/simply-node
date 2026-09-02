@@ -4,7 +4,7 @@
 
 Shared internal utilities for [`@simplysf`](https://github.com/SimplySF/simply-node) Salesforce CLI plugins. This is not a Salesforce CLI plugin itself — it's a plain library consumed by the other packages in this monorepo.
 
-It deliberately does **not** depend on `@salesforce/sf-plugins-core`. Anything needing the oclif flag or command layer belongs in [`@simplysf/simply-plugin-kit`](https://github.com/SimplySF/simply-node/tree/main/packages/simply-plugin-kit) instead.
+It deliberately does **not** depend on `@salesforce/sf-plugins-core`. Anything needing the oclif flag or command layer belongs in [`@simplysf/simply-plugin-kit`](https://github.com/SimplySF/simply-plugins/tree/main/packages/simply-plugin-kit) instead.
 
 ## Install
 

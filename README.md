@@ -2,64 +2,36 @@
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-Simply is a collection of [Salesforce CLI](https://developer.salesforce.com/tools/salesforcecli) plugins built by [SimplySF](https://github.com/SimplySF) that add commands for working with Apex, Apex Enterprise Patterns, CI/CD pipelines, Communities, data, documentation generation, Flows, packages, permissions, projects, schema visualization, and SObjects in Salesforce orgs.
+This repo holds the framework-independent Node/TypeScript libraries behind [SimplySF](https://github.com/SimplySF)'s [Salesforce CLI](https://developer.salesforce.com/tools/salesforcecli) plugins — no oclif dependency, meant to be consumed directly (an editor extension, a CI script, or any other non-CLI caller) as well as by the plugins themselves.
 
-📖 **[Documentation site](https://simplysf.github.io/simply-node/)** — guides and command reference for every plugin, with [`simply-cicd`](https://simplysf.github.io/simply-node/cicd/) covered in the most depth.
+The oclif plugins that consume these libraries — `simply`, `simply-aep`, `simply-apex`, `simply-cicd`, `simply-community`, `simply-data`, `simply-document`, `simply-flow`, `simply-package`, `simply-permissions`, `simply-project`, `simply-schema`, `simply-sobject`, plus `simply-plugin-kit` and the docs site — live in the sibling [`simply-plugins`](https://github.com/SimplySF/simply-plugins) repo. See [docs/design/0026](docs/design/0026-split-simply-node-simply-plugins-repos.md) for why the repos are split this way.
 
 ## Packages
 
-This repository is a monorepo. Thirteen packages are published independently to npm as CLI plugins, plus four internal libraries used by them:
+This repository is a monorepo. Five packages are published independently to npm:
 
-| Package                                                       | Description                                                               |
-| ------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| [`@simplysf/simply`](packages/simply)                         | Orchestrator plugin — bundles the plugins marked ✅ below                 |
-| [`@simplysf/simply-aep`](packages/simply-aep)                 | Commands for Apex Enterprise Patterns tooling (fflib, force-di, AT4DX) ✅ |
-| [`@simplysf/simply-apex`](packages/simply-apex)               | Commands for working with Apex ✅                                         |
-| [`@simplysf/simply-cicd`](packages/simply-cicd)               | Commands for Salesforce CI/CD pipelines                                   |
-| [`@simplysf/simply-community`](packages/simply-community)     | Commands for working with Salesforce Communities ✅                       |
-| [`@simplysf/simply-data`](packages/simply-data)               | Commands for uploading and downloading files in a Salesforce org ✅       |
-| [`@simplysf/simply-document`](packages/simply-document)       | Commands for generating project documentation ✅                          |
-| [`@simplysf/simply-flow`](packages/simply-flow)               | Commands for working with Flows ✅                                        |
-| [`@simplysf/simply-package`](packages/simply-package)         | Commands for managing package dependencies ✅                             |
-| [`@simplysf/simply-permissions`](packages/simply-permissions) | Commands for working with permissions ✅                                  |
-| [`@simplysf/simply-project`](packages/simply-project)         | Commands for working with Salesforce projects ✅                          |
-| [`@simplysf/simply-schema`](packages/simply-schema)           | Commands for visualizing Salesforce schema ✅                             |
-| [`@simplysf/simply-sobject`](packages/simply-sobject)         | Commands for working with SObjects ✅                                     |
+| Package                                                           | Description                                                                     |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| [`@simplysf/simply-core`](packages/simply-core)                   | Querying, bulk export, CSV, and `sfdx-project.json` utilities                   |
+| [`@simplysf/simply-aep-core`](packages/simply-aep-core)           | Apex Enterprise Patterns (fflib, force-di, AT4DX) scan and resolution logic     |
+| [`@simplysf/simply-apex-core`](packages/simply-apex-core)         | Apex execute/log-purge/trace-flag logic                                         |
+| [`@simplysf/simply-document-core`](packages/simply-document-core) | Confluence-storage-format change report and technical design document rendering |
+| [`@simplysf/simply-report`](packages/simply-report)               | Shared HTML report scaffolding                                                  |
 
-Internal libraries — consumed by the plugins above, not Salesforce CLI plugins themselves:
+`simply-aep-core`, `simply-apex-core`, and `simply-document-core` are meant for direct use outside
+this monorepo too (an editor extension, a CI job, a script) — not just as the library layer behind
+their respective [`simply-plugins`](https://github.com/SimplySF/simply-plugins) command packages.
 
-| Package                                                     | Description                                                                                     |
-| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| [`@simplysf/simply-aep-core`](packages/simply-aep-core)     | Apex Enterprise Patterns (fflib, force-di, AT4DX) scan and resolution logic behind `simply-aep` |
-| [`@simplysf/simply-core`](packages/simply-core)             | Querying, bulk export, CSV, and `sfdx-project.json` utilities                                   |
-| [`@simplysf/simply-plugin-kit`](packages/simply-plugin-kit) | Shared oclif command building blocks                                                            |
-| [`@simplysf/simply-report`](packages/simply-report)         | Shared HTML report scaffolding                                                                  |
-
-See each package's README for its full command reference.
-
-`@simplysf/simply-cicd` is published on its own and is **not** bundled into the orchestrator — install it directly if you want its commands.
+See each package's README for its full API reference.
 
 ## Installation
 
-Install the orchestrator plugin to get every command in one shot, or install an individual plugin for just the commands you need:
-
 ```sh
-sf plugins install @simplysf/simply
-```
-
-```sh
-sf plugins install @simplysf/simply-aep
-sf plugins install @simplysf/simply-apex
-sf plugins install @simplysf/simply-cicd
-sf plugins install @simplysf/simply-community
-sf plugins install @simplysf/simply-data
-sf plugins install @simplysf/simply-document
-sf plugins install @simplysf/simply-flow
-sf plugins install @simplysf/simply-package
-sf plugins install @simplysf/simply-permissions
-sf plugins install @simplysf/simply-project
-sf plugins install @simplysf/simply-schema
-sf plugins install @simplysf/simply-sobject
+npm install @simplysf/simply-core
+npm install @simplysf/simply-aep-core
+npm install @simplysf/simply-apex-core
+npm install @simplysf/simply-document-core
+npm install @simplysf/simply-report
 ```
 
 ## Contributing
@@ -68,7 +40,7 @@ Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the repo s
 
 ## Issues
 
-Please report bugs or request features by [opening an issue](https://github.com/SimplySF/simply-node/issues) in this repository.
+Please report bugs or request features by [opening an issue](https://github.com/SimplySF/simply-node/issues) in this repository. For the CLI plugins themselves, use [simply-plugins](https://github.com/SimplySF/simply-plugins/issues) instead.
 
 ## License
 

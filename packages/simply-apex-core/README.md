@@ -2,7 +2,7 @@
 
 [![NPM](https://img.shields.io/npm/v/@simplysf/simply-apex-core?label=@simplysf/simply-apex-core)](https://npmjs.com/@simplysf/simply-apex-core) [![Downloads/week](https://img.shields.io/npm/dw/@simplysf/simply-apex-core.svg)](https://npmjs.com/@simplysf/simply-apex-core) [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://raw.githubusercontent.com/SimplySF/simply-node/main/LICENSE.txt)
 
-Apex execute/log-purge/trace-flag logic. This is not a Salesforce CLI plugin — it's the library layer behind [`@simplysf/simply-apex`](https://github.com/SimplySF/simply-node/tree/main/packages/simply-apex)'s `sf simply apex ...` commands, published separately so it can be imported directly by anything that wants the same behavior (an editor extension, a CI job, a script) without pulling in the CLI framework.
+Apex execute/log-purge/trace-flag logic. This is not a Salesforce CLI plugin — it's the library layer behind [`@simplysf/simply-apex`](https://github.com/SimplySF/simply-plugins/tree/main/packages/simply-apex)'s `sf simply apex ...` commands, published separately so it can be imported directly by anything that wants the same behavior (an editor extension, a CI job, a script) without pulling in the CLI framework.
 
 Unlike the other internal libraries in this monorepo (`@simplysf/simply-core`, `@simplysf/simply-plugin-kit`, `@simplysf/simply-report`), this package is meant to be depended on by projects outside this repo, not only by other `simply-*` packages.
 

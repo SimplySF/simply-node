@@ -14,31 +14,24 @@ Thanks for your interest in contributing to Simply! This document covers the rep
 
 ## Repository Structure
 
-This repository is a Lerna monorepo containing thirteen Salesforce CLI plugins, plus six internal libraries. Every package has its own `CONTRIBUTING.md` covering what's specific to it — read this file first, then that one.
+This repository is a Lerna monorepo containing five framework-independent libraries — no Salesforce
+CLI plugins live here anymore (see [`simply-plugins`](https://github.com/SimplySF/simply-plugins) for
+those, and [docs/design/0026](docs/design/0026-split-simply-node-simply-plugins-repos.md) for why).
+Every package has its own `CONTRIBUTING.md` covering what's specific to it — read this file first,
+then that one.
 
-| Package                                                           | Description                                                                                                                                              | Bundled into `simply`?    |
-| ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
-| [`@simplysf/simply`](packages/simply)                             | Orchestrator plugin — bundles the plugins marked ✅ below                                                                                                | —                         |
-| [`@simplysf/simply-aep`](packages/simply-aep)                     | Apex Enterprise Patterns commands (fflib, force-di, AT4DX)                                                                                               | ✅                        |
-| [`@simplysf/simply-apex`](packages/simply-apex)                   | Apex commands                                                                                                                                            | ✅                        |
-| [`@simplysf/simply-cicd`](packages/simply-cicd)                   | CI/CD pipeline commands                                                                                                                                  | No — installed on its own |
-| [`@simplysf/simply-community`](packages/simply-community)         | Salesforce Communities commands                                                                                                                          | ✅                        |
-| [`@simplysf/simply-data`](packages/simply-data)                   | File upload/download commands                                                                                                                            | ✅                        |
-| [`@simplysf/simply-document`](packages/simply-document)           | Documentation generation commands                                                                                                                        | ✅                        |
-| [`@simplysf/simply-flow`](packages/simply-flow)                   | Flow commands                                                                                                                                            | ✅                        |
-| [`@simplysf/simply-package`](packages/simply-package)             | Package dependency management commands                                                                                                                   | ✅                        |
-| [`@simplysf/simply-permissions`](packages/simply-permissions)     | Permissions commands                                                                                                                                     | ✅                        |
-| [`@simplysf/simply-project`](packages/simply-project)             | Salesforce project commands                                                                                                                              | ✅                        |
-| [`@simplysf/simply-schema`](packages/simply-schema)               | Schema visualization commands                                                                                                                            | ✅                        |
-| [`@simplysf/simply-sobject`](packages/simply-sobject)             | SObject commands                                                                                                                                         | ✅                        |
-| [`@simplysf/simply-core`](packages/simply-core)                   | Shared internal library — not a CLI plugin                                                                                                               | —                         |
-| [`@simplysf/simply-plugin-kit`](packages/simply-plugin-kit)       | Shared oclif command building blocks — not a CLI plugin                                                                                                  | —                         |
-| [`@simplysf/simply-report`](packages/simply-report)               | Shared HTML report scaffolding — not a CLI plugin                                                                                                        | —                         |
-| [`@simplysf/simply-aep-core`](packages/simply-aep-core)           | AT4DX binding scan/resolve library — not a CLI plugin, and unlike the three libraries above, meant for direct use outside this monorepo too              | —                         |
-| [`@simplysf/simply-document-core`](packages/simply-document-core) | Change report/technical design document rendering library — not a CLI plugin, and like `simply-aep-core`, meant for direct use outside this monorepo too | —                         |
-| [`@simplysf/simply-apex-core`](packages/simply-apex-core)         | Apex execute/log-purge/trace-flag library — not a CLI plugin, and like `simply-aep-core`, meant for direct use outside this monorepo too                 | —                         |
+| Package                                                           | Description                                                                                                                        |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| [`@simplysf/simply-core`](packages/simply-core)                   | Shared internal library                                                                                                            |
+| [`@simplysf/simply-report`](packages/simply-report)               | Shared HTML report scaffolding                                                                                                     |
+| [`@simplysf/simply-aep-core`](packages/simply-aep-core)           | AT4DX binding scan/resolve library — meant for direct use outside this monorepo too                                                |
+| [`@simplysf/simply-document-core`](packages/simply-document-core) | Change report/technical design document rendering library — like `simply-aep-core`, meant for direct use outside this monorepo too |
+| [`@simplysf/simply-apex-core`](packages/simply-apex-core)         | Apex execute/log-purge/trace-flag library — like `simply-aep-core`, meant for direct use outside this monorepo too                 |
 
-The "bundled" column matters when you change a flag: see [Pull Requests](#pull-requests) below.
+Every package here is consumed by one or more plugins over in `simply-plugins`, as an ordinary
+published npm dependency — there is no workspace-protocol link between the two repos. A change to a
+public API here (a new export, a changed function signature, a changed return shape) is effectively
+a cross-repo contract change: see [Pull Requests](#pull-requests) below.
 
 There's also a top-level [`site/`](site) directory — the [Astro Starlight](https://starlight.astro.build/) documentation site, deployed to GitHub Pages. It's part of the pnpm workspace (so `pnpm install` at the root sets it up too), but it's not a `packages/*` entry, so Lerna never versions, publishes, or runs `build`/`test`/`lint` scripts against it. See [`site/README` conventions below](#documentation-site) for how to work on it.
 
@@ -67,18 +60,13 @@ pnpm test
 
 `pnpm install` at the root installs and links every workspace package and sets up git hooks automatically via husky.
 
-To try your changes with the Salesforce CLI, run a plugin's local dev binary from inside its package directory:
+To try your changes against a real org or an existing script, `pnpm link` the package you're working on into whatever consumes it — including a local checkout of [`simply-plugins`](https://github.com/SimplySF/simply-plugins) if you're validating a change to a plugin-facing API:
 
 ```sh
-cd packages/simply-data
-./bin/dev.cmd simply data file upload --file-path fileToUpload.txt --target-org myTargetOrg
-```
-
-or link the package so you can run it from anywhere:
-
-```sh
-sf plugins link .
-sf plugins
+cd packages/simply-core
+pnpm link --global
+cd ../../simply-plugins/packages/simply-data
+pnpm link --global @simplysf/simply-core
 ```
 
 ## Common Commands
@@ -99,7 +87,7 @@ pnpm run reset:install  # same as reset, then reinstall dependencies
 Run inside a single package directory to target just that package:
 
 ```sh
-cd packages/simply-data
+cd packages/simply-core
 pnpm run build
 pnpm test
 ```
@@ -109,7 +97,7 @@ pnpm test
 To add a dependency to a specific package:
 
 ```sh
-pnpm add <package> --filter @simplysf/simply-data
+pnpm add <package> --filter @simplysf/simply-core
 ```
 
 To add a root-level devDependency (e.g., a shared build tool):
@@ -117,19 +105,6 @@ To add a root-level devDependency (e.g., a shared build tool):
 ```sh
 pnpm add -w -D <package>
 ```
-
-## Documentation Site
-
-The [docs site](https://simplysf.github.io/simply-node/) lives in [`site/`](site) — an [Astro Starlight](https://starlight.astro.build/) site, deployed to GitHub Pages by `.github/workflows/docs.yml` on every push to `main` that touches `site/**` or any package's `README.md`/`package.json`.
-
-```sh
-pnpm --filter site run dev     # local preview at http://localhost:4321/simply/, auto-regenerates command reference pages
-pnpm --filter site run build   # production build to site/dist, run before opening a PR that touches site/
-```
-
-Every page under `site/src/content/docs/cicd/reference/` and `site/src/content/docs/plugins/` is auto-generated by `site/scripts/sync-command-reference.mjs` from each package's oclif README — don't hand-edit those files, edit the source package's `messages/*.md` (then run that package's `pnpm run readme`) instead. Everything else under `site/src/content/docs/` (concepts, guides, the landing page) is hand-authored.
-
-Internal links between docs pages should be root-relative (e.g. `/cicd/concepts/happy-soup-vs-project/`) — a remark plugin (`site/plugins/remark-base-links.mjs`) rewrites these to account for the site's `/simply` base path at build time. This does **not** apply to Starlight's `hero.actions` frontmatter on the landing page (`site/src/content/docs/index.mdx`), which needs the `/simply` prefix written out by hand — see the comment there if you're changing those links.
 
 ## Commit Messages
 
@@ -142,7 +117,7 @@ docs: update README
 chore: bump a dependency
 ```
 
-If your change only affects one package, scope the commit to it, e.g. `feat(simply-data): add --max-parallel-jobs flag`.
+If your change only affects one package, scope the commit to it, e.g. `feat(simply-core): add chunked bulk query support`.
 
 ## Pull Requests
 
@@ -150,8 +125,12 @@ If your change only affects one package, scope the commit to it, e.g. `feat(simp
 - If the change has a design document in [`docs/design/`](docs/design/README.md), update it to match what actually shipped, including its `Status` line and its row in the index. A design doc that quietly disagrees with the code is worse than none.
 - Make sure `pnpm run build` and `pnpm test` pass before opening the PR. CI runs both across every package; the pre-push hook runs the same checks but scoped to packages changed since the last release tag (see [Git Hooks](#git-hooks)), so a passing push doesn't guarantee a passing PR if your branch touches a root-level config file (e.g. `tsconfig.json`, `eslint.config.mjs`) that no single package's directory reflects.
 - Aim for high test coverage on new code.
-- Update the relevant package's README/command docs if you changed a command's flags or behavior. `packages/simply-data` regenerates its README command docs automatically on version bump (`oclif readme` runs from its `version` script); every other plugin package requires running `pnpm run readme` manually in that package and committing the result.
-- `command-snapshot.json` (used to flag accidental breaking changes to commands/flags) regenerates automatically as part of each package's `pnpm run build` — just commit whatever changes. CI re-verifies with `git diff --exit-code` after `pnpm run build`, so a stale, uncommitted snapshot fails the build. This includes `packages/simply`'s own `command-snapshot.json` when you change a plugin bundled into `@simplysf/simply` (see the orchestrator's `oclif.plugins` list): its wireit `command-snapshot` task cross-depends on every bundled plugin's `compile` task, so a root `pnpm run build` (or `pnpm run build` from within `packages/simply`) picks up dependency flag changes and regenerates it without any extra step.
+- Update the relevant package's README (its public API surface, examples) if you changed an exported
+  function's signature, behavior, or return shape.
+- If the change is to a package also consumed by a plugin in [`simply-plugins`](https://github.com/SimplySF/simply-plugins)
+  (i.e. anything except a purely internal change to `simply-core`/`simply-report`), call out in the
+  PR description what, if anything, changes for that consumer — a breaking change here needs a
+  coordinated version bump on both sides.
 
 ## Versioning and Publishing
 
