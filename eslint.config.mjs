@@ -48,36 +48,25 @@ const compat = new FlatCompat({
 });
 
 // All published packages; every one carries the same Apache-2.0 header.
+// Every package in this repo is a plain library (no oclif commands of its own) since 0026 split
+// the CLI plugins out to simply-plugins - see docs/design/0026-split-simply-node-simply-plugins-repos.md.
 const allPackages = [
-  'packages/simply',
-  'packages/simply-aep',
   'packages/simply-aep-core',
-  'packages/simply-apex',
   'packages/simply-apex-core',
-  'packages/simply-cicd',
-  'packages/simply-community',
   'packages/simply-core',
-  'packages/simply-data',
-  'packages/simply-document',
   'packages/simply-document-core',
-  'packages/simply-flow',
-  'packages/simply-package',
-  'packages/simply-permissions',
-  'packages/simply-plugin-kit',
+  'packages/simply-permissions-core',
   'packages/simply-report',
-  'packages/simply-project',
-  'packages/simply-schema',
-  'packages/simply-sobject',
 ];
 
 // The shared libraries: plain packages consumed by the plugins, with no oclif commands of their own.
 const libraryPackages = [
-  'packages/simply-core',
-  'packages/simply-plugin-kit',
-  'packages/simply-report',
   'packages/simply-aep-core',
-  'packages/simply-document-core',
   'packages/simply-apex-core',
+  'packages/simply-core',
+  'packages/simply-document-core',
+  'packages/simply-permissions-core',
+  'packages/simply-report',
 ];
 
 // sf-plugin's recommended rules only ever applied to the oclif command packages, not the libraries or simply.
@@ -284,7 +273,17 @@ export default [
   // eslint-plugin-sf-plugin ships native flat configs (an array of config objects) rather than an
   // eslintrc-style shareable config, so it's applied directly instead of through the `scoped` /
   // FlatCompat helper used for the plugins that still only publish eslintrc configs.
-  ...sfPluginPlugin.configs.recommended.map((config) => ({ ...config, files: toSrcFiles(sfPluginPackages) })),
-  ...scoped(mochaTestPackages, { env: { mocha: true }, rules: testOverrideRules }, toTestFiles(mochaTestPackages)),
+  //
+  // Both sfPluginPackages and mochaTestPackages are empty now that every package here is a library
+  // (0026 moved every oclif command package to simply-plugins) - an empty `files: []` array is
+  // invalid ESLint flat-config (throws, doesn't just match nothing), so these blocks are skipped
+  // entirely rather than emitted with an empty files list. Re-add the spread once either package
+  // list is non-empty again.
+  ...(sfPluginPackages.length > 0
+    ? sfPluginPlugin.configs.recommended.map((config) => ({ ...config, files: toSrcFiles(sfPluginPackages) }))
+    : []),
+  ...(mochaTestPackages.length > 0
+    ? scoped(mochaTestPackages, { env: { mocha: true }, rules: testOverrideRules }, toTestFiles(mochaTestPackages))
+    : []),
   ...scoped(libraryPackages, { rules: testOverrideRules }, toTestFiles(libraryPackages)),
 ];

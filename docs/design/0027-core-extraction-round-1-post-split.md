@@ -70,10 +70,20 @@ physically lives and how a change gets published.
 
 For each package, in order:
 
-1. **Extract history for just the moved files**, from a `simply-plugins` checkout:
-   `git subtree split --prefix=packages/<plugin>/src/common -b split/<plugin>-core`. This is the
-   same technique 0026 used for the whole-repo split, just scoped to one `common/` subdirectory —
-   already proven low-risk this session (15 packages split cleanly).
+1. **Extract history for just the moved files.** `git subtree split --prefix=packages/<plugin>/src/common
+-b split/<plugin>-core` from `simply-plugins`' `main` **does not work correctly** — discovered
+   implementing `simply-permissions-core` (0028): every plugin package already crossed one
+   subtree-add merge boundary during 0026's whole-repo split (its own `chore: add <plugin> split
+history` commit), and splitting a sub-path from _after_ that boundary only finds commits on the
+   default (simplified) side of it — for `simply-permissions/src/common` this found 1 commit where
+   the real count, confirmed via the pre-merge branch tip, is 10. The fix: find that commit
+   (`git log --oneline main -- packages/<plugin>` — the _earliest_ one touching the package, its
+   `git log --format='%P' -s <that-commit>`'s second parent is the pre-merge tip), then split from
+   _that_ commit with the prefix relative to _its_ tree (`src/common`, not
+   `packages/<plugin>/src/common` — that commit's tree already starts at the package root): `git
+subtree split --prefix=src/common <pre-merge-tip-sha> -b split/<plugin>-core`. Verify by
+   comparing `git log --oneline split/<plugin>-core | wc -l` against
+   `git log --oneline <pre-merge-tip-sha> -- src/common | wc -l` — they must match.
 2. **Bring it into a `simply-node` checkout**: add the `simply-plugins` checkout as a local remote,
    fetch the split branch, then `git subtree add --prefix=packages/<plugin>-core/src/common
 <remote> split/<plugin>-core`, followed by `git mv packages/<plugin>-core/src/common/* 
