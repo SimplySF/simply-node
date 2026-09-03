@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.14.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-aep-core%400.13.2...%40simplysf%2Fsimply-aep-core%400.14.0) (2026-09-03)
+
+### Features
+
+- **simply-aep-core:** add missing-domain-trigger binding validation rule ([#184](https://github.com/SimplySF/simply-node/issues/184)) ([bc3f3dd](https://github.com/SimplySF/simply-node/commit/bc3f3ddb1c5623eb54fa4030cf497f5c62d2f072))
+
 ## [0.13.2](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-aep-core%400.13.1...%40simplysf%2Fsimply-aep-core%400.13.2) (2026-09-02)
 
 **Note:** Version bump only for package @simplysf/simply-aep-core
