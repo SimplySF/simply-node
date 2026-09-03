@@ -27,21 +27,23 @@ npm install @simplysf/simply-community-core
 npm install @simplysf/simply-data-core
 npm install @simplysf/simply-package-core
 npm install @simplysf/simply-schema-core
+npm install @simplysf/simply-project-setup-core
 ```
 
-| Package                   | What it's for                                                                                                     |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `simply-core`             | Querying, bulk export, CSV, and `sfdx-project.json` utilities                                                     |
-| `simply-report`           | Shared HTML report scaffolding                                                                                    |
-| `simply-aep-core`         | Apex Enterprise Patterns (fflib, force-di, AT4DX) binding scan and resolution logic                               |
-| `simply-document-core`    | Confluence-storage-format change report and technical design document rendering                                   |
-| `simply-apex-core`        | Apex execute, log-purge, and trace-flag logic                                                                     |
-| `simply-permissions-core` | Permission set XML and permissions report rendering                                                               |
-| `simply-sobject-core`     | Field history object derivation/filtering and relationship-field discovery                                        |
-| `simply-community-core`   | Community publish/deploy/domain-verification logic and site-file discovery                                        |
-| `simply-data-core`        | Content Version upload/download and CSV row counting logic                                                        |
-| `simply-package-core`     | Package/package-version alias resolution, `sfdx-project.json` dependency management, and Dev Hub version lookup   |
-| `simply-schema-core`      | sObject schema generation (CSV/Excel parsing, field/object normalization) and interactive schema-report rendering |
+| Package                     | What it's for                                                                                                                                                                                   |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `simply-core`               | Querying, bulk export, CSV, and `sfdx-project.json` utilities                                                                                                                                   |
+| `simply-report`             | Shared HTML report scaffolding                                                                                                                                                                  |
+| `simply-aep-core`           | Apex Enterprise Patterns (fflib, force-di, AT4DX) binding scan and resolution logic                                                                                                             |
+| `simply-document-core`      | Confluence-storage-format change report and technical design document rendering                                                                                                                 |
+| `simply-apex-core`          | Apex execute, log-purge, and trace-flag logic                                                                                                                                                   |
+| `simply-permissions-core`   | Permission set XML and permissions report rendering                                                                                                                                             |
+| `simply-sobject-core`       | Field history object derivation/filtering and relationship-field discovery                                                                                                                      |
+| `simply-community-core`     | Community publish/deploy/domain-verification logic and site-file discovery                                                                                                                      |
+| `simply-data-core`          | Content Version upload/download and CSV row counting logic                                                                                                                                      |
+| `simply-package-core`       | Package/package-version alias resolution, `sfdx-project.json` dependency management, and Dev Hub version lookup                                                                                 |
+| `simply-schema-core`        | sObject schema generation (CSV/Excel parsing, field/object normalization) and interactive schema-report rendering                                                                               |
+| `simply-project-setup-core` | Salesforce DX project file/dependency standardization engine (template packs, `.gitignore` composition, `package.json` scripts/dependency merging), including `.sfdevrc.json` schema/validation |
 
 ## Next steps
 
@@ -59,3 +61,4 @@ TypeScript source:
 - [simply-data-core guide](/guides/simply-data-core/) · [API](/api/simply-data-core/readme/)
 - [simply-package-core guide](/guides/simply-package-core/) · [API](/api/simply-package-core/readme/)
 - [simply-schema-core guide](/guides/simply-schema-core/) · [API](/api/simply-schema-core/readme/)
+- [simply-project-setup-core guide](/guides/simply-project-setup-core/) · [API](/api/simply-project-setup-core/readme/)
