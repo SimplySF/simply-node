@@ -21,6 +21,7 @@ import {
   type MalformedBindingRecord,
   type RawBindingRecord,
 } from './at4dxBindingTypes.js';
+import type { RawApexTriggerRecord } from './at4dxApexTriggerTypes.js';
 import { ENTITY_DEFINITION_STANDARD_OBJECTS, isCustomObjectApiName } from './entityDefinitionEligibility.js';
 import type { LocalScanResult } from './at4dxLocalScan.js';
 
@@ -295,6 +296,75 @@ function duplicateDeveloperNameIssues(
 }
 
 /**
+ * @returns Whether `classes` (a trigger's `triggerHandlerClasses`) contains `domainClass` — matched
+ * case-insensitively, and tolerant of a namespace-qualified reference in the trigger
+ * (`ns.AccountsDomain` satisfies a binding's unqualified `to: 'AccountsDomain'`).
+ */
+function triggerHandlesClass(classes: string[], domainClass: string): boolean {
+  const target = domainClass.toLowerCase();
+  return classes.some((className) => {
+    const lower = className.toLowerCase();
+    return lower === target || lower.endsWith(`.${target}`);
+  });
+}
+
+/**
+ * `missing-domain-trigger` — a `Domain` binding whose SObject (`key`) has no *Active* Apex trigger
+ * whose body calls `fflib_SObjectDomain.triggerHandler(<to>.class)`. Skipped entirely when `triggers`
+ * isn't supplied (existing callers see no behavior change), and for a record whose `to` is blank
+ * (nothing to check against — see docs/design/0036's Open questions). Three message shapes depending
+ * on what was found on `key`: no trigger at all, trigger(s) that never call the right class, or only
+ * an Inactive trigger that does.
+ */
+function missingDomainTriggerIssues(
+  records: RawBindingRecord[],
+  triggers: RawApexTriggerRecord[] | undefined,
+): BindingIssue[] {
+  if (!triggers) {
+    return [];
+  }
+
+  const issues: BindingIssue[] = [];
+
+  for (const record of records) {
+    if (record.bindingType !== 'Domain' || !record.to) {
+      continue;
+    }
+
+    const domainClass = record.to;
+    const onSObject = triggers.filter((trigger) => trigger.sobject.toLowerCase() === record.key.toLowerCase());
+    const wired = onSObject.filter((trigger) => triggerHandlesClass(trigger.triggerHandlerClasses, domainClass));
+
+    if (wired.some((trigger) => trigger.active)) {
+      continue;
+    }
+
+    const info = BINDING_RULES['missing-domain-trigger'];
+    const neverFires = `this Domain's logic (and any Domain Process Bindings on ${record.key}) never fires`;
+    const message =
+      onSObject.length === 0
+        ? `${record.developerName}: no Apex trigger exists on ${record.key} — fflib_SObjectDomain.triggerHandler(${domainClass}.class) is never called, so ${neverFires}.`
+        : wired.length === 0
+          ? `${record.developerName}: found ${onSObject.map((trigger) => trigger.name).join(', ')} on ${record.key}, but none call fflib_SObjectDomain.triggerHandler(${domainClass}.class) — ${neverFires}.`
+          : `${record.developerName}: ${wired.map((trigger) => trigger.name).join(', ')} calls fflib_SObjectDomain.triggerHandler(${domainClass}.class), but its Status is Inactive — ${neverFires}.`;
+
+    issues.push({
+      severity: info.severity,
+      rule: info.rule,
+      scope: info.scope,
+      message,
+      bindingType: record.bindingType,
+      developerName: record.developerName,
+      key: record.key,
+      source: record.source,
+      filePath: record.filePath,
+    });
+  }
+
+  return issues;
+}
+
+/**
  * Validate a scan's AT4DX Application Factory binding records for wiring problems `resolveBindings`/
  * `list` don't fail on: a binding with no resolvable key, a Selector/Domain/UnitOfWork binding whose
  * SObject reference is ambiguous or names an object `EntityDefinition` can't actually reference, two
@@ -308,20 +378,35 @@ function duplicateDeveloperNameIssues(
  *
  * @param scanOrRecords - Either a scan result envelope (`{ records, malformed, ambiguous }`, as returned by `scanOrgBindings`/`scanLocalBindings`), or the raw binding records alone.
  * @param diagnostics - The `malformed`/`ambiguous` records the same scan reported alongside `records`. Omitted when the first argument is already a scan envelope.
+ * @param triggers - Apex triggers scanned via `scanLocalApexTriggers`/`scanOrgApexTriggers`, for `missing-domain-trigger`. Omitted entirely (in either call form) skips that one rule — every other rule is unaffected.
  * @returns One issue per problem found. Empty when nothing's wrong.
  */
-export function validateBindings(scan: Pick<LocalScanResult, 'records' | 'malformed' | 'ambiguous'>): BindingIssue[];
+export function validateBindings(
+  scan: Pick<LocalScanResult, 'records' | 'malformed' | 'ambiguous'>,
+  triggers?: RawApexTriggerRecord[],
+): BindingIssue[];
 export function validateBindings(
   records: RawBindingRecord[],
   diagnostics: { malformed: MalformedBindingRecord[]; ambiguous: AmbiguousBindingRecord[] },
+  triggers?: RawApexTriggerRecord[],
 ): BindingIssue[];
 export function validateBindings(
   scanOrRecords: Pick<LocalScanResult, 'records' | 'malformed' | 'ambiguous'> | RawBindingRecord[],
-  diagnostics?: { malformed: MalformedBindingRecord[]; ambiguous: AmbiguousBindingRecord[] },
+  diagnosticsOrTriggers?:
+    { malformed: MalformedBindingRecord[]; ambiguous: AmbiguousBindingRecord[] } | RawApexTriggerRecord[],
+  maybeTriggers?: RawApexTriggerRecord[],
 ): BindingIssue[] {
-  const { records, malformed, ambiguous } = Array.isArray(scanOrRecords)
-    ? { records: scanOrRecords, malformed: diagnostics!.malformed, ambiguous: diagnostics!.ambiguous }
+  const isRecordsForm = Array.isArray(scanOrRecords);
+
+  const { records, malformed, ambiguous } = isRecordsForm
+    ? {
+        records: scanOrRecords,
+        malformed: (diagnosticsOrTriggers as { malformed: MalformedBindingRecord[] }).malformed,
+        ambiguous: (diagnosticsOrTriggers as { ambiguous: AmbiguousBindingRecord[] }).ambiguous,
+      }
     : scanOrRecords;
+
+  const triggers = isRecordsForm ? maybeTriggers : (diagnosticsOrTriggers as RawApexTriggerRecord[] | undefined);
 
   return [
     ...entityDefinitionIssues(records),
@@ -332,5 +417,6 @@ export function validateBindings(
     ...missingSObjectReferenceIssues(malformed),
     ...ambiguousSObjectReferenceIssues(ambiguous),
     ...duplicateDeveloperNameIssues(records, malformed),
+    ...missingDomainTriggerIssues(records, triggers),
   ];
 }

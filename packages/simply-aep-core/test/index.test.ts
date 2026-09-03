@@ -39,6 +39,8 @@ it('exports the expected set of runtime values', () => {
       'bindingTypeForLocalObjectName',
       'BindingWriteError',
       'buildBindingXml',
+      'scanLocalApexTriggers',
+      'scanOrgApexTriggers',
       'scanLocalBindings',
       'scanOrgBindings',
       'resolveBindings',
