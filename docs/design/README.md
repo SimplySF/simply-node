@@ -68,7 +68,7 @@ with no `simply-core`/`-core` library involvement, so they now live only in that
 | [0031](0031-simply-data-core.md)                                     | Splitting `simply-data-core` out of `simply-data`                                     | Implemented |
 | [0032](0032-simply-package-core.md)                                  | Splitting `simply-package-core` out of `simply-package`                               | Implemented |
 | [0033](0033-simply-schema-core.md)                                   | Splitting `simply-schema-core` out of `simply-schema`                                 | Implemented |
-| [0034](0034-content-note-upload.md)                                  | Content Note bulk upload (`simply-core` + `simply-data-core`)                         | Draft       |
+| [0034](0034-content-note-upload.md)                                  | Content Note bulk upload (`simply-core` + `simply-data-core`)                         | Implemented |
 
 ## Template
 

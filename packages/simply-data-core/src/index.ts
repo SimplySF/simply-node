@@ -29,6 +29,13 @@ export {
   type ContentVersionToUpload,
 } from './contentVersionTypes.js';
 export { downloadContentVersion, uploadContentVersion } from './contentVersionUtils.js';
+export {
+  type ContentNoteInput,
+  type ContentNoteResult,
+  type ContentNoteSuccessResult,
+  type ContentNoteErrorResult,
+} from './contentNoteTypes.js';
+export { createContentNote, uploadContentNotes, type UploadContentNotesOptions } from './contentNoteUtils.js';
 export { countCsvRows } from './countCsvRows.js';
 export {
   createBoundary,

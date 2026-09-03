@@ -71,6 +71,18 @@ for (const batch of chunk(ids, 200)) {
 }
 ```
 
+## Bounding concurrency over a stream
+
+```ts
+import { mapConcurrent } from '@simplysf/simply-core';
+
+// `records` can be any AsyncIterable — e.g. rows streamed from `csv-parse` — and is consumed
+// lazily, so a large source never has to be fully loaded into memory first.
+for await (const result of mapConcurrent(records, 10, (record) => connection.sobject('Account').create(record))) {
+  // yielded in completion order as soon as each create resolves, not source order
+}
+```
+
 ## Checking the daily API budget before a bulk operation
 
 ```ts

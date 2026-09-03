@@ -34,9 +34,11 @@ it('exports the expected set of runtime values', () => {
     'contentVersionMultipart',
     'countCsvRows',
     'createBoundary',
+    'createContentNote',
     'downloadContentVersion',
     'escapeHeaderFilename',
     'requestsForQuery',
+    'uploadContentNotes',
     'uploadContentVersion',
   ]);
 });
