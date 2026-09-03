@@ -1,6 +1,6 @@
 # 0034 — Content Note bulk upload
 
-**Status:** Draft
+**Status:** Implemented (PR #181)
 **Package:** `packages/simply-core`, `packages/simply-data-core`
 **Date:** 2026-09-03
 
