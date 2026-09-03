@@ -1,7 +1,7 @@
 {
   "name": "@simplysf/simply-data-core",
   "description": "Content Version upload/download and CSV row counting logic — the library layer behind @simplysf/simply-data, published separately for direct consumption (e.g. editor tooling, CI scripts) without the CLI framework",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "author": "@ClayChipps",
   "homepage": "https://github.com/SimplySF/simply-node",
   "bugs": "https://github.com/SimplySF/simply-node/issues",
@@ -39,7 +39,7 @@
   "type": "module",
   "dependencies": {
     "@salesforce/core": "^8.30.0",
-    "@simplysf/simply-core": "workspace:^1.5.2",
+    "@simplysf/simply-core": "workspace:^1.6.0",
     "csv-parse": "^7.0.2"
   },
   "devDependencies": {

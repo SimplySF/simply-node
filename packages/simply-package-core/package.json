@@ -1,7 +1,7 @@
 {
   "name": "@simplysf/simply-package-core",
   "description": "Package/package-version alias resolution, sfdx-project.json dependency management, and Dev Hub version lookup logic — the library layer behind @simplysf/simply-package, published separately for direct consumption (e.g. editor tooling, CI scripts) without the CLI framework",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": "@ClayChipps",
   "homepage": "https://github.com/SimplySF/simply-node",
   "bugs": "https://github.com/SimplySF/simply-node/issues",
@@ -40,7 +40,7 @@
   "dependencies": {
     "@salesforce/core": "^8.30.0",
     "@salesforce/packaging": "^4.22.16",
-    "@simplysf/simply-core": "workspace:^1.5.1",
+    "@simplysf/simply-core": "workspace:^1.6.0",
     "zod": "^4.1.12"
   },
   "devDependencies": {
