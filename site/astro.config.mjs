@@ -19,6 +19,7 @@ const [simplyCommunityCore, simplyCommunityCoreSidebar] = createStarlightTypeDoc
 const [simplyDataCore, simplyDataCoreSidebar] = createStarlightTypeDocPlugin();
 const [simplyPackageCore, simplyPackageCoreSidebar] = createStarlightTypeDocPlugin();
 const [simplySchemaCore, simplySchemaCoreSidebar] = createStarlightTypeDocPlugin();
+const [simplyProjectSetupCore, simplyProjectSetupCoreSidebar] = createStarlightTypeDocPlugin();
 
 function typeDocOptions(pkg) {
   return {
@@ -71,6 +72,7 @@ export default defineConfig({
         simplyDataCore(typeDocOptions('simply-data-core')),
         simplyPackageCore(typeDocOptions('simply-package-core')),
         simplySchemaCore(typeDocOptions('simply-schema-core')),
+        simplyProjectSetupCore(typeDocOptions('simply-project-setup-core')),
       ],
       sidebar: [
         { label: 'Get Started', slug: 'getting-started' },
@@ -88,6 +90,7 @@ export default defineConfig({
             { label: 'simply-data-core', slug: 'guides/simply-data-core' },
             { label: 'simply-package-core', slug: 'guides/simply-package-core' },
             { label: 'simply-schema-core', slug: 'guides/simply-schema-core' },
+            { label: 'simply-project-setup-core', slug: 'guides/simply-project-setup-core' },
           ],
         },
         {
@@ -104,6 +107,7 @@ export default defineConfig({
             simplyDataCoreSidebar,
             simplyPackageCoreSidebar,
             simplySchemaCoreSidebar,
+            simplyProjectSetupCoreSidebar,
           ],
         },
       ],
