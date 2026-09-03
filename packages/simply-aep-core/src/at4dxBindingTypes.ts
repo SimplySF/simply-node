@@ -169,7 +169,8 @@ export type BindingIssueRule =
   | 'duplicate-domain-sobject'
   | 'duplicate-unit-of-work-sobject'
   | 'sequence-collision'
-  | 'duplicate-developer-name';
+  | 'duplicate-developer-name'
+  | 'missing-domain-trigger';
 
 /**
  * Whether a rule's answer can be computed from one record alone (`record`) or requires seeing every
@@ -261,6 +262,14 @@ export const BINDING_RULES: Readonly<Record<BindingIssueRule, BindingRuleInfo>> 
     title: 'Duplicate DeveloperName',
     summary:
       'The same DeveloperName is defined more than once across the scan — Custom Metadata records are keyed by DeveloperName, so deploying these together is a conflict.',
+  },
+  'missing-domain-trigger': {
+    rule: 'missing-domain-trigger',
+    severity: 'error',
+    scope: 'record',
+    title: 'Missing domain trigger',
+    summary:
+      "No Active Apex trigger on this Domain binding's SObject calls fflib_SObjectDomain.triggerHandler(<its To__c class>.class) — the Domain's logic (and any Domain Process Bindings on that SObject) never fires. Only checked when the caller supplies a trigger scan — see docs/design/0036-at4dx-domain-binding-trigger-validate.md.",
   },
 };
 

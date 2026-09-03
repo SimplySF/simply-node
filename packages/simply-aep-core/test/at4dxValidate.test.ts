@@ -23,6 +23,19 @@ import {
   type MalformedBindingRecord,
   type RawBindingRecord,
 } from '../src/at4dxBindingTypes.js';
+import type { RawApexTriggerRecord } from '../src/at4dxApexTriggerTypes.js';
+
+function trigger(
+  overrides: Partial<RawApexTriggerRecord> & Pick<RawApexTriggerRecord, 'sobject'>,
+): RawApexTriggerRecord {
+  return {
+    name: `${overrides.sobject}Trigger`,
+    triggerHandlerClasses: [],
+    active: true,
+    source: 'test',
+    ...overrides,
+  };
+}
 
 function record(overrides: Partial<RawBindingRecord> & Pick<RawBindingRecord, 'bindingType'>): RawBindingRecord {
   return {
@@ -53,6 +66,7 @@ describe('BINDING_RULES', () => {
       'duplicate-unit-of-work-sobject',
       'sequence-collision',
       'duplicate-developer-name',
+      'missing-domain-trigger',
     ];
 
     for (const rule of rules) {
@@ -487,5 +501,113 @@ describe('validateBindings', () => {
     const viaTwoArgs = validateBindings([a], { malformed, ambiguous });
 
     expect(viaEnvelope).toEqual(viaTwoArgs);
+  });
+});
+
+describe('validateBindings missing-domain-trigger', () => {
+  it('does not flag a Domain binding with a matching Active trigger', () => {
+    const domain = record({ bindingType: 'Domain', key: 'Account', to: 'AccountsDomain' });
+    const triggers = [trigger({ sobject: 'Account', triggerHandlerClasses: ['AccountsDomain'] })];
+
+    const issues = validateBindings([domain], noDiagnostics, triggers);
+
+    expect(issues.filter((issue) => issue.rule === 'missing-domain-trigger')).toEqual([]);
+  });
+
+  it('flags a Domain binding whose SObject has no Apex trigger at all', () => {
+    const domain = record({ bindingType: 'Domain', key: 'Account', to: 'AccountsDomain' });
+
+    const issues = validateBindings([domain], noDiagnostics, []);
+
+    expect(issues).toEqual([
+      expect.objectContaining({
+        severity: 'error',
+        rule: 'missing-domain-trigger',
+        key: 'Account',
+        message: expect.stringContaining('no Apex trigger exists on Account') as string,
+      }),
+    ]);
+  });
+
+  it("flags a Domain binding whose SObject has a trigger that never calls its class's triggerHandler", () => {
+    const domain = record({ bindingType: 'Domain', key: 'Account', to: 'AccountsDomain' });
+    const triggers = [trigger({ sobject: 'Account', triggerHandlerClasses: ['SomeOtherClass'] })];
+
+    const issues = validateBindings([domain], noDiagnostics, triggers);
+
+    expect(issues).toEqual([
+      expect.objectContaining({
+        severity: 'error',
+        rule: 'missing-domain-trigger',
+        message: expect.stringContaining(
+          'none call fflib_SObjectDomain.triggerHandler(AccountsDomain.class)',
+        ) as string,
+      }),
+    ]);
+  });
+
+  it('flags a Domain binding whose only matching trigger is Inactive', () => {
+    const domain = record({ bindingType: 'Domain', key: 'Account', to: 'AccountsDomain' });
+    const triggers = [trigger({ sobject: 'Account', triggerHandlerClasses: ['AccountsDomain'], active: false })];
+
+    const issues = validateBindings([domain], noDiagnostics, triggers);
+
+    expect(issues).toEqual([
+      expect.objectContaining({
+        severity: 'error',
+        rule: 'missing-domain-trigger',
+        message: expect.stringContaining('its Status is Inactive') as string,
+      }),
+    ]);
+  });
+
+  it('matches a namespace-qualified triggerHandler reference against an unqualified binding to', () => {
+    const domain = record({ bindingType: 'Domain', key: 'Account', to: 'AccountsDomain' });
+    const triggers = [trigger({ sobject: 'Account', triggerHandlerClasses: ['ns.AccountsDomain'] })];
+
+    const issues = validateBindings([domain], noDiagnostics, triggers);
+
+    expect(issues.filter((issue) => issue.rule === 'missing-domain-trigger')).toEqual([]);
+  });
+
+  it('matches SObject case-insensitively between a binding and a trigger', () => {
+    const domain = record({ bindingType: 'Domain', key: 'Account', to: 'AccountsDomain' });
+    const triggers = [trigger({ sobject: 'account', triggerHandlerClasses: ['AccountsDomain'] })];
+
+    const issues = validateBindings([domain], noDiagnostics, triggers);
+
+    expect(issues.filter((issue) => issue.rule === 'missing-domain-trigger')).toEqual([]);
+  });
+
+  it('does not flag a Domain binding with a blank to (nothing to check against)', () => {
+    const domain = record({ bindingType: 'Domain', key: 'Account', to: undefined });
+
+    const issues = validateBindings([domain], noDiagnostics, []);
+
+    expect(issues.filter((issue) => issue.rule === 'missing-domain-trigger')).toEqual([]);
+  });
+
+  it('never evaluates non-Domain binding types', () => {
+    const selector = record({ bindingType: 'Selector', key: 'Account', to: 'AccountsSelector' });
+
+    const issues = validateBindings([selector], noDiagnostics, []);
+
+    expect(issues.filter((issue) => issue.rule === 'missing-domain-trigger')).toEqual([]);
+  });
+
+  it('is skipped entirely when triggers is omitted, regardless of binding shape', () => {
+    const domain = record({ bindingType: 'Domain', key: 'Account', to: 'AccountsDomain' });
+
+    const issues = validateBindings([domain], noDiagnostics);
+
+    expect(issues.filter((issue) => issue.rule === 'missing-domain-trigger')).toEqual([]);
+  });
+
+  it('is skipped entirely when triggers is omitted using the scan-envelope call form', () => {
+    const domain = record({ bindingType: 'Domain', key: 'Account', to: 'AccountsDomain' });
+
+    const issues = validateBindings({ records: [domain], ...noDiagnostics });
+
+    expect(issues.filter((issue) => issue.rule === 'missing-domain-trigger')).toEqual([]);
   });
 });

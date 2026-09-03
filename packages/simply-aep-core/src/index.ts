@@ -58,6 +58,9 @@ export {
   type WritableBindingTypeFlag,
 } from './at4dxBindingTypes.js';
 export { buildBindingXml, type BindingXmlFields } from './at4dxBuildXml.js';
+export { type RawApexTriggerRecord } from './at4dxApexTriggerTypes.js';
+export { scanLocalApexTriggers } from './at4dxApexTriggerLocalScan.js';
+export { scanOrgApexTriggers } from './at4dxApexTriggerOrgScan.js';
 export { scanLocalBindings, type LocalScanResult } from './at4dxLocalScan.js';
 export { scanOrgBindings, type OrgScanResult } from './at4dxOrgScan.js';
 export { resolveBindings } from './at4dxResolve.js';
