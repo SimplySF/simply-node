@@ -19,7 +19,9 @@ import { mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync }
 import { globSync } from 'glob';
 import { exists } from './exists.js';
 import { loadRootPath } from './loadRootPath.js';
-import { FileAction, StandardizeFilesOptions } from './types.js';
+import { matchesAny } from './matchesPath.js';
+import { mergeJsonPreservingTarget } from './mergeJson.js';
+import { FileAction, RegexCustomization, StandardizeFilesOptions } from './types.js';
 
 const CUSTOMIZATION_START = '# -- START CUSTOMIZATION';
 const CUSTOMIZATION_END = '# -- END CUSTOMIZATION';
@@ -114,18 +116,88 @@ function mergeCustomization(sourceContent: string, targetContent: string): strin
   return merged;
 }
 
+/**
+ * Regex-scoped analog of `mergeCustomization`: for each pattern (already stripped of a `g`/`y`
+ * flag by the caller), the template's first match is replaced with the target's first match for
+ * the same pattern. `undefined` when a pattern doesn't match the (possibly already-merged-by-an-
+ * earlier-pattern) template content — the caller reports that as an `"ERROR"` action. A pattern
+ * that matches the template but not the target leaves the template's own text in place — nothing
+ * to preserve yet.
+ */
+function mergeRegexCustomization(sourceContent: string, targetContent: string, patterns: RegExp[]): string | undefined {
+  let merged = sourceContent;
+  for (const pattern of patterns) {
+    const regex = new RegExp(pattern.source, pattern.flags.replace(/[gy]/g, ''));
+    const sourceMatch = regex.exec(merged);
+    if (!sourceMatch) {
+      return undefined;
+    }
+    const targetMatch = regex.exec(targetContent);
+    if (targetMatch) {
+      merged =
+        merged.slice(0, sourceMatch.index) + targetMatch[0] + merged.slice(sourceMatch.index + sourceMatch[0].length);
+    }
+  }
+  return merged;
+}
+
+interface FileStrategies {
+  protectedFiles: string[];
+  jsonMergeFiles: string[];
+  regexCustomizations: RegexCustomization[];
+}
+
 function processSingleFile(
   destinationPath: string,
+  destRelativePath: string,
   content: string,
-  protectedFiles: string[],
+  strategies: FileStrategies,
 ): 'CREATE' | 'UPDATE' | 'MERGE' | 'ERROR' | undefined {
-  const destFilename = basename(destinationPath);
+  const { protectedFiles, jsonMergeFiles, regexCustomizations } = strategies;
+  const normalizedDest = destRelativePath.replace(/\\/g, '/');
 
-  if (protectedFiles.includes(destFilename)) {
+  if (matchesAny(normalizedDest, protectedFiles)) {
     if (exists(destinationPath)) {
       return undefined;
     }
     return writeIfDifferent(destinationPath, content);
+  }
+
+  const matchingRegexRules = regexCustomizations.filter((rule) => matchesAny(normalizedDest, [rule.path]));
+  if (matchingRegexRules.length > 0) {
+    const targetContent = readTargetContent(destinationPath);
+    if (targetContent === undefined) {
+      return writeIfDifferent(destinationPath, content);
+    }
+    let merged = content;
+    for (const rule of matchingRegexRules) {
+      const patterns = Array.isArray(rule.pattern) ? rule.pattern : [rule.pattern];
+      const result = mergeRegexCustomization(merged, targetContent, patterns);
+      if (result === undefined) {
+        return 'ERROR';
+      }
+      merged = result;
+    }
+    const result = writeIfDifferent(destinationPath, merged);
+    return result ? 'MERGE' : undefined;
+  }
+
+  if (matchesAny(normalizedDest, jsonMergeFiles)) {
+    const targetContent = readTargetContent(destinationPath);
+    if (targetContent === undefined) {
+      return writeIfDifferent(destinationPath, content);
+    }
+    let templateJson: unknown;
+    let targetJson: unknown;
+    try {
+      templateJson = JSON.parse(content);
+      targetJson = JSON.parse(targetContent);
+    } catch {
+      return 'ERROR';
+    }
+    const mergedContent = JSON.stringify(mergeJsonPreservingTarget(templateJson, targetJson), null, 2) + '\n';
+    const result = writeIfDifferent(destinationPath, mergedContent);
+    return result ? 'MERGE' : undefined;
   }
 
   if (hasCustomization(content)) {
@@ -223,6 +295,8 @@ export function standardizeFiles(options: StandardizeFilesOptions): FileAction[]
     gitignoreHeader,
     renameFile,
     protectedFiles = [],
+    jsonMergeFiles = [],
+    regexCustomizations = [],
     transformFile,
   } = options;
   const projectRoot = getProjectRoot(projectPath);
@@ -277,7 +351,11 @@ export function standardizeFiles(options: StandardizeFilesOptions): FileAction[]
     if (transformFile) {
       content = transformFile({ sourcePath, destRelativePath, content });
     }
-    const action = processSingleFile(destinationPath, content, protectedFiles);
+    const action = processSingleFile(destinationPath, destRelativePath, content, {
+      protectedFiles,
+      jsonMergeFiles,
+      regexCustomizations,
+    });
     if (action) {
       actions.push({ file: destRelativePath, action });
     }

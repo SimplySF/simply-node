@@ -124,6 +124,198 @@ describe('standardizeFiles', () => {
     expect(fs.readFileSync(path.join(projectPath, '.myrc.json'), 'utf8')).toBe('from-template');
   });
 
+  it('matches protectedFiles against the relative destination path, not just the basename', () => {
+    fs.mkdirSync(path.join(templatesPath, 'protected', 'nested'), { recursive: true });
+    fs.writeFileSync(path.join(templatesPath, 'protected', 'nested', '.myrc.json'), 'from-template');
+    fs.mkdirSync(path.join(projectPath, 'nested'), { recursive: true });
+    fs.writeFileSync(path.join(projectPath, 'nested', '.myrc.json'), 'user-owned');
+
+    const actions = standardizeFiles({
+      config: { include: ['protected'], exclude: [], add: [] },
+      templatesPath,
+      projectPath,
+      protectedFiles: ['.myrc.json'], // only matches a root-level .myrc.json now, not nested/.myrc.json
+    });
+
+    expect(fs.readFileSync(path.join(projectPath, 'nested', '.myrc.json'), 'utf8')).toBe('from-template');
+    expect(actions.some((a) => a.file === path.join('nested', '.myrc.json') && a.action === 'UPDATE')).toBe(true);
+  });
+
+  describe('jsonMergeFiles', () => {
+    beforeEach(() => {
+      fs.mkdirSync(path.join(templatesPath, 'jsonpack'), { recursive: true });
+      fs.writeFileSync(
+        path.join(templatesPath, 'jsonpack', '.myapprc.json'),
+        JSON.stringify({ apiVersion: '60.0', nested: { a: 1, b: 2 } }, null, 2),
+      );
+    });
+
+    it('creates the file as-is when the target does not exist yet', () => {
+      standardizeFiles({
+        config: { include: ['jsonpack'], exclude: [], add: [] },
+        templatesPath,
+        projectPath,
+        jsonMergeFiles: ['.myapprc.json'],
+      });
+
+      const written = JSON.parse(fs.readFileSync(path.join(projectPath, '.myapprc.json'), 'utf8')) as unknown;
+      expect(written).toStrictEqual({ apiVersion: '60.0', nested: { a: 1, b: 2 } });
+    });
+
+    it('deep-merges an existing target, keeping its values and adding new template keys', () => {
+      fs.writeFileSync(
+        path.join(projectPath, '.myapprc.json'),
+        JSON.stringify({ apiVersion: '58.0', nested: { a: 99 }, custom: true }, null, 2),
+      );
+
+      const actions = standardizeFiles({
+        config: { include: ['jsonpack'], exclude: [], add: [] },
+        templatesPath,
+        projectPath,
+        jsonMergeFiles: ['.myapprc.json'],
+      });
+
+      const written = JSON.parse(fs.readFileSync(path.join(projectPath, '.myapprc.json'), 'utf8')) as unknown;
+      expect(written).toStrictEqual({ apiVersion: '58.0', nested: { a: 99, b: 2 }, custom: true });
+      expect(actions.find((a) => a.file === '.myapprc.json')?.action).toBe('MERGE');
+    });
+
+    it('is a no-op when the merge result matches the existing target', () => {
+      fs.writeFileSync(
+        path.join(projectPath, '.myapprc.json'),
+        JSON.stringify({ apiVersion: '60.0', nested: { a: 1, b: 2 } }, null, 2) + '\n',
+      );
+
+      const actions = standardizeFiles({
+        config: { include: ['jsonpack'], exclude: [], add: [] },
+        templatesPath,
+        projectPath,
+        jsonMergeFiles: ['.myapprc.json'],
+      });
+
+      expect(actions.some((a) => a.file === '.myapprc.json')).toBe(false);
+    });
+
+    it('returns ERROR when the existing target is not valid JSON', () => {
+      fs.writeFileSync(path.join(projectPath, '.myapprc.json'), 'not json');
+
+      const actions = standardizeFiles({
+        config: { include: ['jsonpack'], exclude: [], add: [] },
+        templatesPath,
+        projectPath,
+        jsonMergeFiles: ['.myapprc.json'],
+      });
+
+      expect(actions.find((a) => a.file === '.myapprc.json')?.action).toBe('ERROR');
+    });
+  });
+
+  describe('regexCustomizations', () => {
+    beforeEach(() => {
+      fs.mkdirSync(path.join(templatesPath, 'regexpack'), { recursive: true });
+      fs.writeFileSync(
+        path.join(templatesPath, 'regexpack', 'deploy.sh'),
+        ['TARGET_ORG=default', 'TIMEOUT=30', 'echo done'].join('\n'),
+      );
+    });
+
+    it('creates the file as-is when the target does not exist yet', () => {
+      standardizeFiles({
+        config: { include: ['regexpack'], exclude: [], add: [] },
+        templatesPath,
+        projectPath,
+        regexCustomizations: [{ path: 'deploy.sh', pattern: /^TARGET_ORG=(.*)$/m }],
+      });
+
+      expect(fs.readFileSync(path.join(projectPath, 'deploy.sh'), 'utf8')).toContain('TARGET_ORG=default');
+    });
+
+    it('splices the target-matched text into the freshly generated template output', () => {
+      // an outdated TIMEOUT line, not covered by any rule, proves the template's other content still
+      // lands even though TARGET_ORG's customized value is preserved
+      fs.writeFileSync(
+        path.join(projectPath, 'deploy.sh'),
+        ['TARGET_ORG=my-custom-org', 'TIMEOUT=15', 'echo done'].join('\n'),
+      );
+
+      const actions = standardizeFiles({
+        config: { include: ['regexpack'], exclude: [], add: [] },
+        templatesPath,
+        projectPath,
+        regexCustomizations: [{ path: 'deploy.sh', pattern: /^TARGET_ORG=(.*)$/m }],
+      });
+
+      const content = fs.readFileSync(path.join(projectPath, 'deploy.sh'), 'utf8');
+      expect(content).toContain('TARGET_ORG=my-custom-org');
+      expect(content).toContain('TIMEOUT=30'); // not covered by a rule, so the template's value wins
+      expect(actions.find((a) => a.file === 'deploy.sh')?.action).toBe('MERGE');
+    });
+
+    it('applies multiple patterns on one rule independently', () => {
+      fs.writeFileSync(
+        path.join(projectPath, 'deploy.sh'),
+        ['TARGET_ORG=my-custom-org', 'TIMEOUT=120', 'echo done'].join('\n'),
+      );
+
+      standardizeFiles({
+        config: { include: ['regexpack'], exclude: [], add: [] },
+        templatesPath,
+        projectPath,
+        regexCustomizations: [{ path: 'deploy.sh', pattern: [/^TARGET_ORG=(.*)$/m, /^TIMEOUT=(\d+)$/m] }],
+      });
+
+      const content = fs.readFileSync(path.join(projectPath, 'deploy.sh'), 'utf8');
+      expect(content).toContain('TARGET_ORG=my-custom-org');
+      expect(content).toContain('TIMEOUT=120');
+    });
+
+    it('keeps the template text when the pattern matches the template but not the target', () => {
+      fs.writeFileSync(path.join(projectPath, 'deploy.sh'), ['echo done'].join('\n'));
+
+      standardizeFiles({
+        config: { include: ['regexpack'], exclude: [], add: [] },
+        templatesPath,
+        projectPath,
+        regexCustomizations: [{ path: 'deploy.sh', pattern: /^TARGET_ORG=(.*)$/m }],
+      });
+
+      expect(fs.readFileSync(path.join(projectPath, 'deploy.sh'), 'utf8')).toContain('TARGET_ORG=default');
+    });
+
+    it('returns ERROR when the pattern does not match the template', () => {
+      fs.writeFileSync(
+        path.join(projectPath, 'deploy.sh'),
+        ['TARGET_ORG=my-custom-org', 'TIMEOUT=30', 'echo done'].join('\n'),
+      );
+
+      const actions = standardizeFiles({
+        config: { include: ['regexpack'], exclude: [], add: [] },
+        templatesPath,
+        projectPath,
+        regexCustomizations: [{ path: 'deploy.sh', pattern: /^NOT_IN_TEMPLATE=(.*)$/m }],
+      });
+
+      expect(actions.find((a) => a.file === 'deploy.sh')?.action).toBe('ERROR');
+    });
+  });
+
+  it('checks protectedFiles before regexCustomizations and jsonMergeFiles', () => {
+    fs.mkdirSync(path.join(templatesPath, 'precedence'), { recursive: true });
+    fs.writeFileSync(path.join(templatesPath, 'precedence', '.myrc.json'), JSON.stringify({ a: 1 }));
+    fs.writeFileSync(path.join(projectPath, '.myrc.json'), 'user-owned, not even JSON');
+
+    const actions = standardizeFiles({
+      config: { include: ['precedence'], exclude: [], add: [] },
+      templatesPath,
+      projectPath,
+      protectedFiles: ['.myrc.json'],
+      jsonMergeFiles: ['.myrc.json'],
+    });
+
+    expect(fs.readFileSync(path.join(projectPath, '.myrc.json'), 'utf8')).toBe('user-owned, not even JSON');
+    expect(actions.some((a) => a.file === '.myrc.json')).toBe(false);
+  });
+
   it('runs transformFile on template content before writing', () => {
     standardizeFiles({
       config: { include: ['husky'], exclude: [], add: [] },
