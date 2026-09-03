@@ -1,7 +1,7 @@
 # 0031 — Splitting `simply-data-core` out of `simply-data`
 
 **Status:** Implemented (PR #176) — published as `0.1.0` via `pnpm publish`. `simply-plugins`'
-companion PR is not yet open.
+companion PR (#12) merged.
 **Package:** new `packages/simply-data-core` (in `simply-node`); `packages/simply-data` (CLI,
 slimmed, in `simply-plugins`)
 **Date:** 2026-09-02

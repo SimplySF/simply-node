@@ -1,8 +1,8 @@
 # 0033 — Splitting `simply-schema-core` out of `simply-schema`
 
 **Status:** Implemented (PR #178) — published as `0.1.0` via `pnpm publish`. `simply-plugins`'
-companion PR is not yet open. This is the last package in round 1 (0027) — `simply-cicd` remains
-explicitly out of scope.
+companion PR (#14) merged — this closes out round 1 (0027) entirely: all six packages' `simply-node`
+and `simply-plugins` sides are done. `simply-cicd` remains explicitly out of scope.
 **Package:** new `packages/simply-schema-core` (in `simply-node`); `packages/simply-schema` (CLI,
 slimmed, in `simply-plugins`)
 **Date:** 2026-09-02

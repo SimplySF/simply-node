@@ -1,8 +1,10 @@
 # 0027 — Continuing the `-core` extraction under the two-repo split (round 1, excludes `simply-cicd`)
 
-**Status:** Implemented — `simply-node` side. All six packages merged and published (PRs #173–#178;
-see each package's own doc). `simply-plugins`' companion PRs (repointing each plugin's imports at
-the new published packages, per Behavior step 6) have not been opened yet — deliberately deferred.
+**Status:** Implemented, fully. All six packages merged and published on the `simply-node` side
+(PRs #173–#178), and all six `simply-plugins` companion PRs (#8, #10–#14) merged and published —
+every plugin now consumes its `-core` package as a real npm dependency, no `common/`-relative
+imports left except `simply-data`'s untouched `apiBudgetFlag.ts` (0027's own decision to keep it
+behind). `simply-cicd` remains explicitly out of scope for this round.
 **Package:** repo-wide across `simply-node` and `simply-plugins`; concrete new packages are
 `packages/simply-permissions-core`, `packages/simply-sobject-core`, `packages/simply-community-core`,
 `packages/simply-data-core`, `packages/simply-package-core`, `packages/simply-schema-core` in
