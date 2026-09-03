@@ -80,12 +80,12 @@ new package as a published npm dependency.
 
 Checked by grepping `packages/simply-community/src` outside `common/` for each:
 
-| Dependency                           | Used elsewhere in `simply-community`? | Stays in `simply-community`'s `dependencies`? |
-| ------------------------------------ | ------------------------------------- | --------------------------------------------- |
-| `@salesforce/kit`                    | to be checked at implementation time  | —                                             |
-| `@salesforce/source-deploy-retrieve` | to be checked at implementation time  | —                                             |
-| `glob`                               | to be checked at implementation time  | —                                             |
-| `xmlbuilder2`                        | to be checked at implementation time  | —                                             |
+| Dependency                           | Used elsewhere in `simply-community`?                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Stays in `simply-community`'s `dependencies`? |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| `@salesforce/kit`                    | Yes — `url/set.ts` (`Duration`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Yes                                           |
+| `@salesforce/source-deploy-retrieve` | Not by `src/`, but **correction, caught by `pnpm test` failing** — `test/commands/simply/community/url/set.test.ts` imports `ComponentSet`/`ComponentStatus` directly to stub `ComponentSet.prototype.deploy`/`.retrieve`, since the command test still needs to control what the (now-external) `deployChangedFiles`/`retrieveCustomSite` calls return. Moved to `devDependencies` (no longer a runtime need for the published package, only a test-time one) rather than dropped outright — grepping only `src/` for a dependency check misses test-only usages, worth remembering for the next package. | Yes (as a `devDependency`, not `dependency`)  |
+| `glob`                               | No                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | No                                            |
+| `xmlbuilder2`                        | No                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | No                                            |
 
 This table is intentionally left for implementation time (per 0019's own rule about not
 pre-committing to specifics best checked close to implementation) rather than guessed here.
@@ -172,9 +172,10 @@ No `oclif` block, no `bin/`, no `@oclif/core`, no `@salesforce/sf-plugins-core`,
 
 - Command files import from `@simplysf/simply-community-core` instead of relative `common/*.js`
   paths.
-- `package.json` gains `@simplysf/simply-community-core: "^0.1.0"`; drops whichever of
-  `@salesforce/kit`/`@salesforce/source-deploy-retrieve`/`glob`/`xmlbuilder2` nothing else imports
-  directly (checked at implementation time per the table above).
+- `package.json` gains `@simplysf/simply-community-core: "^0.1.0"`; drops `glob`/`xmlbuilder2`
+  outright (unused anywhere once `common/` moves); moves `@salesforce/source-deploy-retrieve` to
+  `devDependencies` rather than dropping it (the command test still needs it — see the table above);
+  keeps `@salesforce/kit` as a regular dependency (`url/set.ts` uses it directly).
 - `messages/`, `oclif` config, `bin/`, and command behavior are unchanged.
 
 ### Public-API test (in `simply-community-core`)

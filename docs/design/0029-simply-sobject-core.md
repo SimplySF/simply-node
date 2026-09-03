@@ -2,7 +2,7 @@
 
 **Status:** Implemented (PR #174) — published as `0.2.0`, then republished as `0.2.2` after the
 initial bootstrap publish went out via plain `npm publish` and didn't rewrite its `workspace:`
-dependency (see the package's own `CHANGELOG.md`). `simply-plugins`' companion PR is not yet open.
+dependency (see the package's own `CHANGELOG.md`). `simply-plugins`' companion PR (#10) merged.
 **Package:** new `packages/simply-sobject-core` (in `simply-node`); `packages/simply-sobject` (CLI,
 slimmed, in `simply-plugins`)
 **Date:** 2026-09-02
