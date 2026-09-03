@@ -53,6 +53,7 @@ const compat = new FlatCompat({
 const allPackages = [
   'packages/simply-aep-core',
   'packages/simply-apex-core',
+  'packages/simply-cicd-core',
   'packages/simply-community-core',
   'packages/simply-core',
   'packages/simply-data-core',
@@ -69,6 +70,7 @@ const allPackages = [
 const libraryPackages = [
   'packages/simply-aep-core',
   'packages/simply-apex-core',
+  'packages/simply-cicd-core',
   'packages/simply-community-core',
   'packages/simply-core',
   'packages/simply-data-core',
