@@ -71,7 +71,7 @@ doc (there's no open request for a `simply-data note upload` command yet; see
 
 ```ts
 function mapConcurrent<T, R>(
-  source: AsyncIterable<T>,
+  source: AsyncIterable<T> | Iterable<T>,
   concurrency: number,
   mapper: (item: T) => Promise<R>,
 ): AsyncGenerator<R>;
@@ -81,10 +81,13 @@ A fixed-size worker pool over an `AsyncIterable` source: at most `concurrency` c
 in flight at once, and as soon as one finishes, the next input item (if any remain) starts
 immediately — no waiting for sibling tasks in the same "batch" the way `mapChunked` does. Results are
 yielded in **completion order, not input order** (documented explicitly; this matches what the
-script already did — its success/error CSV rows were written in completion order, not file order). A
-rejected `mapper` call does not stop the pool; the rejection is yielded in place of a result — see
-[Alternatives considered](#alternatives-considered) for why `mapper` itself must catch and shouldn't
-just `throw`, so this is really "yields whatever `mapper` returns," not built-in error swallowing.
+script already did — its success/error CSV rows were written in completion order, not file order).
+
+Matching `mapChunked`'s existing behavior, `mapConcurrent` does not catch a `mapper` rejection — it
+propagates immediately, ending iteration. This stays a plain concurrency pool; per-item error
+modeling (a typed result instead of a thrown error) is `mapper`'s job, not `mapConcurrent`'s — see
+[Alternatives considered](#alternatives-considered). `createContentNote` follows that contract: it
+never rejects, it returns a `ContentNoteResult` with `status: 'error'`.
 
 ### New in `simply-data-core`
 

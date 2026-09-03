@@ -2,7 +2,7 @@
 
 [![NPM](https://img.shields.io/npm/v/@simplysf/simply-data-core?label=@simplysf/simply-data-core)](https://npmjs.com/@simplysf/simply-data-core) [![Downloads/week](https://img.shields.io/npm/dw/@simplysf/simply-data-core.svg)](https://npmjs.com/@simplysf/simply-data-core) [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://raw.githubusercontent.com/SimplySF/simply-node/main/LICENSE.txt)
 
-Content Version upload/download and CSV row counting logic. This is not a Salesforce CLI plugin — it's the library layer behind [`@simplysf/simply-data`](https://github.com/SimplySF/simply-plugins/tree/main/packages/simply-data)'s file commands, published separately so it can be imported directly by anything that wants the same logic (an editor extension, a CI job, a script) without pulling in the CLI framework.
+Content Version upload/download, Content Note bulk upload, and CSV row counting logic. This is not a Salesforce CLI plugin — it's the library layer behind [`@simplysf/simply-data`](https://github.com/SimplySF/simply-plugins/tree/main/packages/simply-data)'s file commands, published separately so it can be imported directly by anything that wants the same logic (an editor extension, a CI job, a script) without pulling in the CLI framework.
 
 ## Install
 
@@ -16,18 +16,20 @@ Requires Node.js `>=22` and either `"type": "module"` or a dynamic `import()` �
 
 Everything below is exported from the package root. Removing or renaming an export is a breaking change; see [`src/index.ts`](src/index.ts).
 
-| Export                                                                          | Description                                                                                |
-| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `uploadContentVersion(connection, filePath, title?, firstPublishLocationId?)`   | Uploads a local file as a new `ContentVersion`, re-queried to include `ContentDocumentId`. |
-| `downloadContentVersion(connection, contentVersionDownload, downloadDirectory)` | Downloads a `ContentVersion`'s file data to a local directory.                             |
-| `countCsvRows(filePath)`                                                        | Counts the data rows in a CSV, excluding its header.                                       |
-| `requestsForQuery(recordCount)`                                                 | Estimates the API requests a record query costs, including its `queryMore` round trips.    |
-| `REQUESTS_PER_UPLOAD`                                                           | API requests consumed per file uploaded (`2`).                                             |
-| `REQUESTS_PER_DOWNLOAD`                                                         | API requests consumed per file downloaded (`1`).                                           |
-| `QUERY_BATCH_SIZE`                                                              | Records jsforce returns per query round trip.                                              |
-| `createBoundary()`                                                              | Generates a multipart boundary string.                                                     |
-| `escapeHeaderFilename(filename)`                                                | Escapes a filename for inclusion in a `Content-Disposition` header.                        |
-| `contentVersionMultipart(options)`                                              | Builds the `multipart/form-data` body for a `ContentVersion` create request.               |
+| Export                                                                          | Description                                                                                                        |
+| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `uploadContentVersion(connection, filePath, title?, firstPublishLocationId?)`   | Uploads a local file as a new `ContentVersion`, re-queried to include `ContentDocumentId`.                         |
+| `downloadContentVersion(connection, contentVersionDownload, downloadDirectory)` | Downloads a `ContentVersion`'s file data to a local directory.                                                     |
+| `countCsvRows(filePath)`                                                        | Counts the data rows in a CSV, excluding its header.                                                               |
+| `requestsForQuery(recordCount)`                                                 | Estimates the API requests a record query costs, including its `queryMore` round trips.                            |
+| `REQUESTS_PER_UPLOAD`                                                           | API requests consumed per file uploaded (`2`).                                                                     |
+| `REQUESTS_PER_DOWNLOAD`                                                         | API requests consumed per file downloaded (`1`).                                                                   |
+| `QUERY_BATCH_SIZE`                                                              | Records jsforce returns per query round trip.                                                                      |
+| `createBoundary()`                                                              | Generates a multipart boundary string.                                                                             |
+| `escapeHeaderFilename(filename)`                                                | Escapes a filename for inclusion in a `Content-Disposition` header.                                                |
+| `contentVersionMultipart(options)`                                              | Builds the `multipart/form-data` body for a `ContentVersion` create request.                                       |
+| `createContentNote(connection, input, linkedEntityId)`                          | Creates one `ContentNote` and links it to a record via `ContentDocumentLink`.                                      |
+| `uploadContentNotes(connection, inputs, linkedEntityIdsByExternalId, options?)` | Creates a stream of `ContentNote`s with bounded concurrency, resolving each one's parent record from a lookup map. |
 
 ```ts
 import { uploadContentVersion, downloadContentVersion } from '@simplysf/simply-data-core';
@@ -41,6 +43,27 @@ import { countCsvRows, requestsForQuery, REQUESTS_PER_UPLOAD } from '@simplysf/s
 
 const rowCount = await countCsvRows('./records.csv');
 const plannedRequests = requestsForQuery(rowCount) + rowCount * REQUESTS_PER_UPLOAD;
+```
+
+```ts
+import { queryRecords } from '@simplysf/simply-core';
+import { uploadContentNotes, type ContentNoteInput } from '@simplysf/simply-data-core';
+
+// Build the external-id -> record-id lookup notes will link against.
+const lookup = new Map<string, string>();
+for await (const record of queryRecords(connection, 'SELECT Id, Name FROM HRM_Request__c')) {
+  lookup.set(record.Name, record.Id);
+}
+
+const inputs: ContentNoteInput[] = [
+  { content: 'Called the customer back.', title: 'Follow-up', linkedRecordExternalId: 'HRM-00042' },
+];
+
+for await (const result of uploadContentNotes(connection, inputs, lookup, { concurrency: 10 })) {
+  if (result.status === 'error') {
+    console.error(`${result.stage}: ${result.message}`);
+  }
+}
 ```
 
 ## Issues

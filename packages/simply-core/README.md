@@ -125,12 +125,13 @@ const result = await streamBulkQueryToFile(connection, 'SELECT Id, Name FROM Acc
 
 ### Collections and paths
 
-| Export                            | Description                                                                                    |
-| --------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `chunk(items, size)`              | Splits an array into fixed-size chunks.                                                        |
-| `mapChunked(items, size, mapper)` | Maps an async `mapper` over an array one chunk at a time, awaiting each chunk before the next. |
-| `ensureDirectory(path)`           | Creates a directory (and parents) if it doesn't already exist.                                 |
-| `timestampForFileName(date?)`     | A filesystem-safe timestamp, for generated output file names.                                  |
+| Export                                       | Description                                                                                                                                                                                                              |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `chunk(items, size)`                         | Splits an array into fixed-size chunks.                                                                                                                                                                                  |
+| `mapChunked(items, size, mapper)`            | Maps an async `mapper` over an array one chunk at a time, awaiting each chunk before the next.                                                                                                                           |
+| `mapConcurrent(source, concurrency, mapper)` | Maps an async `mapper` over an `AsyncIterable`/`Iterable` source with a fixed-size worker pool — the next item starts as soon as a slot frees, instead of waiting for a whole chunk. Yields results in completion order. |
+| `ensureDirectory(path)`                      | Creates a directory (and parents) if it doesn't already exist.                                                                                                                                                           |
+| `timestampForFileName(date?)`                | A filesystem-safe timestamp, for generated output file names.                                                                                                                                                            |
 
 ## Issues
 

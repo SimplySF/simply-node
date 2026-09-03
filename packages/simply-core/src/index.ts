@@ -20,6 +20,7 @@ export {
   type ClientCredentialsAuthResult,
 } from './auth/clientCredentialsAuth.js';
 export { retryWithBackoff, type RetryWithBackoffOptions } from './async/retryWithBackoff.js';
+export { mapConcurrent } from './async/mapConcurrent.js';
 export {
   apiBudgetError,
   checkApiBudget,

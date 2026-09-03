@@ -39,6 +39,7 @@
   "type": "module",
   "dependencies": {
     "@salesforce/core": "^8.30.0",
+    "@simplysf/simply-core": "workspace:^1.5.2",
     "csv-parse": "^7.0.2"
   },
   "devDependencies": {
