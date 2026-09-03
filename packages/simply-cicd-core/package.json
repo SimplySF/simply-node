@@ -1,7 +1,7 @@
 {
   "name": "@simplysf/simply-cicd-core",
   "description": "ALM issue linking (Jira, GitLab Issues) and VCS API clients (GitHub, GitLab) — the library layer behind @simplysf/simply-cicd, published separately for direct consumption (e.g. a bot or script) without the CLI framework",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": "@ClayChipps",
   "homepage": "https://github.com/SimplySF/simply-node",
   "bugs": "https://github.com/SimplySF/simply-node/issues",
