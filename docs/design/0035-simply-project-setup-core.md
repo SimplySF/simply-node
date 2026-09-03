@@ -27,33 +27,39 @@ shape, or a different branch/customization convention without forking the whole 
 
 ## Decision
 
-Extract the engine — not most of the opinions — into `@simplysf/simply-project-setup-core`, a plain
-library with no built-in templates, presets, or org-specific defaults. A consumer plugin (e.g. a
-`setup` subcommand added to `simply-plugins`' existing `packages/simply-project`) supplies:
+Extract the engine — not the opinions — into `@simplysf/simply-project-setup-core`, a plain library
+with no built-in templates, presets, org-specific defaults, or project-local config-file format. A
+consumer plugin (e.g. a `setup` subcommand added to `simply-plugins`' existing
+`packages/simply-project`) supplies:
 
 - a templates directory (one subdirectory per feature id, each optionally holding a
   `dependencies.json`),
 - a base `SetupConfig` and named presets,
   its own `package.json` defaults (scripts/wireit/workspaces) and which scripts belong to which
   feature,
+- its own project-local config-file format, if it wants one — this package only ever sees the
+  `{ include?: string[]; exclude?: string[] }` shape a consumer chooses to extract from it and pass
+  as `resolveSetupConfig`'s `localOverrides`,
 - and, only if it wants them, hooks for renaming a template's destination filename, protecting a
   file from being overwritten once it exists, and rewriting a copied file's content — the mechanism
   the original tool used, filename-special-cased, to template a branch-naming regex into a
   pre-commit hook.
 
-The one deliberate exception: `.sfdevrc.json` — its schema, `zod` validation, and the
-branch-naming-regex convention its `branchRegex`/`jiraProjectKey`/`jiraProjectKeys` fields drive —
-stays part of this package, not a consumer's. Revised from this doc's first draft: it's purposely an
-opinionated piece of the tool, not one more thing every consumer redefines for itself. See Behavior's
-`.sfdevrc.json` subsection and Alternatives.
+No deliberate exception this time: an earlier draft of this doc carved out `.sfdevrc.json` — its
+schema, `zod` validation, and the branch-naming-regex convention its fields drove — as this
+package's one opinionated piece, reasoning that every consumer would otherwise redefine the same
+file shape for itself. Reversed again, back to the original framing: `.sfdevrc.json` is a
+`generic`/GitLab-specific config-file name and shape from the one source tool this engine was
+extracted from, not a convention this package should be in the business of owning. A project-local
+override file is exactly the kind of thing templates and presets already are — a specific project's
+own opinion — and it doesn't need this package's help to be one. See Alternatives.
 
-This package exposes that engine plus the `.sfdevrc.json` spec: `resolveSetupConfig`,
-`standardizeFiles`, `standardizePackageJson`, `writeDependencies`, `sfdevrcSchema`/`loadSfdevrc`/
-`findSfdevrcPath`/`buildBranchRegex`, plus the small utilities they're built from (`PackageJson`,
-`exists`, `loadRootPath`, `log`, `orderMap`, `semverIsLessThan`) so a consumer can compose additional
-feature-specific steps (e.g. UTAM's self-referential `"pkgName": "file:"` dependency, which is
-dropped from this package as too narrow to bake in — see Alternatives) the same way it composes
-everything else.
+This package exposes just the engine: `resolveSetupConfig`, `standardizeFiles`,
+`standardizePackageJson`, `writeDependencies`, plus the small utilities they're built from
+(`PackageJson`, `exists`, `loadRootPath`, `log`, `orderMap`, `semverIsLessThan`) so a consumer can
+compose additional feature-specific steps (e.g. UTAM's self-referential `"pkgName": "file:"`
+dependency, which is dropped from this package as too narrow to bake in — see Alternatives) the same
+way it composes everything else.
 
 Out of scope: the source tool's `release` command (GitLab release/branch-bump automation) is a
 separate concern — GitLab- and versioning-convention-specific, not part of "resolve a feature list
@@ -84,31 +90,29 @@ templates/
 `standardizeFiles`/`writeDependencies` only know the directory shape above — no feature id is
 hardcoded.
 
-### `.sfdevrc.json`
+### Project-local config-file overrides
+
+This package owns no config-file format — not `.sfdevrc.json`, not any name/shape of a consumer's
+own choosing. `resolveSetupConfig` takes a plain `localOverrides?: { include?: string[]; exclude?:
+string[] }` argument instead of reading or validating a file itself:
 
 ```ts
-import {
-  sfdevrcSchema,
-  type Sfdevrc,
-  loadSfdevrc,
-  findSfdevrcPath,
-  buildBranchRegex,
-} from '@simplysf/simply-project-setup-core';
+import { resolveSetupConfig } from '@simplysf/simply-project-setup-core';
 
-const sfdevrc = loadSfdevrc(); // walks up from cwd; undefined if no .sfdevrc.json exists
+const myConfig = loadMyConfigFile(); // however a consumer's own command finds/reads/validates it
+
+const config = resolveSetupConfig({
+  flags,
+  localOverrides: myConfig?.setup, // e.g. { exclude: ['utam'] }
+  baseConfig,
+});
 ```
 
-`sfdevrcSchema` (`zod`, `.strict()`) validates the same fields the source tool's
-`schemas/sfdevrc.schema.ts` did — `$schema`, `gitlabProjectId`, `jiraProjectKey`, `jiraProjectKeys`,
-`branchRegex`, `deploymentPlugins`, `setup.include`/`setup.exclude` — unchanged. `loadSfdevrc` finds
-the nearest `.sfdevrc.json` (via `findSfdevrcPath`, also exported standalone), returning `undefined`
-when none exists (every field is optional — a project without the file is valid) but **throwing**
-when a file exists and fails to parse as JSON or fails schema validation, rather than the source
-tool's swallow-and-warn: a library has no message channel of its own to warn through, and a
-malformed config file is a mistake worth a consumer's command surfacing loudly, in whatever style
-its own error handling uses. `buildBranchRegex` ports `copyHuskyPreCommit`'s regex-building block
-unchanged (`branchRegex` wins outright; else `jiraProjectKey`/`jiraProjectKeys`, merged and folded
-into both cases, build a JIRA-keyed regex; else a default `feature|bugfix|devops|release` pattern).
+A consumer wanting the original tool's `.sfdevrc.json` behavior — schema validation, a JIRA-key- or
+`branchRegex`-derived branch-naming regex fed into a `transformFile` hook, throwing on a malformed
+file rather than warning — implements it in its own command with its own `zod` schema (or whatever
+validation library it already uses) and passes the `setup.include`/`setup.exclude` piece through as
+`localOverrides`. Nothing about that convention is specific to this package's engine.
 
 ### `resolveSetupConfig`
 
@@ -124,7 +128,7 @@ const baseConfig: SetupConfig = {
 
 const config = resolveSetupConfig({
   flags, // this command's own Record<string, boolean | string | undefined>
-  sfdevrc, // this package's own Sfdevrc type, from loadSfdevrc() — or undefined
+  localOverrides, // { include?: string[]; exclude?: string[] } — a consumer's own to produce, or undefined
   baseConfig,
   presets: { hrm: ['core', 'vscode', 'eslint', 'commitlint', 'lintstaged', 'prettier', 'utam', 'jest'] },
   booleanFeatures: ['prettier', 'utam', 'jest', 'eslint', 'commitlint', 'lintstaged', 'vscode'],
@@ -134,7 +138,7 @@ const config = resolveSetupConfig({
 ```
 
 Resolution order (unchanged from the source tool): start from `baseConfig` → apply
-`sfdevrc.setup.include`/`exclude` → apply a named preset if `flags[presetFlagName]` (default flag
+`localOverrides.include`/`exclude` → apply a named preset if `flags[presetFlagName]` (default flag
 name `"preset"`) is set, else apply each of `booleanFeatures` as an add/remove toggle from
 `flags[feature] === true / false` → add or remove `packageJsonFeatureId` depending on whether any of
 `dependentFeatures` ended up included. Same precedence, same shape (`SetupConfig`), fully
@@ -152,10 +156,10 @@ const actions = standardizeFiles({
   gitignoreHeader: "# This file is auto-generated by 'myapp project setup'. Do not edit manually.\n\n",
   renameFile: (destRelativePath) =>
     destRelativePath === '.prettier.config.mjs' ? 'prettier.config.mjs' : destRelativePath,
-  protectedFiles: ['.sfdevrc.json'],
+  protectedFiles: ['.myapprc.json'],
   transformFile: ({ destRelativePath, content }) =>
     destRelativePath.endsWith('pre-commit')
-      ? content.replace('REPLACE_WITH_BRANCH_REGEX', `"${buildBranchRegex(sfdevrc)}"`)
+      ? content.replace('REPLACE_WITH_BRANCH_REGEX', myOwnBranchRegexLogic())
       : content,
 });
 ```
@@ -170,14 +174,14 @@ per included feature, wrapped with the same customization-block footer). Returns
 Generalized out of the engine, now consumer hooks: the gitignore header text (was a hardcoded
 `"generic project setup"` string), the `.prettier.config.mjs` → `prettier.config.mjs` rename (was an
 `if` checked against that literal filename in two places), the `.sfdevrc.json` no-clobber rule (was
-an `if` checked against that literal filename — still a `protectedFiles` entry a consumer opts into,
-since this package doesn't assume `.sfdevrc.json` is even one of the files a given template pack
-copies), and the pre-commit branch-regex substitution (was an `if` checked against the literal
-filename `pre-commit`). Only _which file_ gets transformed, and whether it's copied at all, stays a
-consumer/template-layout decision (`transformFile` still takes a callback) — but the regex-building
-logic behind it is `buildBranchRegex`, not something a consumer has to reimplement. All four hooks
-are optional; omitting them reproduces "copy every resolved file verbatim, never protect any of
-them."
+an `if` checked against that literal filename — now just whatever a consumer lists in
+`protectedFiles`, this package has no opinion on what that file is named), and the pre-commit
+branch-regex substitution (was an `if` checked against the literal filename `pre-commit`, and a call
+into this package's own regex-building logic — now entirely a consumer's own `transformFile`
+callback, this package doesn't build branch-naming regexes at all). Only _which file_ gets
+transformed, and whether it's copied at all, stays a consumer/template-layout decision. All four
+hooks are optional; omitting them reproduces "copy every resolved file verbatim, never protect any
+of them."
 
 ### `standardizePackageJson`
 
@@ -240,16 +244,15 @@ generic engine, using the same primitives the engine itself uses.
   "types": "./lib/index.d.ts",
   "exports": { ".": { "types": "./lib/index.d.ts", "default": "./lib/index.js" } },
   "dependencies": {
-    "glob": "^13.0.6",
-    "zod": "^4.1.12"
+    "glob": "^13.0.6"
   }
 }
 ```
 
 No `@oclif/core`, no `@salesforce/*`, no `messages/`, no `oclif` block — this package never touches
-an org connection or a CLI framework. `glob` (banned-file pattern matching in `standardizeFiles`) and
-`zod` (`.sfdevrc.json` validation — the same version other `-core` packages in this repo already
-depend on) are its only two runtime dependencies.
+an org connection or a CLI framework. `glob` (banned-file pattern matching in `standardizeFiles`) is
+its only runtime dependency — no `zod`, since this package validates no config-file schema of its
+own.
 
 ## Alternatives considered
 
@@ -260,18 +263,26 @@ any bundled template immediately becomes an opinion this package has to maintain
 independently of the consumer that actually uses it, for zero engine benefit (the engine doesn't
 care whether a template pack exists).
 
-**Leave `.sfdevrc.json`'s schema and validation to each consumer, with `resolveSetupConfig`'s
-`sfdevrc` parameter typed as the minimal `{ setup?: { include?: string[]; exclude?: string[] } }`
-shape it actually reads.** This doc's own first draft, reversed at explicit direction: `.sfdevrc.json`
-is called out as _purposely_ an opinionated part of this tool, not one more thing every consumer
-redefines for itself — unlike templates and presets, where every consumer genuinely wants its own.
-Treating it as generic would mean re-deriving and re-validating the same file shape (and the
-JIRA-key-to-branch-regex logic riding on it) in every consumer that wants it, with no guarantee two
-consumers agree on what `.sfdevrc.json` even means. Keeping the schema here also means
-`gitlabProjectId`/`deploymentPlugins` — not read by anything in this package, only by a consumer's
-own commands (a release command, a deploy command) — are still validated against the one schema a
-project's `.sfdevrc.json` has to satisfy, rather than left unvalidated because no single package owns
-the whole file.
+**Keep `.sfdevrc.json`'s schema, `zod` validation, and branch-naming-regex derivation
+(`sfdevrcSchema`/`loadSfdevrc`/`findSfdevrcPath`/`buildBranchRegex`) as this package's one
+opinionated, named config-file format — a second draft of this doc's own position, since the first
+draft already proposed the generic shape below and got reversed toward this once, on the reasoning
+that every consumer would otherwise re-derive and re-validate the same file (and the
+JIRA-key-to-branch-regex logic riding on it), with no guarantee two consumers agreed on what
+`.sfdevrc.json` even meant.** Reversed back, final: that reasoning doesn't hold up against this
+package's own stated premise for everything else it doesn't own. `.sfdevrc.json` is a `generic`/
+GitLab-specific file name and field set from one source tool, not a convention every Salesforce DX
+project needs — `gitlabProjectId`/`deploymentPlugins`/JIRA-key-driven branch regexes are that one
+org's choices, exactly as templates/presets/`package.json` defaults are. A consumer that does want a
+shared, named config-file convention across its own commands (setup, release, deploy) is free to
+define and validate one — that's a decision for a consumer's own package or plugin repo to make and
+own, not something this package should force on every consumer by being the one place the schema
+lives. Keeping it here also meant a schema field (`gitlabProjectId`) this package itself never reads,
+validated here anyway "for symmetry" — a sign the schema didn't belong to the engine in the first
+place. `resolveSetupConfig`'s `localOverrides` parameter is exactly the minimal
+`{ include?: string[]; exclude?: string[] }` shape it actually reads, with no wrapping `setup` key
+either — that nesting existed only because `.sfdevrc.json` had other, unrelated top-level fields to
+namespace away from; once this package doesn't own the whole file, there's nothing left to namespace.
 
 **Keep the UTAM self-referential dependency step (`dependencies[pkgName] = "file:"` when `"utam"` is
 included) in `writeDependencies`, gated by a `utamFeatureId` option.** Rejected: it's the one place
@@ -285,52 +296,47 @@ next to their own `writeDependencies` call in three lines, using the same class 
 
 **Fold `release`'s logic in too, as a second export group.** Rejected (see Problem) — different
 inputs (git/GitLab, not template packs), different failure modes, and no shared code with the setup
-path beyond "reads `.sfdevrc.json`." Bundling it would make this package's dependency footprint and
-API surface answer a question ("does this project also want GitLab release automation?") unrelated
-to "does this project want its files/dependencies standardized?"
+path. Bundling it would make this package's dependency footprint and API surface answer a question
+("does this project also want GitLab release automation?") unrelated to "does this project want its
+files/dependencies standardized?"
 
 ## Implementation plan
 
 1. **New package `packages/simply-project-setup-core`**, scaffolded like `simply-schema-core`:
    `package.json` (Behavior section above), `tsconfig.json`/`test/tsconfig.json` extending the root
    configs, `.gitignore`, `README.md`, `CONTRIBUTING.md`.
-2. **`src/types.ts`** — `SetupConfig`, `SetupFlags`, `ResolveSetupConfigOptions` (its `sfdevrc` field
-   typed as `Sfdevrc`, from `sfdevrcSchema.ts`), `FileAction`, `PackageJsonDefaults`.
-3. **`src/sfdevrcSchema.ts`** — `sfdevrcSchema`/`Sfdevrc`, ported verbatim from
-   `schemas/sfdevrc.schema.ts`.
-4. **`src/loadSfdevrc.ts`** — `findSfdevrcPath` (built on `loadRootPath`) and `loadSfdevrc`
-   (find + read + `JSON.parse` + `sfdevrcSchema.safeParse`, throwing with the file path on either
-   failure — see Behavior for why this throws instead of the source tool's warn-and-continue).
-5. **`src/buildBranchRegex.ts`** — ported from `copyHuskyPreCommit`'s JIRA-key regex-building block
-   (`standardize-files.ts`), unchanged, minus the file-copying it used to be embedded in.
-6. **`src/exists.ts`, `src/loadRootPath.ts`, `src/log.ts`, `src/orderMap.ts`, `src/semver.ts`** —
+2. **`src/types.ts`** — `SetupConfig`, `SetupFlags`, `LocalOverrides` (`{ include?: string[];
+exclude?: string[] }`), `ResolveSetupConfigOptions` (its `localOverrides` field typed as
+   `LocalOverrides`), `FileAction`, `PackageJsonDefaults`.
+3. **`src/exists.ts`, `src/loadRootPath.ts`, `src/log.ts`, `src/orderMap.ts`, `src/semver.ts`** —
    ported verbatim from `utils/exists.ts`/`load-root-path.ts`/`log.ts`/`order-map.ts`/`semver.ts`
    (already framework-agnostic; only the license header and camelCase filenames change to match this
    repo's convention).
-7. **`src/packageJson.ts`** — ported from `utils/package-json.ts`, same behavior.
-8. **`src/resolveSetupConfig.ts`** — generalized from `setup/index.ts`'s `resolveConfig`/
-   `applySfdevrc`/`applyPreset`/`applyBooleanFlags`, parameterized per Behavior above; `applySfdevrc`
-   takes the real `Sfdevrc` type now, not a narrowed local shape.
-9. **`src/standardizeFiles.ts`** — generalized from `utils/standardize-files.ts`: `TEMPLATES_PATH`
+4. **`src/packageJson.ts`** — ported from `utils/package-json.ts`, same behavior.
+5. **`src/resolveSetupConfig.ts`** — generalized from `setup/index.ts`'s `resolveConfig`/
+   `applySfdevrc`/`applyPreset`/`applyBooleanFlags`, parameterized per Behavior above;
+   `applySfdevrc` becomes `applyLocalOverrides`, reading the generic `LocalOverrides` shape instead
+   of a `Sfdevrc`'s `setup` sub-object.
+6. **`src/standardizeFiles.ts`** — generalized from `utils/standardize-files.ts`: `TEMPLATES_PATH`
    becomes the `templatesPath` argument; `.prettier.config.mjs` rename becomes `renameFile`;
-   `.sfdevrc.json` no-clobber becomes a `protectedFiles` entry; the `pre-commit`-named branch-regex
-   substitution becomes a `transformFile` callback that calls this package's own `buildBranchRegex`
-   (the regex-building logic doesn't move out of this package, only the "which file, if any, gets
-   this treatment" decision does); the hardcoded gitignore header string becomes `gitignoreHeader`.
-10. **`src/standardizePackageJson.ts`** — generalized from `utils/standardize-pjson.ts` +
-    `utils/sf-config.ts`: `PACKAGE_DEFAULTS`/`resolveConfig` (the `sf-config.ts` one, distinct from
-    `resolveSetupConfig`) become the `defaults` argument; `prettierScripts`/`utamScripts`/
-    `jestScripts` become `defaults.featureScripts`.
-11. **`src/writeDependencies.ts`** — generalized from `utils/write-dependencies.ts`: `dirname`-relative
-    `../../src/templates` path becomes the `templatesPath` argument; the UTAM `file:` step is dropped
-    (see Alternatives).
-12. **`src/index.ts`** — barrel, re-exporting everything above; header comment matching
-    `simply-schema-core`'s (semver-covered surface, pinned by `test/index.test.ts`).
-13. **Tests** — see Testing.
-14. **`simply-node`'s `eslint.config.mjs`** — add `packages/simply-project-setup-core` to both
+   `.sfdevrc.json` no-clobber becomes whatever a consumer lists in `protectedFiles`; the
+   `pre-commit`-named branch-regex substitution becomes an ordinary `transformFile` callback with no
+   help from this package (it builds no regex of its own); the hardcoded gitignore header string
+   becomes `gitignoreHeader`.
+7. **`src/standardizePackageJson.ts`** — generalized from `utils/standardize-pjson.ts` +
+   `utils/sf-config.ts`: `PACKAGE_DEFAULTS`/`resolveConfig` (the `sf-config.ts` one, distinct from
+   `resolveSetupConfig`) become the `defaults` argument; `prettierScripts`/`utamScripts`/
+   `jestScripts` become `defaults.featureScripts`.
+8. **`src/writeDependencies.ts`** — generalized from `utils/write-dependencies.ts`: `dirname`-relative
+   `../../src/templates` path becomes the `templatesPath` argument; the UTAM `file:` step is dropped
+   (see Alternatives).
+9. **`src/index.ts`** — barrel, re-exporting everything above; header comment matching
+   `simply-schema-core`'s (semver-covered surface, pinned by `test/index.test.ts`).
+10. **Tests** — see Testing.
+11. **`simply-node`'s `eslint.config.mjs`** — add `packages/simply-project-setup-core` to both
     `allPackages` and `libraryPackages`.
-15. **`simply-node`'s root `CONTRIBUTING.md`** — add a row to the repository-structure table.
-16. **`docs/design/README.md`** — add this doc's row.
+12. **`simply-node`'s root `CONTRIBUTING.md`** — add a row to the repository-structure table.
+13. **`docs/design/README.md`** — add this doc's row.
 
 This package has no `simply-plugins` companion PR to coordinate in this change — nothing in
 `simply-plugins` depends on it yet. A consumer command (e.g. `simply project setup` added to
@@ -341,14 +347,7 @@ This package has no `simply-plugins` companion PR to coordinate in this change �
 **Unit**, one file per module, run with the monorepo's `vitest` project auto-discovery (no config
 change needed — `vitest.config.ts` globs `packages/*`):
 
-- `sfdevrcSchema.test.ts`: accepts an empty object and the full field set; rejects an unknown
-  top-level field (`.strict()`) and a wrong-typed known field.
-- `loadSfdevrc.test.ts`: `undefined` with no file found; finds/reads/validates an existing file;
-  walks up through ancestor directories; throws on invalid JSON; throws on a schema violation.
-- `buildBranchRegex.test.ts`: default regex with `undefined` and with an empty `Sfdevrc`;
-  `branchRegex` wins outright over JIRA keys when both are set; a JIRA-keyed regex from
-  `jiraProjectKeys`; `jiraProjectKey` + `jiraProjectKeys` merged without duplicates (both cases).
-- `resolveSetupConfig.test.ts`: base config only; `sfdevrc.setup.include`/`exclude` applied before a
+- `resolveSetupConfig.test.ts`: base config only; `localOverrides.include`/`exclude` applied before a
   preset; a preset short-circuiting `booleanFeatures`; boolean flags adding/removing features when no
   preset flag is set; `packageJsonFeatureId` added when a `dependentFeatures` member is included and
   removed when none are.

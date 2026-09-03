@@ -18,17 +18,14 @@
 // export is a minor/patch change, but removing or renaming one is breaking. `test/index.test.ts`
 // pins the exported-key list down so an accidental removal fails a test instead of silently shipping
 // in a patch release. See docs/design/0035-simply-project-setup-core.md for why this package has no
-// built-in templates/presets (a consumer's own concern) but does own the `.sfdevrc.json` spec and
-// validation (this package's one deliberate opinion).
+// built-in templates, presets, package.json defaults, or project-local config-file format — every
+// one of those is a specific project's own opinion, not this engine's.
 
 export { resolveSetupConfig } from './resolveSetupConfig.js';
 export { standardizeFiles } from './standardizeFiles.js';
 export { standardizePackageJson } from './standardizePackageJson.js';
 export { writeDependencies } from './writeDependencies.js';
 export { PackageJson, type PackageJsonContents } from './packageJson.js';
-export { sfdevrcSchema, type Sfdevrc } from './sfdevrcSchema.js';
-export { loadSfdevrc, findSfdevrcPath } from './loadSfdevrc.js';
-export { buildBranchRegex } from './buildBranchRegex.js';
 export { exists } from './exists.js';
 export { loadRootPath } from './loadRootPath.js';
 export { log } from './log.js';
@@ -37,6 +34,7 @@ export { semverIsLessThan } from './semver.js';
 export type {
   SetupConfig,
   SetupFlags,
+  LocalOverrides,
   ResolveSetupConfigOptions,
   FileAction,
   TransformFileContext,
