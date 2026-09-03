@@ -69,6 +69,19 @@ export interface TransformFileContext {
   content: string;
 }
 
+/**
+ * A regex-scoped customization region — the alternative to a comment-delimited customization block
+ * for a format that can't hold one (JSON) or a single inline token that doesn't warrant a whole
+ * block. `path` is a glob matched against the resolved relative destination path; `pattern` (one or
+ * more) must each contain exactly one capturing group and match the *template's* content — the
+ * capturing group only proves the pattern identifies a customizable value, so only the first match
+ * per pattern is used, never a global replace. See `StandardizeFilesOptions.regexCustomizations`.
+ */
+export interface RegexCustomization {
+  path: string;
+  pattern: RegExp | RegExp[];
+}
+
 export interface StandardizeFilesOptions {
   config: SetupConfig;
   /** Directory of feature packs — see this package's README for the expected shape. */
@@ -82,8 +95,24 @@ export interface StandardizeFilesOptions {
   gitignoreHeader?: string;
   /** Maps a template's relative destination path to a different one, e.g. dropping a leading dot. */
   renameFile?: (destRelativePath: string) => string;
-  /** Relative destination paths that are only ever created, never overwritten once they exist. */
+  /**
+   * Glob patterns, matched against the resolved relative destination path, that are only ever
+   * created, never overwritten once they exist.
+   */
   protectedFiles?: string[];
+  /**
+   * Glob patterns, matched against the resolved relative destination path, whose target JSON is
+   * deep-merged with the template JSON on write — the target's existing values win on conflict
+   * (including arrays, replaced outright rather than merged element-wise), and only keys the
+   * template has that the target doesn't are added. Checked before customization-block detection,
+   * so a JSON file doesn't need `# -- START/END CUSTOMIZATION` markers to be preserved.
+   */
+  jsonMergeFiles?: string[];
+  /**
+   * Regex-scoped customization rules — see `RegexCustomization`. Checked before `jsonMergeFiles`
+   * and customization-block detection.
+   */
+  regexCustomizations?: RegexCustomization[];
   /** Rewrites a copied file's content before it's written; return `content` unchanged to skip. */
   transformFile?: (context: TransformFileContext) => string;
 }

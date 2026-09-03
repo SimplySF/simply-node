@@ -40,6 +40,7 @@ export type {
   ResolveSetupConfigOptions,
   FileAction,
   TransformFileContext,
+  RegexCustomization,
   StandardizeFilesOptions,
   PackageJsonDefaults,
   StandardizePackageJsonOptions,
