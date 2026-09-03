@@ -71,6 +71,7 @@ with no `simply-core`/`-core` library involvement, so they now live only in that
 | [0034](0034-content-note-upload.md)                                  | Content Note bulk upload (`simply-core` + `simply-data-core`)                         | Implemented |
 | [0035](0035-simply-project-setup-core.md)                            | `@simplysf/simply-project-setup-core`                                                 | Draft       |
 | [0036](0036-at4dx-domain-binding-trigger-validate.md)                | `simply-aep-core`: `missing-domain-trigger` binding validation rule                   | Draft       |
+| [0037](0037-simply-cicd-core.md)                                     | Splitting `simply-cicd-core` out of `simply-cicd`                                     | Draft       |
 
 ## Template
 
