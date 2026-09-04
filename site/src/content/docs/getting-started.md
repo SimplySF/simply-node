@@ -28,6 +28,7 @@ npm install @simplysf/simply-data-core
 npm install @simplysf/simply-package-core
 npm install @simplysf/simply-schema-core
 npm install @simplysf/simply-project-setup-core
+npm install @simplysf/simply-cicd-core
 ```
 
 | Package                     | What it's for                                                                                                                                      |
@@ -44,6 +45,7 @@ npm install @simplysf/simply-project-setup-core
 | `simply-package-core`       | Package/package-version alias resolution, `sfdx-project.json` dependency management, and Dev Hub version lookup                                    |
 | `simply-schema-core`        | sObject schema generation (CSV/Excel parsing, field/object normalization) and interactive schema-report rendering                                  |
 | `simply-project-setup-core` | Salesforce DX project file/dependency standardization engine (template packs, `.gitignore` composition, `package.json` scripts/dependency merging) |
+| `simply-cicd-core`          | ALM issue linking (Jira, GitLab Issues) and VCS API clients (GitHub, GitLab)                                                                       |
 
 ## Next steps
 
@@ -62,3 +64,4 @@ TypeScript source:
 - [simply-package-core guide](/guides/simply-package-core/) · [API](/api/simply-package-core/readme/)
 - [simply-schema-core guide](/guides/simply-schema-core/) · [API](/api/simply-schema-core/readme/)
 - [simply-project-setup-core guide](/guides/simply-project-setup-core/) · [API](/api/simply-project-setup-core/readme/)
+- [simply-cicd-core guide](/guides/simply-cicd-core/) · [API](/api/simply-cicd-core/readme/)
