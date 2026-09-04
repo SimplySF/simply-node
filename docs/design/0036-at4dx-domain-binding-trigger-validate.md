@@ -1,6 +1,7 @@
 # 0036 — `simply-aep-core`: `missing-domain-trigger` binding validation rule
 
-**Status:** Draft
+**Status:** Implemented (PR #184) — published as `0.14.0` via `pnpm publish`. `simply-plugins`'
+companion PR (#20) merged, wiring the rule into `at4dx binding validate`.
 **Package:** `packages/simply-aep-core` (consumed by `simply-plugins`' `packages/simply-aep`, see that
 repo's [0034](https://github.com/SimplySF/simply-plugins/blob/main/docs/design/0034-at4dx-domain-binding-trigger-validate.md))
 **Date:** 2026-09-03
