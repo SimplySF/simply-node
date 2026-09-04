@@ -7,11 +7,9 @@ enabled from CLI flags, a preset, and a project-local config file; copy each ena
 template pack into the project (preserving any customization-marked region on a file that already
 exists); compose `.gitignore`; and merge each feature's dependencies into `package.json`.
 
-This package ships **no templates, no presets, and no package.json defaults** — every one of those
-is a specific project's own opinion, not this engine's. A consumer plugin supplies them and gets the
-file-copy/merge/customization mechanics for free. The one deliberate exception is `.sfdevrc.json`:
-its schema, validation, and the branch-naming-regex convention it drives are this package's own
-opinion, not a consumer's — see [`sfdevrcSchema`](#api) below. See
+This package ships **no templates, no presets, no package.json defaults, and no project-local
+config-file format** — every one of those is a specific project's own opinion, not this engine's. A
+consumer plugin supplies them and gets the file-copy/merge/customization mechanics for free. See
 [docs/design/0035-simply-project-setup-core.md](https://github.com/SimplySF/simply-node/blob/main/docs/design/0035-simply-project-setup-core.md)
 for the reasoning.
 
@@ -85,26 +83,25 @@ nothing to preserve yet (the template's own text is kept); not matching the temp
 reported as an `"ERROR"` action, since it means the rule no longer corresponds to anything in the
 current template.
 
-## `.sfdevrc.json`
+## Project-local config-file overrides
 
-Unlike templates and presets, `.sfdevrc.json` is this package's own opinion — every consumer that
-uses `resolveSetupConfig` shares the same config-file format, validated the same way:
+`resolveSetupConfig` doesn't read any file itself — it takes a `localOverrides` argument shaped
+`{ include?: string[]; exclude?: string[] }` and applies it before a preset or boolean flags. A
+consumer that wants a project-local override file (its own name, its own schema, its own other
+fields) parses and validates it however it likes, then passes just that shape through:
 
-```json
-{
-  "gitlabProjectId": "42",
-  "jiraProjectKeys": ["ABC", "XYZ"],
-  "deploymentPlugins": ["sfdmu"],
-  "setup": { "exclude": ["utam"] }
-}
+```ts
+import { resolveSetupConfig } from '@simplysf/simply-project-setup-core';
+
+// however your command finds/reads/validates its own config file
+const myConfig = loadMyConfigFile();
+
+const config = resolveSetupConfig({
+  flags,
+  localOverrides: myConfig?.setup, // e.g. { exclude: ['utam'] }
+  baseConfig,
+});
 ```
-
-`resolveSetupConfig` reads `setup.include`/`setup.exclude`. `buildBranchRegex` reads `branchRegex`
-(if set, used verbatim) or `jiraProjectKey`/`jiraProjectKeys` (folded into a JIRA-keyed branch-name
-regex, each key in both cases), falling back to a default `feature|bugfix|devops|release` pattern
-when neither is set. `gitlabProjectId` and `deploymentPlugins` aren't read by anything in this
-package — they're validated here anyway so a project has exactly one schema to satisfy, whether a
-field is read by this package, by a consumer's own commands, or both.
 
 ## API
 
@@ -118,10 +115,6 @@ change; see [`src/index.ts`](src/index.ts).
 | `standardizePackageJson(options)`   | Writes `private`/`type`/`workspaces` and feature-gated `scripts`/`wireit` entries.           |
 | `writeDependencies(options)`        | Merges each included feature's `dependencies.json` into `package.json`.                      |
 | `PackageJson`                       | Reads/mutates/writes a project's `package.json`, ordering keys on write.                     |
-| `sfdevrcSchema`                     | The `zod` schema for `.sfdevrc.json`; `Sfdevrc` is its inferred type.                        |
-| `loadSfdevrc(cwd?)`                 | Finds, reads, and validates the nearest `.sfdevrc.json`; `undefined` if none exists.         |
-| `findSfdevrcPath(cwd?)`             | Just the path-finding half of `loadSfdevrc`, without reading or validating.                  |
-| `buildBranchRegex(sfdevrc)`         | Derives a branch-naming regex from `branchRegex`/`jiraProjectKey(s)`.                        |
 | `exists(path)`                      | `true` if a path exists and is accessible.                                                   |
 | `loadRootPath(fileName, cwd?)`      | Walks up from `cwd` for the nearest ancestor directory containing `fileName`.                |
 | `log(message, indent?)`             | A small indent-aware `console.warn` wrapper used by `PackageJson.write()`.                   |
@@ -137,14 +130,12 @@ import {
   standardizeFiles,
   standardizePackageJson,
   writeDependencies,
-  loadSfdevrc,
-  buildBranchRegex,
   type SetupConfig,
 } from '@simplysf/simply-project-setup-core';
 import path from 'node:path';
 
 const templatesPath = path.join(import.meta.dirname, 'templates');
-const sfdevrc = loadSfdevrc(); // finds/reads/validates the nearest .sfdevrc.json, or undefined
+const myConfig = loadMyConfigFile(); // however your command finds/reads/validates its own config file
 
 const baseConfig: SetupConfig = {
   include: ['core'],
@@ -155,7 +146,7 @@ const baseConfig: SetupConfig = {
 
 const config = resolveSetupConfig({
   flags, // this command's own parsed flags
-  sfdevrc,
+  localOverrides: myConfig?.setup, // e.g. { exclude: ['utam'] } — this package owns no config-file format
   baseConfig,
   presets: { hrm: ['core', 'eslint', 'prettier', 'jest'] },
   booleanFeatures: ['eslint', 'prettier', 'jest'],
@@ -167,13 +158,11 @@ const fileActions = standardizeFiles({
   templatesPath,
   gitignoreHeader: "# Generated by 'myapp project setup'. Do not edit manually.\n\n",
   renameFile: (dest) => (dest === '.prettier.config.mjs' ? 'prettier.config.mjs' : dest),
-  protectedFiles: ['.sfdevrc.json'],
+  protectedFiles: ['.env'],
   jsonMergeFiles: ['.myapprc.json'],
   regexCustomizations: [{ path: 'bin/deploy.sh', pattern: /^TARGET_ORG=.*$/m }],
   transformFile: ({ destRelativePath, content }) =>
-    destRelativePath === '.husky/pre-commit'
-      ? content.replace('REPLACE_WITH_BRANCH_REGEX', `"${buildBranchRegex(sfdevrc)}"`)
-      : content,
+    destRelativePath === '.husky/pre-commit' ? content.replace('REPLACE_WITH_BRANCH_REGEX', myBranchRegex()) : content,
 });
 
 const pjsonChanged =

@@ -28,16 +28,12 @@ import * as api from '../src/index.js';
 it('exports the expected set of runtime values', () => {
   expect(Object.keys(api).sort()).toStrictEqual([
     'PackageJson',
-    'buildBranchRegex',
     'exists',
-    'findSfdevrcPath',
     'loadRootPath',
-    'loadSfdevrc',
     'log',
     'orderMap',
     'resolveSetupConfig',
     'semverIsLessThan',
-    'sfdevrcSchema',
     'standardizeFiles',
     'standardizePackageJson',
     'writeDependencies',

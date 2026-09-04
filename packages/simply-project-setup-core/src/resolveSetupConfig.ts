@@ -14,18 +14,14 @@
  * limitations under the License.
  */
 
-import { Sfdevrc } from './sfdevrcSchema.js';
-import { ResolveSetupConfigOptions, SetupConfig } from './types.js';
+import { LocalOverrides, ResolveSetupConfigOptions, SetupConfig } from './types.js';
 
-function applySfdevrc(config: SetupConfig, sfdevrc: Sfdevrc | undefined): void {
-  if (sfdevrc?.setup) {
-    const { setup } = sfdevrc;
-    if (setup.exclude) {
-      config.include = config.include.filter((f) => !setup.exclude?.includes(f));
-    }
-    if (setup.include) {
-      config.include = [...new Set([...config.include, ...setup.include])];
-    }
+function applyLocalOverrides(config: SetupConfig, localOverrides: LocalOverrides | undefined): void {
+  if (localOverrides?.exclude) {
+    config.include = config.include.filter((f) => !localOverrides.exclude?.includes(f));
+  }
+  if (localOverrides?.include) {
+    config.include = [...new Set([...config.include, ...localOverrides.include])];
   }
 }
 
@@ -67,7 +63,7 @@ function applyBooleanFlags(
 export function resolveSetupConfig(options: ResolveSetupConfigOptions): SetupConfig {
   const {
     flags,
-    sfdevrc,
+    localOverrides,
     baseConfig,
     presets,
     booleanFeatures = [],
@@ -83,7 +79,7 @@ export function resolveSetupConfig(options: ResolveSetupConfigOptions): SetupCon
     banned: baseConfig.banned ? [...baseConfig.banned] : [],
   };
 
-  applySfdevrc(config, sfdevrc);
+  applyLocalOverrides(config, localOverrides);
 
   const presetApplied = applyPreset(config, presets, flags[presetFlagName] as string | undefined);
 

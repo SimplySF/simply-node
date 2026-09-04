@@ -276,9 +276,6 @@ importers:
       minimatch:
         specifier: ^10.2.6
         version: 10.2.6
-      zod:
-        specifier: ^4.1.12
-        version: 4.4.3
     devDependencies:
       '@vitest/coverage-v8':
         specifier: ^4.1.10

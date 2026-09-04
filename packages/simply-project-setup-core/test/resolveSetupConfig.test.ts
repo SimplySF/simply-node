@@ -26,11 +26,11 @@ describe('resolveSetupConfig', () => {
     expect(config.include).toEqual(['core']);
   });
 
-  it('applies sfdevrc include/exclude overrides before a preset or flags', () => {
+  it('applies localOverrides include/exclude before a preset or flags', () => {
     const config = resolveSetupConfig({
       flags: {},
       baseConfig,
-      sfdevrc: { setup: { include: ['vscode'], exclude: ['core'] } },
+      localOverrides: { include: ['vscode'], exclude: ['core'] },
     });
     expect(config.include).toEqual(['vscode']);
   });

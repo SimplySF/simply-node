@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import { Sfdevrc } from './sfdevrcSchema.js';
-
 /**
  * The resolved set of feature ids a project setup run should apply. A "feature id" is just the
  * name of a subdirectory under a consumer's `templatesPath` (see `standardizeFiles`) — this
@@ -35,11 +33,21 @@ export interface SetupConfig {
 /** A command's own parsed flags, as `resolveSetupConfig` expects to receive them. */
 export type SetupFlags = Record<string, boolean | string | undefined>;
 
+/**
+ * The shape `resolveSetupConfig` reads out of a consumer's own project-local config file — this
+ * package has no opinion on that file's name, location, or any other field it might carry; a
+ * consumer parses/validates its own file however it likes and passes just this piece through.
+ */
+export interface LocalOverrides {
+  include?: string[];
+  exclude?: string[];
+}
+
 export interface ResolveSetupConfigOptions {
   /** This command's own parsed flags. */
   flags: SetupFlags;
-  /** The project's parsed `.sfdevrc.json` (see `loadSfdevrc`), if any. */
-  sfdevrc?: Sfdevrc;
+  /** Include/exclude overrides from a consumer's own project-local config file, if any. */
+  localOverrides?: LocalOverrides;
   /** Starting point before any override is applied. */
   baseConfig: SetupConfig;
   /** Named presets; a matched preset replaces `include` outright, short-circuiting `booleanFeatures`. */
