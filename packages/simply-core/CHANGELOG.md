@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.6.1](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-core%401.6.0...%40simplysf%2Fsimply-core%401.6.1) (2026-09-06)
+
+### Bug Fixes
+
+- **deps:** bump fast-xml-parser from 5.11.0 to 5.11.1 ([#193](https://github.com/SimplySF/simply-node/issues/193)) ([4114de7](https://github.com/SimplySF/simply-node/commit/4114de75515fc8bc301c74acc95c32a62a32618b))
+
 # [1.6.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-core%401.5.2...%40simplysf%2Fsimply-core%401.6.0) (2026-09-03)
 
 ### Features

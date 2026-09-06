@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.2.2](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-package-core%400.2.1...%40simplysf%2Fsimply-package-core%400.2.2) (2026-09-06)
+
+**Note:** Version bump only for package @simplysf/simply-package-core
+
 ## [0.2.1](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-package-core%400.2.0...%40simplysf%2Fsimply-package-core%400.2.1) (2026-09-03)
 
 **Note:** Version bump only for package @simplysf/simply-package-core
