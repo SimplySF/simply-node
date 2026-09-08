@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.4.1](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-project-setup-core%400.4.0...%40simplysf%2Fsimply-project-setup-core%400.4.1) (2026-09-08)
+
+**Note:** Version bump only for package @simplysf/simply-project-setup-core
+
 # [0.4.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-project-setup-core%400.3.0...%40simplysf%2Fsimply-project-setup-core%400.4.0) (2026-09-04)
 
 - feat(simply-project-setup-core)!: remove the .sfdevrc.json config-file opinion (#188) ([6456dcb](https://github.com/SimplySF/simply-node/commit/6456dcb3fe31a8bb92e68275345ed2262aacf50e)), closes [#188](https://github.com/SimplySF/simply-node/issues/188)
