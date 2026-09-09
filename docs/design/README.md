@@ -73,7 +73,7 @@ with no `simply-core`/`-core` library involvement, so they now live only in that
 | [0036](0036-at4dx-domain-binding-trigger-validate.md)                | `simply-aep-core`: `missing-domain-trigger` binding validation rule                   | Implemented |
 | [0037](0037-simply-cicd-core.md)                                     | Splitting `simply-cicd-core` out of `simply-cicd`                                     | Draft       |
 | [0038](0038-simply-project-setup-core-file-write-strategies.md)      | `simply-project-setup-core`: `jsonMergeFiles`/`regexCustomizations` file strategies   | Draft       |
-| [0039](0039-package-dependencies-install-service.md)                 | `simply-package-core`: `installPackageDependencies` service (used by `simply-cicd`)   | Draft       |
+| [0039](0039-package-dependencies-install-service.md)                 | `simply-package-core`: `installPackageDependencies` service (used by `simply-cicd`)   | Implemented |
 
 ## Template
 

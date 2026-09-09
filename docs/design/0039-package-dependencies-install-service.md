@@ -1,6 +1,6 @@
 # 0039 — `simply-package-core`: `installPackageDependencies` service
 
-**Status:** Draft
+**Status:** Implemented (PR #196) — published as `@simplysf/simply-package-core@0.3.0`. `simply-plugins` companion PR to follow.
 **Package:** `packages/simply-package-core` (in `simply-node`); `packages/simply-package` and
 `packages/simply-cicd` (consumers, in `simply-plugins`)
 **Date:** 2026-09-09
