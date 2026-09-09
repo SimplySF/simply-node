@@ -75,3 +75,25 @@ const xml = buildBindingXml({
   to: 'MyServiceImpl',
 });
 ```
+
+## Simulating platform event distribution
+
+`PlatformEvents_Subscription__mdt` records route platform events to consumer classes. Given a scan,
+`resolvePlatformEventDistribution` answers "which consumers would AT4DX invoke for this event, and why
+not the others?" without publishing anything.
+
+```ts
+import {
+  resolvePlatformEventDistribution,
+  scanLocalPlatformEventSubscriptions,
+  validatePlatformEventSubscriptions,
+} from '@simplysf/simply-aep-core';
+
+const scan = scanLocalPlatformEventSubscriptions(['force-app/main/default']);
+const issues = validatePlatformEventSubscriptions(scan);
+
+const { matches, misses } = resolvePlatformEventDistribution(
+  { eventBus: 'Order_Event__e', category: 'Fulfillment', eventName: 'OrderShipped' },
+  scan.records,
+);
+```

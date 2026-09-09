@@ -3,8 +3,8 @@ title: simply-package-core
 description: Usage examples for @simplysf/simply-package-core.
 ---
 
-Package/package-version alias resolution, `sfdx-project.json` dependency management, and Dev Hub
-version lookup logic. Full signatures and types are in the
+Package/package-version alias resolution, `sfdx-project.json` dependency management, package
+dependency installation, and Dev Hub version lookup logic. Full signatures and types are in the
 [API reference](/api/simply-package-core/readme/).
 
 ```sh
