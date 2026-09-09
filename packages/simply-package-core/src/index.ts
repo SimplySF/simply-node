@@ -46,6 +46,18 @@ export {
   type VersionServiceFilterIds,
 } from './packageVersionService.js';
 export { buildProjectService, type SfdxProjectService } from './sfdxProjectService.js';
+export {
+  installPackageDependencies,
+  type InstallPackageDependenciesOptions,
+  type InstallPackageDependenciesProgress,
+  type InstallPackageDependenciesPrompts,
+  type PackageInstallApexCompileType,
+  type PackageInstallSecurityType,
+  type PackageInstallStatus,
+  type PackageInstallType,
+  type PackageInstallUpgradeType,
+  type PackageToInstall,
+} from './packageDependenciesInstall.js';
 export { type DependencyChange, type PackageDependenciesManageResult } from './schemas/manage/dependencyChange.js';
 export { type ParsedDependency, parseDependency } from './schemas/manage/parsedDependency.js';
 export {

@@ -22,6 +22,7 @@ Everything below is exported from the package root. Removing or renaming an expo
 | `findPackageVersions(project, packageName, options?)`                                                                                             | Finds every place a package name is declared in an `sfdx-project.json`, and the version declared there. |
 | `buildVersionService(connection, project, filterIds?)`                                                                                            | Loads Dev Hub packages/versions and returns a queryable alias-resolution/version-choice service.        |
 | `buildProjectService(project)`                                                                                                                    | Reads/writes an `sfdx-project.json`'s package dependencies and related plugin config.                   |
+| `installPackageDependencies(options)`                                                                                                             | Installs a project's declared package dependencies into an org, and reports each one's outcome.         |
 | `parseDependency(resolvedPackage, versionNumber?)`                                                                                                | Parses a resolved dependency reference into its component parts.                                        |
 | `reducePackageInstallRequestErrors(request)`                                                                                                      | Formats a failed `PackageInstallRequest`'s errors as a numbered-list string.                            |
 | `isDependenciesPackagingDirectory(packageDir)`                                                                                                    | Type guard narrowing a package directory to one that declares a `dependencies` array.                   |
@@ -47,6 +48,25 @@ import { buildProjectService } from '@simplysf/simply-package-core';
 
 const projectService = await buildProjectService(sfProject);
 const dependenciesByDirectory = projectService.getDependenciesByDirectory();
+```
+
+```ts
+import { Duration } from '@salesforce/kit';
+import { installPackageDependencies } from '@simplysf/simply-package-core';
+
+// Installs whatever `sfdx-project.json` declares that isn't already installed (or is newer than
+// what is), one package at a time, auto-approving any confirmations. Progress goes to `console`.
+const results = await installPackageDependencies({
+  project: sfProject,
+  targetOrgConnection: connection,
+  installType: 'Upgrade',
+  wait: Duration.minutes(120),
+  progress: { info: console.log, warn: console.warn, stepStart: console.log },
+});
+
+const upgraded = results.filter(
+  (r) => r.Status === 'Installed' && r.ExistingSubscriberPackageVersionId !== r.SubscriberPackageVersionId,
+);
 ```
 
 ## Issues
