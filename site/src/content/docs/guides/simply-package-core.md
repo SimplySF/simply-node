@@ -40,3 +40,31 @@ import { buildProjectService } from '@simplysf/simply-package-core';
 const projectService = await buildProjectService(sfProject);
 const dependenciesByDirectory = projectService.getDependenciesByDirectory();
 ```
+
+## Installing a project's package dependencies
+
+The engine behind `sf simply package dependencies install`, without the CLI. Dependencies are
+resolved from `sfdx-project.json` (aliases, or a Dev Hub for `package` + `versionNumber` pairs),
+compared against what the org already has, and installed one at a time.
+
+```ts
+import { Duration } from '@salesforce/kit';
+import { installPackageDependencies } from '@simplysf/simply-package-core';
+
+const results = await installPackageDependencies({
+  project: sfProject,
+  targetOrgConnection: connection,
+  // Only invoked if a dependency is declared as package + versionNumber.
+  targetDevHubConnection: async () => devHubOrg.getConnection(),
+  installType: 'Upgrade', // or 'All' | 'Delta'
+  installationKeys: { MyProtectedPackage: 'key' }, // alias or 04t id → key
+  wait: Duration.minutes(120),
+  retryAttempts: 2,
+  progress: { info: console.log, warn: console.warn, stepStart: console.log },
+  // Omit `prompts` to auto-approve the Delete-upgrade and external-sites confirmations.
+});
+
+for (const result of results) {
+  console.log(`${result.PackageName}: ${result.Status}`);
+}
+```

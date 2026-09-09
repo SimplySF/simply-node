@@ -39,6 +39,7 @@
   "type": "module",
   "dependencies": {
     "@salesforce/core": "^8.30.0",
+    "@salesforce/kit": "^3.2.6",
     "@salesforce/packaging": "^4.22.16",
     "@simplysf/simply-core": "workspace:^1.6.1",
     "zod": "^4.1.12"

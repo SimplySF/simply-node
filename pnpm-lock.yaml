@@ -235,6 +235,9 @@ importers:
       '@salesforce/core':
         specifier: ^8.30.0
         version: 8.32.6
+      '@salesforce/kit':
+        specifier: ^3.2.6
+        version: 3.2.6
       '@salesforce/packaging':
         specifier: ^4.22.16
         version: 4.27.8(supports-color@8.1.1)
