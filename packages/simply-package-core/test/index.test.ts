@@ -36,6 +36,7 @@ it('exports the expected set of runtime values', () => {
     'buildProjectService',
     'buildVersionService',
     'findPackageVersions',
+    'installPackageDependencies',
     'isDependenciesPackagingDirectory',
     'isPackage2Id',
     'isPackage2VersionId',
