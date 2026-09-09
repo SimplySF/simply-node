@@ -16,17 +16,21 @@ Requires Node.js `>=22` and either `"type": "module"` or a dynamic `import()` â€
 
 Everything below is exported from the package root. Removing or renaming an export is a breaking change; see [`src/index.ts`](src/index.ts).
 
-| Export                              | Description                                                                                   |
-| ----------------------------------- | --------------------------------------------------------------------------------------------- |
-| `getObjectInfo(workbook)`           | Reads the `object` worksheet into a plain property map.                                       |
-| `getFieldInfo(workbook)`            | Reads the `fields` worksheet into one row object per field.                                   |
-| `getValuesInfo(valuesWorksheet)`    | Reads a picklist values worksheet into one entry per value.                                   |
-| `toBoolean(value)`                  | Converts a CSV/Excel value to a boolean, preserving `undefined` for empty/missing input.      |
-| `blankToUndefined(value)`           | Treats an empty string the same as `undefined`.                                               |
-| `buildSchemaReportHtml(options)`    | Renders a self-contained, interactive HTML schema report (diagram + relationship data table). |
-| `IMPLEMENTED_FIELD_TYPES`           | The Salesforce field types this package knows how to generate `CustomField` metadata for.     |
-| `FIELD_TYPES_WITHOUT_REQUIRED_PROP` | Field types whose `CustomField` metadata never carries a `required` tag.                      |
-| `XML_BUILDER_OPTIONS`               | Standardized XML builder options matching Salesforce CLI's own output formatting.             |
+| Export                                                                                                 | Description                                                                                                                             |
+| ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `getObjectInfo(workbook)`                                                                              | Reads the `object` worksheet into a plain property map.                                                                                 |
+| `getFieldInfo(workbook)`                                                                               | Reads the `fields` worksheet into one row object per field.                                                                             |
+| `getValuesInfo(valuesWorksheet)`                                                                       | Reads a picklist values worksheet into one entry per value.                                                                             |
+| `toBoolean(value)`                                                                                     | Converts a CSV/Excel value to a boolean, preserving `undefined` for empty/missing input.                                                |
+| `blankToUndefined(value)`                                                                              | Treats an empty string the same as `undefined`.                                                                                         |
+| `buildSchemaReportHtml(options)`                                                                       | Renders a self-contained, interactive HTML schema report (diagram + relationship data table).                                           |
+| `IMPLEMENTED_FIELD_TYPES`                                                                              | The Salesforce field types this package knows how to generate `CustomField` metadata for.                                               |
+| `FIELD_TYPES_WITHOUT_REQUIRED_PROP`                                                                    | Field types whose `CustomField` metadata never carries a `required` tag.                                                                |
+| `XML_BUILDER_OPTIONS`                                                                                  | Standardized XML builder options matching Salesforce CLI's own output formatting.                                                       |
+| `ObjectData`, `NormalizedFieldData`, `RecordTypeData`, `BoolLike`                                      | The normalized object/field/record-type shapes both the CSV and Excel flows produce, and the boolean-or-text input `toBoolean` accepts. |
+| `PicklistValueSet`, `PicklistValueSetDefinition`, `PicklistValueSetValue`, `PicklistValueSettingEntry` | The `valueSet` node structure of a `Picklist`/`MultiselectPicklist` `CustomField`.                                                      |
+| `ExcelObjectInfo`, `ExcelFieldRow`, `ExcelValueRow`                                                    | Row shapes returned by `getObjectInfo`/`getFieldInfo`/`getValuesInfo`.                                                                  |
+| `SchemaRelationship`, `SchemaDiagramNode`, `SchemaDiagramEdge`                                         | `buildSchemaReportHtml`'s relationship rows and `vis-network` node/edge inputs.                                                         |
 
 ```ts
 import { getObjectInfo, getFieldInfo, getValuesInfo } from '@simplysf/simply-schema-core';

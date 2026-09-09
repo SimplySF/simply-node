@@ -185,19 +185,19 @@ const config = resolveSetupConfig({
 Everything below is exported from the package root. Removing or renaming an export is a breaking
 change; see [`src/index.ts`](src/index.ts).
 
-| Export                              | Description                                                                                  |
-| ----------------------------------- | -------------------------------------------------------------------------------------------- |
-| `resolveSetupConfig(options)`       | Resolves the feature list to apply from a base config, local overrides, a preset, and flags. |
-| `standardizeFiles(options)`         | Copies template packs into the project, composes `.gitignore`, deletes banned files.         |
-| `standardizePackageJson(options)`   | Writes `private`/`type`/`workspaces` and feature-gated `scripts`/`wireit` entries.           |
-| `writeDependencies(options)`        | Merges each included feature's `dependencies.json` into `package.json`.                      |
-| `PackageJson`                       | Reads/mutates/writes a project's `package.json`, ordering keys on write.                     |
-| `exists(path)`                      | `true` if a path exists and is accessible.                                                   |
-| `loadRootPath(fileName, cwd?)`      | Walks up from `cwd` for the nearest ancestor directory containing `fileName`.                |
-| `log(message, indent?)`             | A small indent-aware `console.warn` wrapper used by `PackageJson.write()`.                   |
-| `orderMap(map)`                     | Returns a copy of `map` with keys sorted alphabetically.                                     |
-| `semverIsLessThan(version, target)` | Compares two plain `major.minor.patch` strings.                                              |
-| `RegexCustomization`                | Type for a `standardizeFiles` `regexCustomizations` entry — see above.                       |
+| Export                               | Description                                                                                                                |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| `resolveSetupConfig(options)`        | Resolves the feature list to apply from a base config, local overrides, a preset, and flags.                               |
+| `standardizeFiles(options)`          | Copies template packs into the project, composes `.gitignore`, deletes banned files.                                       |
+| `standardizePackageJson(options)`    | Writes `private`/`type`/`workspaces` and feature-gated `scripts`/`wireit` entries.                                         |
+| `writeDependencies(options)`         | Merges each included feature's `dependencies.json` into `package.json`.                                                    |
+| `PackageJson`, `PackageJsonContents` | Reads/mutates/writes a project's `package.json`, ordering keys on write; `PackageJsonContents` is the parsed file's shape. |
+| `exists(path)`                       | `true` if a path exists and is accessible.                                                                                 |
+| `loadRootPath(fileName, cwd?)`       | Walks up from `cwd` for the nearest ancestor directory containing `fileName`.                                              |
+| `log(message, indent?)`              | A small indent-aware `console.warn` wrapper used by `PackageJson.write()`.                                                 |
+| `orderMap(map)`                      | Returns a copy of `map` with keys sorted alphabetically.                                                                   |
+| `semverIsLessThan(version, target)`  | Compares two plain `major.minor.patch` strings.                                                                            |
+| `RegexCustomization`                 | Type for a `standardizeFiles` `regexCustomizations` entry — see above.                                                     |
 
 ### End-to-end example
 

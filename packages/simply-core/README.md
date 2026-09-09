@@ -133,6 +133,45 @@ const result = await streamBulkQueryToFile(connection, 'SELECT Id, Name FROM Acc
 | `ensureDirectory(path)`                      | Creates a directory (and parents) if it doesn't already exist.                                                                                                                                                           |
 | `timestampForFileName(date?)`                | A filesystem-safe timestamp, for generated output file names.                                                                                                                                                            |
 
+### Resilience
+
+| Export                          | Description                                                                                                                                                                                                                                                                 |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `retryWithBackoff(fn, options)` | Calls `fn`, retrying on failure up to `options.retryAttempts` more times with an exponentially growing delay (`backoffFactor` × `initialDelay`, default 1s), before rethrowing the last error. `shouldRetry` can veto a retry per error; `onRetry` fires before each delay. |
+| `RetryWithBackoffOptions`       | Option type.                                                                                                                                                                                                                                                                |
+
+```ts
+import { retryWithBackoff } from '@simplysf/simply-core';
+
+const result = await retryWithBackoff(() => connection.query('SELECT Id FROM Account LIMIT 1'), {
+  retryAttempts: 3,
+  backoffFactor: 2,
+});
+```
+
+### API budget
+
+| Export                                                        | Description                                                                                                                                                                                                                                                                                                                  |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `checkApiBudget(conn, plannedRequests, options)`              | Works out whether a run of `plannedRequests` API calls fits inside `options.maxUsagePercent` of the org's _remaining_ daily allocation — read from the `Sforce-Limit-Info` header when jsforce has seen one, else from `/limits`. Never throws for an unreadable allocation: `status` is `ok`, `exceeded`, or `unavailable`. |
+| `apiBudgetError(result, maxUsagePercent)`                     | Builds the `SfError` to throw when a run doesn't fit, with the planned/remaining/limit/budget figures in the message.                                                                                                                                                                                                        |
+| `ApiBudgetResult`, `ApiBudgetSource`, `CheckApiBudgetOptions` | Result, allocation-source (`header`/`limits-api`), and option types.                                                                                                                                                                                                                                                         |
+
+```ts
+import { apiBudgetError, checkApiBudget } from '@simplysf/simply-core';
+
+const result = await checkApiBudget(connection, /* plannedRequests */ 500, { maxUsagePercent: 80 });
+if (result.status === 'exceeded') {
+  throw apiBudgetError(result, 80);
+}
+```
+
+### Metadata manifests
+
+| Export                                             | Description                                                                                                                                             |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `readPackageManifestMembers(xmlContent, typeName)` | Reads the `<members>` of the `<types>` block named `typeName` out of a `package.xml`/`destructiveChanges.xml` document. `[]` if the type isn't present. |
+
 ## Issues
 
 Please report any issues at https://github.com/SimplySF/simply-node/issues
