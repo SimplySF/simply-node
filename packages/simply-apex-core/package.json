@@ -3,11 +3,11 @@
   "description": "Apex execute/log/trace-flag logic — the library layer behind @simplysf/simply-apex, published separately for direct consumption (e.g. editor tooling) without the CLI framework",
   "version": "0.3.7",
   "author": "@ClayChipps",
-  "homepage": "https://github.com/SimplySF/simply-node",
-  "bugs": "https://github.com/SimplySF/simply-node/issues",
+  "homepage": "https://github.com/SimplySF/simply-plugins-core",
+  "bugs": "https://github.com/SimplySF/simply-plugins-core/issues",
   "repository": {
     "type": "git",
-    "url": "https://github.com/SimplySF/simply-node",
+    "url": "https://github.com/SimplySF/simply-plugins-core",
     "directory": "packages/simply-apex-core"
   },
   "engines": {

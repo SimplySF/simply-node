@@ -3,7 +3,7 @@ import { defineConfig } from 'astro/config';
 import { createStarlightTypeDocPlugin } from 'starlight-typedoc';
 import { remarkBaseLinks } from './plugins/remark-base-links.mjs';
 
-const base = '/simply-node';
+const base = '/simply-plugins-core';
 
 // One instance per package: each needs its own sidebar-group placeholder (from
 // createStarlightTypeDocPlugin) so their generated entries don't collide, and its own
@@ -57,9 +57,9 @@ export default defineConfig({
         alt: 'Simply SF logo',
       },
       favicon: '/favicon.png',
-      social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/SimplySF/simply-node' }],
+      social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/SimplySF/simply-plugins-core' }],
       editLink: {
-        baseUrl: 'https://github.com/SimplySF/simply-node/edit/main/site/',
+        baseUrl: 'https://github.com/SimplySF/simply-plugins-core/edit/main/site/',
       },
       plugins: [
         simplyCore(typeDocOptions('simply-core')),

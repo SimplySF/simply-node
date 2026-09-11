@@ -56,8 +56,8 @@ This repo pins its pnpm version via the `packageManager` field in `package.json`
 
 ```sh
 corepack enable
-git clone git@github.com:SimplySF/simply-node.git
-cd simply-node
+git clone git@github.com:SimplySF/simply-plugins-core.git
+cd simply-plugins-core
 corepack install   # installs the pnpm version pinned in package.json
 pnpm install
 pnpm run build
@@ -116,10 +116,10 @@ pnpm add -w -D <package>
 
 ## Documentation Site
 
-The [docs site](https://simplysf.github.io/simply-node/) lives in [`site/`](site) — an [Astro Starlight](https://starlight.astro.build/) site, deployed to GitHub Pages by `.github/workflows/docs.yml` on every push to `main` that touches `site/**` or any package's `src/`, `README.md`, or `package.json`.
+The [docs site](https://simplysf.github.io/simply-plugins-core/) lives in [`site/`](site) — an [Astro Starlight](https://starlight.astro.build/) site, deployed to GitHub Pages by `.github/workflows/docs.yml` on every push to `main` that touches `site/**` or any package's `src/`, `README.md`, or `package.json`.
 
 ```sh
-pnpm --filter site run dev     # local preview at http://localhost:4321/simply-node/
+pnpm --filter site run dev     # local preview at http://localhost:4321/simply-plugins-core/
 pnpm --filter site run build   # production build to site/dist, run before opening a PR that touches site/
 ```
 
@@ -210,4 +210,4 @@ Hooks are installed automatically on `pnpm install` via the `prepare: husky` scr
 
 ## Reporting Issues
 
-Please report bugs or request features by [opening an issue](https://github.com/SimplySF/simply-node/issues) rather than submitting a PR without prior discussion for anything non-trivial.
+Please report bugs or request features by [opening an issue](https://github.com/SimplySF/simply-plugins-core/issues) rather than submitting a PR without prior discussion for anything non-trivial.

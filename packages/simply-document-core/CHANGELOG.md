@@ -3,15 +3,15 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
-## [0.2.3](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-document-core%400.2.2...%40simplysf%2Fsimply-document-core%400.2.3) (2026-09-09)
+## [0.2.3](https://github.com/SimplySF/simply-plugins-core/compare/%40simplysf%2Fsimply-document-core%400.2.2...%40simplysf%2Fsimply-document-core%400.2.3) (2026-09-09)
 
 **Note:** Version bump only for package @simplysf/simply-document-core
 
-## [0.2.2](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-document-core%400.2.1...%40simplysf%2Fsimply-document-core%400.2.2) (2026-09-09)
+## [0.2.2](https://github.com/SimplySF/simply-plugins-core/compare/%40simplysf%2Fsimply-document-core%400.2.1...%40simplysf%2Fsimply-document-core%400.2.2) (2026-09-09)
 
 **Note:** Version bump only for package @simplysf/simply-document-core
 
-## [0.2.1](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-document-core%400.2.0...%40simplysf%2Fsimply-document-core%400.2.1) (2026-09-02)
+## [0.2.1](https://github.com/SimplySF/simply-plugins-core/compare/%40simplysf%2Fsimply-document-core%400.2.0...%40simplysf%2Fsimply-document-core%400.2.1) (2026-09-02)
 
 **Note:** Version bump only for package @simplysf/simply-document-core
 
@@ -19,4 +19,4 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 ### Features
 
-- **simply-document-core:** extract library package from simply-document ([453d3f2](https://github.com/SimplySF/simply-node/commit/453d3f29ce3dcbc01f9b1705b105af83b49ec803))
+- **simply-document-core:** extract library package from simply-document ([453d3f2](https://github.com/SimplySF/simply-plugins-core/commit/453d3f29ce3dcbc01f9b1705b105af83b49ec803))

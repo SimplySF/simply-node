@@ -1,8 +1,8 @@
 # Contributing to @simplysf/simply-document-core
 
-Confluence-storage-format change report and technical design document rendering. This package is part of the [`simply-node`](https://github.com/SimplySF/simply-node) monorepo.
+Confluence-storage-format change report and technical design document rendering. This package is part of the [`simply-plugins-core`](https://github.com/SimplySF/simply-plugins-core) monorepo.
 
-**Start with the [root CONTRIBUTING.md](https://github.com/SimplySF/simply-node/blob/main/CONTRIBUTING.md).** It covers repository structure, environment setup, commit conventions, versioning and publishing, CI, git hooks, and the pull request process — all of which apply here. This file covers only what is specific to this package.
+**Start with the [root CONTRIBUTING.md](https://github.com/SimplySF/simply-plugins-core/blob/main/CONTRIBUTING.md).** It covers repository structure, environment setup, commit conventions, versioning and publishing, CI, git hooks, and the pull request process — all of which apply here. This file covers only what is specific to this package.
 
 ## Working on this package
 
@@ -29,4 +29,4 @@ No pull request is accepted without tests covering the change. Tests live in [`t
 
 ## Reporting issues
 
-Please [open an issue](https://github.com/SimplySF/simply-node/issues) rather than sending a pull request for anything non-trivial without prior discussion.
+Please [open an issue](https://github.com/SimplySF/simply-plugins-core/issues) rather than sending a pull request for anything non-trivial without prior discussion.

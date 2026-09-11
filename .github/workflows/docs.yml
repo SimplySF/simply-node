@@ -52,8 +52,8 @@ jobs:
       - name: Check for broken internal links
         run: |
           pnpm --filter site run preview &
-          npx --yes wait-on http://localhost:4321/simply-node/
-          pnpm exec linkinator http://localhost:4321/simply-node/ --recurse --skip "^https?://(?!localhost)"
+          npx --yes wait-on http://localhost:4321/simply-plugins-core/
+          pnpm exec linkinator http://localhost:4321/simply-plugins-core/ --recurse --skip "^https?://(?!localhost)"
 
       - if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v4

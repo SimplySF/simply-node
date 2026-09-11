@@ -1,8 +1,8 @@
 # Contributing to @simplysf/simply-package-core
 
-Package/package-version alias resolution, `sfdx-project.json` dependency management, and Dev Hub version lookup logic. This package is part of the [`simply-node`](https://github.com/SimplySF/simply-node) monorepo.
+Package/package-version alias resolution, `sfdx-project.json` dependency management, and Dev Hub version lookup logic. This package is part of the [`simply-plugins-core`](https://github.com/SimplySF/simply-plugins-core) monorepo.
 
-**Start with the [root CONTRIBUTING.md](https://github.com/SimplySF/simply-node/blob/main/CONTRIBUTING.md).** It covers repository structure, environment setup, commit conventions, versioning and publishing, CI, git hooks, and the pull request process — all of which apply here. This file covers only what is specific to this package.
+**Start with the [root CONTRIBUTING.md](https://github.com/SimplySF/simply-plugins-core/blob/main/CONTRIBUTING.md).** It covers repository structure, environment setup, commit conventions, versioning and publishing, CI, git hooks, and the pull request process — all of which apply here. This file covers only what is specific to this package.
 
 ## Working on this package
 

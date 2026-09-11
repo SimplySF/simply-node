@@ -24,7 +24,7 @@ This repository is a monorepo. Thirteen packages are published independently to 
 | [`@simplysf/simply-project-setup-core`](packages/simply-project-setup-core) | Salesforce DX project file/dependency standardization engine (template packs, `.gitignore` composition, `package.json` scripts/dependency merging) |
 | [`@simplysf/simply-cicd-core`](packages/simply-cicd-core)                   | ALM issue linking (Jira, GitLab Issues) and VCS API clients (GitHub, GitLab)                                                                       |
 
-See each package's README for its full API reference and usage examples, or browse the [documentation site](https://simplysf.github.io/simply-node/) for API docs and code snippets across all thirteen.
+See each package's README for its full API reference and usage examples, or browse the [documentation site](https://simplysf.github.io/simply-plugins-core/) for API docs and code snippets across all thirteen.
 
 ## Installation
 
@@ -52,7 +52,7 @@ Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the repo s
 
 ## Issues
 
-Please report bugs or request features by [opening an issue](https://github.com/SimplySF/simply-node/issues) in this repository.
+Please report bugs or request features by [opening an issue](https://github.com/SimplySF/simply-plugins-core/issues) in this repository.
 
 ## License
 
