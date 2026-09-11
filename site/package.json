@@ -1,7 +1,7 @@
 {
   "name": "site",
   "private": true,
-  "description": "Documentation site for the @simplysf simply-node libraries",
+  "description": "Documentation site for the @simplysf simply-plugins-core libraries",
   "type": "module",
   "scripts": {
     "dev": "astro dev",

@@ -3,25 +3,25 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
-## [0.3.2](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-package-core%400.3.1...%40simplysf%2Fsimply-package-core%400.3.2) (2026-09-09)
+## [0.3.2](https://github.com/SimplySF/simply-plugins-core/compare/%40simplysf%2Fsimply-package-core%400.3.1...%40simplysf%2Fsimply-package-core%400.3.2) (2026-09-09)
 
 **Note:** Version bump only for package @simplysf/simply-package-core
 
-## [0.3.1](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-package-core%400.3.0...%40simplysf%2Fsimply-package-core%400.3.1) (2026-09-09)
+## [0.3.1](https://github.com/SimplySF/simply-plugins-core/compare/%40simplysf%2Fsimply-package-core%400.3.0...%40simplysf%2Fsimply-package-core%400.3.1) (2026-09-09)
 
 **Note:** Version bump only for package @simplysf/simply-package-core
 
-# [0.3.0](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-package-core%400.2.2...%40simplysf%2Fsimply-package-core%400.3.0) (2026-09-09)
+# [0.3.0](https://github.com/SimplySF/simply-plugins-core/compare/%40simplysf%2Fsimply-package-core%400.2.2...%40simplysf%2Fsimply-package-core%400.3.0) (2026-09-09)
 
 ### Features
 
-- **simply-package-core:** add installPackageDependencies service ([#196](https://github.com/SimplySF/simply-node/issues/196)) ([fb19f60](https://github.com/SimplySF/simply-node/commit/fb19f6001cc6bacdbc3832eb01a4fee6ce9ccc3a))
+- **simply-package-core:** add installPackageDependencies service ([#196](https://github.com/SimplySF/simply-plugins-core/issues/196)) ([fb19f60](https://github.com/SimplySF/simply-plugins-core/commit/fb19f6001cc6bacdbc3832eb01a4fee6ce9ccc3a))
 
-## [0.2.2](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-package-core%400.2.1...%40simplysf%2Fsimply-package-core%400.2.2) (2026-09-06)
+## [0.2.2](https://github.com/SimplySF/simply-plugins-core/compare/%40simplysf%2Fsimply-package-core%400.2.1...%40simplysf%2Fsimply-package-core%400.2.2) (2026-09-06)
 
 **Note:** Version bump only for package @simplysf/simply-package-core
 
-## [0.2.1](https://github.com/SimplySF/simply-node/compare/%40simplysf%2Fsimply-package-core%400.2.0...%40simplysf%2Fsimply-package-core%400.2.1) (2026-09-03)
+## [0.2.1](https://github.com/SimplySF/simply-plugins-core/compare/%40simplysf%2Fsimply-package-core%400.2.0...%40simplysf%2Fsimply-package-core%400.2.1) (2026-09-03)
 
 **Note:** Version bump only for package @simplysf/simply-package-core
 
@@ -29,7 +29,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 ### Features
 
-- add simply-package-core ([#177](https://github.com/SimplySF/simply-node/issues/177)) ([266da02](https://github.com/SimplySF/simply-node/commit/266da0232c7a6095bdf366dc078cf6061c79e90b))
+- add simply-package-core ([#177](https://github.com/SimplySF/simply-plugins-core/issues/177)) ([266da02](https://github.com/SimplySF/simply-plugins-core/commit/266da0232c7a6095bdf366dc078cf6061c79e90b))
 
 ### BREAKING CHANGES
 

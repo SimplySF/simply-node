@@ -35,6 +35,11 @@ refactors that keep the public surface identical (though a short doc is welcome 
 
 ## Index
 
+> **Repo rename (2026-09-11):** this repository was renamed from `simply-node` to
+> `simply-plugins-core`. Links everywhere were repointed, but the prose in these design docs
+> deliberately keeps the old name, because that is what the repo was called when each doc was
+> written. Read every `simply-node` mention below, and in the docs themselves, as this repo.
+
 Docs 0001-0005, 0007, 0008, and 0021 were removed here when their packages moved to
 [`simply-plugins`](https://github.com/SimplySF/simply-plugins) (see 0026) — they're plugin-only,
 with no `simply-core`/`-core` library involvement, so they now live only in that repo's

@@ -3,11 +3,11 @@
   "description": "Content Version upload/download and CSV row counting logic — the library layer behind @simplysf/simply-data, published separately for direct consumption (e.g. editor tooling, CI scripts) without the CLI framework",
   "version": "0.3.3",
   "author": "@ClayChipps",
-  "homepage": "https://github.com/SimplySF/simply-node",
-  "bugs": "https://github.com/SimplySF/simply-node/issues",
+  "homepage": "https://github.com/SimplySF/simply-plugins-core",
+  "bugs": "https://github.com/SimplySF/simply-plugins-core/issues",
   "repository": {
     "type": "git",
-    "url": "https://github.com/SimplySF/simply-node",
+    "url": "https://github.com/SimplySF/simply-plugins-core",
     "directory": "packages/simply-data-core"
   },
   "engines": {

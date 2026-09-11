@@ -1,6 +1,6 @@
 # @simplysf/simply-project-setup-core
 
-[![NPM](https://img.shields.io/npm/v/@simplysf/simply-project-setup-core?label=@simplysf/simply-project-setup-core)](https://npmjs.com/@simplysf/simply-project-setup-core) [![Downloads/week](https://img.shields.io/npm/dw/@simplysf/simply-project-setup-core.svg)](https://npmjs.com/@simplysf/simply-project-setup-core) [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://raw.githubusercontent.com/SimplySF/simply-node/main/LICENSE.txt)
+[![NPM](https://img.shields.io/npm/v/@simplysf/simply-project-setup-core?label=@simplysf/simply-project-setup-core)](https://npmjs.com/@simplysf/simply-project-setup-core) [![Downloads/week](https://img.shields.io/npm/dw/@simplysf/simply-project-setup-core.svg)](https://npmjs.com/@simplysf/simply-project-setup-core) [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://raw.githubusercontent.com/SimplySF/simply-plugins-core/main/LICENSE.txt)
 
 The engine behind a "standardize this Salesforce DX project" command: resolve which features are
 enabled from CLI flags, a preset, and a project-local config file; copy each enabled feature's
@@ -10,7 +10,7 @@ exists); compose `.gitignore`; and merge each feature's dependencies into `packa
 This package ships **no templates, no presets, no package.json defaults, and no project-local
 config-file format** — every one of those is a specific project's own opinion, not this engine's. A
 consumer plugin supplies them and gets the file-copy/merge/customization mechanics for free. See
-[docs/design/0035-simply-project-setup-core.md](https://github.com/SimplySF/simply-node/blob/main/docs/design/0035-simply-project-setup-core.md)
+[docs/design/0035-simply-project-setup-core.md](https://github.com/SimplySF/simply-plugins-core/blob/main/docs/design/0035-simply-project-setup-core.md)
 for the reasoning.
 
 ## Install
@@ -278,12 +278,12 @@ if (config.include.includes('utam')) {
 
 ## Issues
 
-Please report any issues at https://github.com/SimplySF/simply-node/issues
+Please report any issues at https://github.com/SimplySF/simply-plugins-core/issues
 
 ## Contributing
 
-This package is part of the [`@simplysf/simply`](https://github.com/SimplySF/simply-node) monorepo. See [CONTRIBUTING.md](CONTRIBUTING.md) for what's specific to this package, and the repo's [root CONTRIBUTING.md](https://github.com/SimplySF/simply-node/blob/main/CONTRIBUTING.md) for repo structure, setup, commit conventions, and how to submit a pull request. Please also read our [Code of Conduct](https://github.com/SimplySF/simply-node/blob/main/CODE_OF_CONDUCT.md).
+This package is part of the [`@simplysf/simply`](https://github.com/SimplySF/simply-plugins-core) monorepo. See [CONTRIBUTING.md](CONTRIBUTING.md) for what's specific to this package, and the repo's [root CONTRIBUTING.md](https://github.com/SimplySF/simply-plugins-core/blob/main/CONTRIBUTING.md) for repo structure, setup, commit conventions, and how to submit a pull request. Please also read our [Code of Conduct](https://github.com/SimplySF/simply-plugins-core/blob/main/CODE_OF_CONDUCT.md).
 
 ## License
 
-Licensed under the [Apache-2.0](https://raw.githubusercontent.com/SimplySF/simply-node/main/LICENSE.txt) license.
+Licensed under the [Apache-2.0](https://raw.githubusercontent.com/SimplySF/simply-plugins-core/main/LICENSE.txt) license.

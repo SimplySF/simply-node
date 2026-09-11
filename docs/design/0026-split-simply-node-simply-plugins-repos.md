@@ -9,6 +9,11 @@ manual push) — unrelated to this doc, tracked separately.
 **Package:** repo-wide (`pnpm-workspace.yaml`, `lerna.json`, `.github/`, every `packages/*`, `site/`)
 **Date:** 2026-09-02
 
+> **Repo rename (2026-09-11):** the repo this doc calls `simply-node` was later renamed to
+> `simply-plugins-core` — same repository, new GitHub URL (`SimplySF/simply-plugins-core`) and new
+> Pages base (`/simply-plugins-core`). Links were repointed across both repos; the prose here keeps
+> the original name so the account of the split stays accurate to when it happened.
+
 ## Problem
 
 `simply-node` currently holds two kinds of packages with different audiences and different release

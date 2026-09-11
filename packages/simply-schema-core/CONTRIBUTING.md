@@ -1,8 +1,8 @@
 # Contributing to @simplysf/simply-schema-core
 
-sObject schema generation (CSV/Excel parsing, field/object normalization) and interactive schema-report rendering. This package is part of the [`simply-node`](https://github.com/SimplySF/simply-node) monorepo.
+sObject schema generation (CSV/Excel parsing, field/object normalization) and interactive schema-report rendering. This package is part of the [`simply-plugins-core`](https://github.com/SimplySF/simply-plugins-core) monorepo.
 
-**Start with the [root CONTRIBUTING.md](https://github.com/SimplySF/simply-node/blob/main/CONTRIBUTING.md).** It covers repository structure, environment setup, commit conventions, versioning and publishing, CI, git hooks, and the pull request process — all of which apply here. This file covers only what is specific to this package.
+**Start with the [root CONTRIBUTING.md](https://github.com/SimplySF/simply-plugins-core/blob/main/CONTRIBUTING.md).** It covers repository structure, environment setup, commit conventions, versioning and publishing, CI, git hooks, and the pull request process — all of which apply here. This file covers only what is specific to this package.
 
 ## Working on this package
 

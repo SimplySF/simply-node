@@ -1,8 +1,8 @@
 # @simplysf/simply-core
 
-[![NPM](https://img.shields.io/npm/v/@simplysf/simply-core?label=@simplysf/simply-core)](https://npmjs.com/@simplysf/simply-core) [![Downloads/week](https://img.shields.io/npm/dw/@simplysf/simply-core.svg)](https://npmjs.com/@simplysf/simply-core) [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://raw.githubusercontent.com/SimplySF/simply-node/main/LICENSE.txt)
+[![NPM](https://img.shields.io/npm/v/@simplysf/simply-core?label=@simplysf/simply-core)](https://npmjs.com/@simplysf/simply-core) [![Downloads/week](https://img.shields.io/npm/dw/@simplysf/simply-core.svg)](https://npmjs.com/@simplysf/simply-core) [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://raw.githubusercontent.com/SimplySF/simply-plugins-core/main/LICENSE.txt)
 
-Shared internal utilities for [`@simplysf`](https://github.com/SimplySF/simply-node) Salesforce CLI plugins. This is not a Salesforce CLI plugin itself — it's a plain library consumed by the other packages in this monorepo.
+Shared internal utilities for [`@simplysf`](https://github.com/SimplySF/simply-plugins-core) Salesforce CLI plugins. This is not a Salesforce CLI plugin itself — it's a plain library consumed by the other packages in this monorepo.
 
 It deliberately does **not** depend on `@salesforce/sf-plugins-core`. Anything needing the oclif flag or command layer belongs in [`@simplysf/simply-plugin-kit`](https://github.com/SimplySF/simply-plugins/tree/main/packages/simply-plugin-kit) instead.
 
@@ -174,12 +174,12 @@ if (result.status === 'exceeded') {
 
 ## Issues
 
-Please report any issues at https://github.com/SimplySF/simply-node/issues
+Please report any issues at https://github.com/SimplySF/simply-plugins-core/issues
 
 ## Contributing
 
-This package is part of the [`@simplysf/simply`](https://github.com/SimplySF/simply-node) monorepo. See [CONTRIBUTING.md](CONTRIBUTING.md) for what's specific to this package, and the repo's [root CONTRIBUTING.md](https://github.com/SimplySF/simply-node/blob/main/CONTRIBUTING.md) for repo structure, setup, commit conventions, and how to submit a pull request. Please also read our [Code of Conduct](https://github.com/SimplySF/simply-node/blob/main/CODE_OF_CONDUCT.md).
+This package is part of the [`@simplysf/simply`](https://github.com/SimplySF/simply-plugins-core) monorepo. See [CONTRIBUTING.md](CONTRIBUTING.md) for what's specific to this package, and the repo's [root CONTRIBUTING.md](https://github.com/SimplySF/simply-plugins-core/blob/main/CONTRIBUTING.md) for repo structure, setup, commit conventions, and how to submit a pull request. Please also read our [Code of Conduct](https://github.com/SimplySF/simply-plugins-core/blob/main/CODE_OF_CONDUCT.md).
 
 ## License
 
-Licensed under the [Apache-2.0](https://raw.githubusercontent.com/SimplySF/simply-node/main/LICENSE.txt) license.
+Licensed under the [Apache-2.0](https://raw.githubusercontent.com/SimplySF/simply-plugins-core/main/LICENSE.txt) license.

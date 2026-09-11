@@ -3,11 +3,11 @@
   "description": "Engine for standardizing a Salesforce DX project's files, .gitignore, and package.json dependencies/scripts from a consumer-supplied set of template packs, presets, and defaults — the reusable backend behind a project-setup command, published separately so a consumer plugin can build its own end-user command on top of it",
   "version": "0.4.3",
   "author": "@ClayChipps",
-  "homepage": "https://github.com/SimplySF/simply-node",
-  "bugs": "https://github.com/SimplySF/simply-node/issues",
+  "homepage": "https://github.com/SimplySF/simply-plugins-core",
+  "bugs": "https://github.com/SimplySF/simply-plugins-core/issues",
   "repository": {
     "type": "git",
-    "url": "https://github.com/SimplySF/simply-node",
+    "url": "https://github.com/SimplySF/simply-plugins-core",
     "directory": "packages/simply-project-setup-core"
   },
   "engines": {
