@@ -117,7 +117,7 @@ importers:
         specifier: ^12.37.2
         version: 12.37.2(supports-color@8.1.1)
       '@simplysf/simply-core':
-        specifier: workspace:^1.6.3
+        specifier: workspace:^1.6.4
         version: link:../simply-core
       zod:
         specifier: ^4.1.12
@@ -151,7 +151,7 @@ importers:
         specifier: ^12.37.2
         version: 12.37.2(supports-color@8.1.1)
       '@simplysf/simply-core':
-        specifier: workspace:^1.6.3
+        specifier: workspace:^1.6.4
         version: link:../simply-core
       glob:
         specifier: ^13.0.6
@@ -204,7 +204,7 @@ importers:
         specifier: ^8.30.0
         version: 8.32.6
       '@simplysf/simply-core':
-        specifier: workspace:^1.6.3
+        specifier: workspace:^1.6.4
         version: link:../simply-core
       csv-parse:
         specifier: ^7.0.2
@@ -242,7 +242,7 @@ importers:
         specifier: ^4.22.16
         version: 4.27.8(supports-color@8.1.1)
       '@simplysf/simply-core':
-        specifier: workspace:^1.6.3
+        specifier: workspace:^1.6.4
         version: link:../simply-core
       zod:
         specifier: ^4.1.12
@@ -258,7 +258,7 @@ importers:
   packages/simply-permissions-core:
     dependencies:
       '@simplysf/simply-report':
-        specifier: workspace:^1.0.5
+        specifier: workspace:^1.0.6
         version: link:../simply-report
       xmlbuilder2:
         specifier: ^4.0.3
@@ -303,7 +303,7 @@ importers:
   packages/simply-schema-core:
     dependencies:
       '@simplysf/simply-report':
-        specifier: workspace:^1.0.5
+        specifier: workspace:^1.0.6
         version: link:../simply-report
       exceljs:
         specifier: ^4.4.0
@@ -322,7 +322,7 @@ importers:
         specifier: ^8.30.0
         version: 8.32.6
       '@simplysf/simply-report':
-        specifier: workspace:^1.0.5
+        specifier: workspace:^1.0.6
         version: link:../simply-report
       zod:
         specifier: ^4.1.12
