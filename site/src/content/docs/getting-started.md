@@ -1,6 +1,6 @@
 ---
 title: Get Started
-description: Requirements and installation for the Simply Node libraries.
+description: Requirements and installation for the Simply Plugins Core libraries.
 ---
 
 ## Requirements

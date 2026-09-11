@@ -48,9 +48,9 @@ export default defineConfig({
   },
   integrations: [
     starlight({
-      title: 'Simply Node',
+      title: 'Simply Plugins Core',
       description:
-        'Framework-independent Node/TypeScript libraries for working with Salesforce, built by SimplySF: querying and bulk data, AT4DX binding scan/resolution, Apex tooling, permission set/schema/package/community/sobject logic, document/report rendering, and more.',
+        "The core Node/TypeScript libraries behind SimplySF's Salesforce CLI plugins, published standalone and framework-independent: querying and bulk data, AT4DX binding scan/resolution, Apex tooling, permission set/schema/package/community/sobject logic, document/report rendering, and more.",
       logo: {
         light: './src/assets/logo-icon.png',
         dark: './src/assets/logo-icon-dark.png',

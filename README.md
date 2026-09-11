@@ -1,8 +1,8 @@
-# Simply Node
+# Simply Plugins Core
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-A collection of framework-independent Node/TypeScript libraries for working with Salesforce, built by [SimplySF](https://github.com/SimplySF). Each package is a plain library with no CLI dependency — install it and call its functions directly from a script, an editor extension, a CI job, or any other Node codebase.
+The core Node/TypeScript libraries behind [SimplySF](https://github.com/SimplySF)'s Salesforce CLI plugins, published standalone. Each package is a plain library with no CLI dependency — install it and call its functions directly from a script, an editor extension, a CI job, or any other Node codebase.
 
 ## Packages
 
